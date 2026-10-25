@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Fitness RPG - UI Flow</title>
+    <style>
+      :root { --bg:#211b18; --panel:#302720; --ink:#f3e3bb; --muted:#c0ae83; --gold:#e8c765; --orange:#d58a36; --blue:#78a9ae; --green:#9cb36a; --line:#9c7040; }
+      * { box-sizing:border-box; }
+      body { margin:0; color:var(--ink); background:#120f0e; font-family:Georgia,'Times New Roman',serif; }
+      .page { max-width:1500px; margin:auto; padding:28px; }
+      header { display:flex; justify-content:space-between; align-items:end; gap:20px; border-bottom:2px solid #876035; padding-bottom:18px; margin-bottom:24px; }
+      h1 { margin:0 0 6px; font-size:clamp(2rem,4vw,3.7rem); letter-spacing:.01em; }
+      p { margin:0; color:var(--muted); }.eyebrow { color:var(--gold); font:500 .7rem/1.2 monospace; letter-spacing:.14em; }
+      .legend { display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; }.legend span { padding:7px 10px; border:1px solid var(--line); border-radius:4px; font-size:.8rem; }.legend .primary { border-color:var(--orange); }.legend .secondary { border-color:var(--blue); }.legend .social { border-color:var(--green); }
+      .flow-shell { overflow:auto; padding:16px 0 26px; background:radial-gradient(circle at 50% 10%,#3b2a22 0,#211b18 50%); border:3px double #876035; box-shadow:inset 0 0 0 1px #4d3524; }
+      svg { display:block; min-width:1280px; width:100%; height:auto; }
+      .connector { fill:none; stroke:var(--line); stroke-width:3; marker-end:url(#arrow); }.connector.social { stroke:var(--green); }.connector.secondary { stroke:var(--blue); }
+      .node rect { fill:var(--panel); stroke:#876035; stroke-width:2; rx:6; }.node.primary rect { stroke:var(--orange); stroke-width:3; }.node.secondary rect { stroke:var(--blue); }.node.social rect { stroke:var(--green); }.node h2 { font:700 20px Georgia,serif; fill:var(--ink); }.node text { font:15px Georgia,serif; fill:var(--muted); }.node .tag { font:600 11px monospace; letter-spacing:1px; fill:var(--gold); }.node .icon { fill:var(--gold); font:700 26px Georgia,serif; }
+      .footnote { display:flex; justify-content:space-between; gap:20px; margin-top:16px; font-size:.9rem; }.back { color:var(--gold); }
+      @media (max-width:700px) { .page { padding:18px 12px; } header { align-items:flex-start; flex-direction:column; }.legend { justify-content:flex-start; }.footnote { flex-direction:column; } }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header>
+        <div><p class="eyebrow">FITNESS RPG / INFORMATION ARCHITECTURE</p><h1>Intended UI flow</h1><p>Primary user actions from the mobile home hub.</p></div>
+        <div class="legend"><span class="primary">Primary progression</span><span class="secondary">Supporting detail</span><span class="social">Friends / social</span></div>
+      </header>
+      <div class="flow-shell">
+        <svg viewBox="0 0 1420 1120" role="img" aria-labelledby="flow-title flow-description">
+          <title id="flow-title">Fitness RPG mobile UI flowchart</title>
+          <desc id="flow-description">The home screen branches to domain class pages, activity details, quests, avatar customization, and friends. Domain pages lead to individual skills, which lead to ranks or history.</desc>
+          <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#9c7040" /></marker></defs>
+
+          <path class="connector" d="M710 175 V225 H205 V275" /><path class="connector" d="M710 175 V225 H485 V275" /><path class="connector" d="M710 175 V225 H765 V275" />
+          <path class="connector secondary" d="M710 175 V225 H1045 V275" /><path class="connector secondary" d="M710 175 V225 H1300 V275" />
+          <path class="connector social" d="M710 175 V210 H1280 V735" />
+          <path class="connector" d="M205 385 V445 H205 V515" /><path class="connector" d="M485 385 V445 H485 V515" /><path class="connector" d="M765 385 V445 H765 V515" />
+          <path class="connector secondary" d="M205 625 V685 H105 V735" /><path class="connector secondary" d="M205 625 V685 H305 V735" />
+          <path class="connector social" d="M1280 845 V895 H1280 V875" /><path class="connector social" d="M1280 985 V1015" />
+          <path class="connector secondary" d="M1045 385 V515" /><path class="connector secondary" d="M1300 385 V515" />
+
+          <g class="node primary" transform="translate(530 55)"><rect width="360" height="120"/><text class="tag" x="24" y="28">HOME HUB</text><text class="icon" x="24" y="74">O</text><text h2="true" x="70" y="62" class="node h2">Current Class: Wrecking Ball</text><text x="70" y="88">3 highest domain levels · recent activity · next quest</text></g>
+
+          <g class="node primary" transform="translate(80 275)"><rect width="250" height="110"/><text class="tag" x="20" y="26">DOMAIN</text><text class="icon" x="20" y="72">/</text><text x="60" y="60" class="node h2">Running</text><text x="60" y="85">Cumulative Level 24</text></g>
+          <g class="node primary" transform="translate(360 275)"><rect width="250" height="110"/><text class="tag" x="20" y="26">DOMAIN</text><text class="icon" x="20" y="72">+</text><text x="60" y="60" class="node h2">Strength</text><text x="60" y="85">Cumulative Level 4</text></g>
+          <g class="node primary" transform="translate(640 275)"><rect width="250" height="110"/><text class="tag" x="20" y="26">DOMAIN</text><text class="icon" x="20" y="72">~</text><text x="60" y="60" class="node h2">Cycling</text><text x="60" y="85">Cumulative Level 11</text></g>
+          <g class="node secondary" transform="translate(920 275)"><rect width="250" height="110"/><text class="tag" x="20" y="26">ACTIVITY</text><text class="icon" x="20" y="72">+</text><text x="60" y="60" class="node h2">Recent activity</text><text x="60" y="85">XP + loot breakdown</text></g>
+          <g class="node secondary" transform="translate(1175 275)"><rect width="250" height="110"/><text class="tag" x="20" y="26">COSMETICS</text><text class="icon" x="20" y="72">*</text><text x="60" y="60" class="node h2">Avatar closet</text><text x="60" y="85">Equip and show off loot</text></g>
+
+          <g class="node primary" transform="translate(80 515)"><rect width="250" height="110"/><text class="tag" x="20" y="26">CLASS PAGE</text><text class="icon" x="20" y="72">/</text><text x="60" y="60" class="node h2">Running skills</text><text x="60" y="85">Grid of internal skills</text></g>
+          <g class="node primary" transform="translate(360 515)"><rect width="250" height="110"/><text class="tag" x="20" y="26">CLASS PAGE</text><text class="icon" x="20" y="72">+</text><text x="60" y="60" class="node h2">Strength skills</text><text x="60" y="85">Grid of internal skills</text></g>
+          <g class="node primary" transform="translate(640 515)"><rect width="250" height="110"/><text class="tag" x="20" y="26">CLASS PAGE</text><text class="icon" x="20" y="72">~</text><text x="60" y="60" class="node h2">Cycling skills</text><text x="60" y="85">Grid of internal skills</text></g>
+          <g class="node secondary" transform="translate(920 515)"><rect width="250" height="110"/><text class="tag" x="20" y="26">QUESTS</text><text class="icon" x="20" y="72">!</text><text x="60" y="60" class="node h2">Quest page</text><text x="60" y="85">Goals, rewards, progress</text></g>
+          <g class="node secondary" transform="translate(1175 515)"><rect width="250" height="110"/><text class="tag" x="20" y="26">ACTIVITY DETAIL</text><text class="icon" x="20" y="72">+</text><text x="60" y="60" class="node h2">Activity reward</text><text x="60" y="85">XP calculation and drop</text></g>
+
+          <g class="node secondary" transform="translate(0 735)"><rect width="210" height="110"/><text class="tag" x="20" y="26">SKILL TILE</text><text class="icon" x="20" y="72">*</text><text x="60" y="58" class="node h2">Fastest 5K</text><text x="60" y="83">Level 50</text></g>
+          <g class="node secondary" transform="translate(220 735)"><rect width="210" height="110"/><text class="tag" x="20" y="26">SKILL TILE</text><text class="icon" x="20" y="72">~</text><text x="60" y="58" class="node h2">Monthly distance</text><text x="60" y="83">Level 18</text></g>
+          <g class="node social" transform="translate(0 945)"><rect width="240" height="60"/><text class="tag" x="18" y="25">SKILL HISTORY</text><text x="18" y="47">Current Level 50 · Peak Level 56</text></g>
+          <g class="node secondary" transform="translate(550 735)"><rect width="240" height="110"/><text class="tag" x="20" y="26">SKILL ACTION</text><text class="icon" x="20" y="72">#</text><text x="60" y="58" class="node h2">Ranks</text><text x="60" y="83">Skill-specific leaderboard</text></g>
+          <g class="node secondary" transform="translate(820 735)"><rect width="240" height="110"/><text class="tag" x="20" y="26">SKILL ACTION</text><text class="icon" x="20" y="72">~</text><text x="60" y="58" class="node h2">History</text><text x="60" y="83">Level over time and peak</text></g>
+
+          <g class="node social" transform="translate(1175 735)"><rect width="250" height="110"/><text class="tag" x="20" y="26">SOCIAL</text><text class="icon" x="20" y="72">+</text><text x="60" y="58" class="node h2">Friends</text><text x="60" y="83">Browse friend levels</text></g>
+          <g class="node social" transform="translate(1175 875)"><rect width="250" height="110"/><text class="tag" x="20" y="26">FRIEND PROFILE</text><text class="icon" x="20" y="72">O</text><text x="60" y="58" class="node h2">Friend levels</text><text x="60" y="83">Compare domains and skills</text></g>
+          <g class="node social" transform="translate(1175 1015)"><rect width="250" height="60"/><text class="tag" x="18" y="25">FRIEND DETAIL</text><text x="18" y="47">Friend domain and skill view</text></g>
+        </svg>
+      </div>
+      <div class="footnote"><span>Solid gold paths = primary progression. Blue = supporting utility. Green = friends/social.</span><span class="back">Back to <a href="index.html" style="color:inherit">mockup</a></span></div>
+    </div>
+  </body>
+</html>

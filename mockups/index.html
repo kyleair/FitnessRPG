@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Fitness RPG - Dashboard Mockups</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body data-theme="classic">
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="top-actions">
+          <details class="theme-picker"><summary>Theme</summary><div class="theme-menu"><button data-theme-choice="cozy">Cozy Quest</button><button data-theme-choice="arcade">Arcade Stats</button><button data-theme-choice="modern">Modern RPG</button><button data-theme-choice="classic">Classic RPG</button></div></details>
+        </div>
+      </header>
+
+      <svg class="icon-defs" aria-hidden="true">
+        <symbol id="icon-runner" viewBox="0 0 64 64"><circle cx="39" cy="10" r="6"/><path d="M31 20l11 8-7 10 12 8M35 37L22 51M42 28l13 2M28 24l-12 8"/></symbol>
+        <symbol id="icon-strength" viewBox="0 0 64 64"><path d="M13 25v14M20 19v26M27 26h10M44 19v26M51 25v14M20 32h24"/></symbol>
+        <symbol id="icon-cycle" viewBox="0 0 64 64"><circle cx="18" cy="46" r="10"/><circle cx="48" cy="46" r="10"/><path d="M18 46l12-24 8 24M30 22h12M30 22l-8 0M30 22l18 24M25 32h17"/></symbol>
+        <symbol id="icon-speed" viewBox="0 0 64 64"><path d="M14 45a24 24 0 1 1 36 0M32 34l12-12M20 45h24M22 20l3 5M42 20l-3 5"/></symbol>
+        <symbol id="icon-endurance" viewBox="0 0 64 64"><path d="M32 53S12 40 12 24a11 11 0 0 1 20-7 11 11 0 0 1 20 7c0 16-20 29-20 29Z"/></symbol>
+        <symbol id="icon-consistency" viewBox="0 0 64 64"><path d="M32 12v40M12 32h40M18 18l28 28M46 18L18 46"/></symbol>
+        <symbol id="icon-swimming" viewBox="0 0 64 64"><path d="M14 24c5-6 10 6 15 0s10 6 15 0 8 2 8 2"/><circle cx="21" cy="15" r="5"/><path d="M12 39c5-5 10 5 15 0s10 5 15 0 8 2 10 2M13 50c5-5 10 5 15 0s10 5 15 0 8 2 10 2"/></symbol>
+        <symbol id="icon-quest" viewBox="0 0 64 64"><path d="M20 16h24l5 9-17 27-17-27 5-9ZM15 25h34M32 16v36"/></symbol>
+      </svg>
+      <main>
+        <section class="view active" id="home-view">
+          <div class="hero-card">
+            <div class="hero-copy"><p class="eyebrow">CURRENT CLASS</p><h2>Wrecking Ball</h2><p class="muted">A nimble runner with the power to move mountains.</p></div>
+            <button class="hero-avatar" data-view="profile" aria-label="Open items and cosmetics"><span class="avatar-figure" aria-hidden="true"><i class="avatar-head"></i><i class="avatar-body"></i><i class="avatar-boot avatar-boot-left"></i><i class="avatar-boot avatar-boot-right"></i></span><b>*</b></button>
+            <div class="hero-levels"><span><b>Fastest 5K</b><strong>Level 50</strong></span><span><b>Bench Press</b><strong>Level 42</strong></span><span><b>Monthly Distance</b><strong>Level 18</strong></span></div>
+          </div>
+
+          <div class="section-heading"><div><p class="eyebrow">YOUR SKILLS</p><h3>Choose a class to inspect.</h3></div></div>
+          <div class="skill-grid">
+            <button class="skill-card running" data-view="domain" data-domain="running"><div class="skill-icon skill-emblem"><svg><use href="#icon-runner"></use></svg></div><div class="skill-meta"><span>RUNNING</span><strong>Level 24</strong></div><div class="meter"><span style="width:72%"></span></div><p>720 / 1,000 lifetime XP</p><small>Explore 4 running skills</small></button>
+            <button class="skill-card strength" data-view="domain" data-domain="strength"><div class="skill-icon skill-emblem"><svg><use href="#icon-strength"></use></svg></div><div class="skill-meta"><span>STRENGTH</span><strong>Level 12</strong></div><div class="meter"><span style="width:48%"></span></div><p>180 / 400 lifetime XP</p><small>Explore 4 strength skills</small></button>
+            <button class="skill-card cycling" data-view="domain" data-domain="cycling"><div class="skill-icon skill-emblem"><svg><use href="#icon-cycle"></use></svg></div><div class="skill-meta"><span>CYCLING</span><strong>Level 11</strong></div><div class="meter"><span style="width:30%"></span></div><p>300 / 1,000 lifetime XP</p><small>Explore 4 cycling skills</small></button>
+            <button class="skill-card swimming" data-view="domain" data-domain="swimming"><div class="skill-icon skill-emblem"><svg><use href="#icon-swimming"></use></svg></div><div class="skill-meta"><span>SWIMMING</span><strong>Level 2</strong></div><div class="meter"><span style="width:22%"></span></div><p>6 / 30 lifetime XP</p><small>Explore 4 swimming skills</small></button>
+          </div>
+
+          <div class="section-heading dashboard-heading"><div><p class="eyebrow">QUESTS AND ACTIVITIES</p><h3>Keep your adventure moving.</h3></div></div>
+          <div class="dashboard-grid">
+            <button class="panel quest-panel quest-entry" data-view="quests" aria-label="Open quests"><div class="quest-entry-icon"><svg><use href="#icon-quest"></use></svg></div><div><p class="eyebrow">ADVENTURE BOARD</p><h3>Quests</h3><p class="muted">Daily, weekly, and monthly challenges.</p></div><span class="quest-entry-arrow">&gt;</span></button>
+            <article class="panel recent-panel"><div class="panel-heading"><div><p class="eyebrow">RECENT ACTIVITIES</p></div></div><div class="activity-row"><div class="activity-mark">/</div><div><b>Evening 5K</b><p>5.02 km - 32 min - Today</p></div><strong>+5 XP</strong></div><button class="secondary full" data-view="activity">See activities</button></article>
+          </div>
+        </section>
+
+        <section class="view" id="quests-view">
+          <button class="back-button" data-view="home">Back to dashboard</button>
+          <div class="page-title"><h2>Quests</h2><p class="muted">Small goals, clear progress, and rewards for keeping your adventure moving.</p></div>
+          <section class="quest-group"><div class="quest-group-heading"><div><p class="eyebrow">DAILY QUESTS</p><h3>Today’s challenges</h3></div><span class="expiry-label">Resets in 1 day</span></div><article class="quest-card"><div class="quest-card-icon">*</div><div class="quest-card-copy"><h3>Touch grass, gain power</h3><p>Complete one outdoor activity.</p><div class="quest-card-progress"><div class="quest-progress"><span>2 / 3 activities</span><span>1 day</span></div><div class="meter"><span style="width:66%"></span></div></div></div></article><article class="quest-card"><div class="quest-card-icon">+</div><div class="quest-card-copy"><h3>Warm-up ritual</h3><p>Log a five-minute warm-up before training.</p><div class="quest-card-progress"><div class="quest-progress"><span>0 / 1 warm-ups</span><span>1 day</span></div><div class="meter"><span style="width:0%"></span></div></div></div></article></section>
+          <section class="quest-group"><div class="quest-group-heading"><div><p class="eyebrow">WEEKLY QUESTS</p><h3>This week’s challenges</h3></div><span class="expiry-label">6 days left</span></div><article class="quest-card"><div class="quest-card-icon">/</div><div class="quest-card-copy"><h3>Three paths walked</h3><p>Complete three activities across any domains.</p><div class="quest-card-progress"><div class="quest-progress"><span>2 / 3 activities</span><span>6 days</span></div><div class="meter"><span style="width:66%"></span></div></div></div></article></section>
+          <section class="quest-group"><div class="quest-group-heading"><div><p class="eyebrow">MONTHLY QUESTS</p><h3>This month’s challenges</h3></div><span class="expiry-label">18 days left</span></div><article class="quest-card"><div class="quest-card-icon">*</div><div class="quest-card-copy"><h3>Adventure atlas</h3><p>Log 100 total kilometers across running and cycling.</p><div class="quest-card-progress"><div class="quest-progress"><span>61 / 100 km</span><span>18 days</span></div><div class="meter"><span style="width:61%"></span></div></div></div></article></section>
+        </section>
+
+        <section class="view" id="domain-view">
+          <button class="back-button" data-view="home">Back to dashboard</button>
+          <div class="domain-page-head"><div class="page-title"><h2 id="domain-title">Running Class</h2></div><div class="toggle-row mode-toggle" aria-label="Class page mode"><button class="toggle active" data-mode="skills">Skills</button><button class="toggle" data-mode="achievements">Achievements</button></div></div>
+          <div class="domain-summary" data-mode-panel="skills"><div><span>CUMULATIVE LEVEL</span><strong id="domain-level">Level 24</strong><p id="domain-xp">720 / 1,000 lifetime XP</p></div><div><span>BEST SKILL</span><strong id="domain-best-skill">Fastest 5K</strong><p id="domain-best-level">Level 50</p></div></div>
+          <div class="domain-summary is-hidden" data-mode-panel="achievements"><div><span>CUMULATIVE LEVEL</span><strong id="achievement-domain-level">Level 24</strong><p id="achievement-domain-xp">720 / 1,000 lifetime XP</p></div><div><span>RAREST ACHIEVEMENT</span><strong id="domain-rarest">Long Haul</strong><p id="domain-rarest-detail">Earned by 8% of runners</p></div></div>
+
+          <div data-mode-panel="skills" id="domain-skills-content"></div>
+
+          <div class="achievement-mode is-hidden" data-mode-panel="achievements" id="domain-achievements-content"></div>
+        </section>
+
+        <section class="view" id="activity-view">
+          <button class="back-button" data-view="home">Back to dashboard</button>
+          <div class="page-title"><p class="eyebrow">ACTIVITY REWARD</p><h2>Your run just became progress.</h2><p class="muted">A transparent reward moment makes the numbers feel earned.</p></div>
+          <article class="reward-card"><div class="reward-icon">/</div><div class="reward-main"><span class="source-pill">IMPORTED FROM STRAVA</span><h3>Evening 5K</h3><p>5.02 km - 32 min - Today</p></div><div class="reward-xp"><small>RUNNING XP</small><strong>+5</strong></div></article>
+          <div class="level-up"><div><p class="eyebrow">RUNNING</p><h3>Level 24 progress</h3><p>720 -> 725 lifetime XP</p></div><div class="level-number">24</div><div class="meter"><span style="width:76%"></span></div><small>275 XP to level 25</small></div>
+          <div class="reward-grid"><article class="panel"><p class="eyebrow">CURRENT PERFORMANCE</p><h3>Fastest 5K: level 50</h3><p class="muted">Your best 5K in the last six months puts you at level 50. Your all-time peak was level 56.</p><button class="text-button" data-view="domain">Open running skills</button></article><article class="loot-card"><span class="loot-shine">*</span><p class="eyebrow">LUCKY FIND</p><h3>You found sunglasses!</h3><p>New cosmetic added to your collection.</p><button class="primary" data-view="profile">Equip item</button></article></div>
+        </section>
+
+        <section class="view" id="leaderboard-view">
+          <button class="back-button" data-view="domain">Back to running skills</button>
+          <div class="page-title"><p class="eyebrow">FASTEST 5K LEADERBOARD</p><h2>How do you stack up?</h2><p class="muted">Ranks are specific to this skill, not your overall Running class level.</p></div>
+          <div class="scope-row"><button class="scope active">Neighborhood</button><button class="scope">City</button><button class="scope">Province</button><button class="scope">Global</button></div>
+          <article class="leaderboard-card"><div class="rank-row header"><span>RANK</span><span>PLAYER</span><span>SKILL LEVEL</span></div><div class="rank-row"><b>01</b><div class="player"><span class="mini-avatar gold">*</span><span>MapleMarauder <small>26:02</small></span></div><strong>Level 62</strong></div><div class="rank-row you"><b>02</b><div class="player"><span class="mini-avatar">M</span><span>You <small>27:14</small></span></div><strong>Level 50</strong></div><div class="rank-row"><b>03</b><div class="player"><span class="mini-avatar blue">O</span><span>Hill Goblin <small>28:44</small></span></div><strong>Level 47</strong></div></article><p class="privacy-note">Neighborhood ranking is optional and uses an approximate area. <button class="text-button">Manage privacy</button></p>
+        </section>
+
+        <section class="view" id="history-view">
+          <button class="back-button" data-view="domain">Back to running skills</button>
+          <div class="page-title"><p class="eyebrow">SKILL HISTORY</p><h2>Fastest 5K over time</h2><p class="muted">Your active skill reflects the best tracked performance in the last six months. Your peak stays visible as part of your story.</p></div>
+          <div class="history-summary"><div><span>CURRENT</span><strong>Level 50</strong><small>27:14 best recent time</small></div><div class="peak-box"><span>ALL-TIME PEAK</span><strong>Level 56</strong><small>25:48 personal best</small></div><div><span>WINDOW</span><strong>6 months</strong><small>Rolling active period</small></div></div>
+          <article class="history-card"><div class="history-card-heading"><div><p class="eyebrow">ACTIVE LEVEL</p><h3>Performance timeline</h3></div><span class="source-pill">BEST RESULT / MONTH</span></div><div class="history-chart"><div class="chart-y"><span>60</span><span>50</span><span>40</span><span>30</span><span>20</span></div><div class="chart-area"><div class="chart-grid"><i></i><i></i><i></i><i></i><i></i></div><svg viewBox="0 0 600 220" preserveAspectRatio="none" aria-label="Fastest 5K level rose from 34 to a peak of 56 and is now 50"><polyline points="0,166 100,142 200,120 300,92 400,35 500,58 600,70" /></svg><div class="chart-labels"><span>May</span><span>Jun</span><span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span></div></div></div><div class="history-legend"><span><i class="legend-current"></i>Current level 50</span><span><i class="legend-peak"></i>Peak level 56</span></div></article>
+        </section>
+
+        <section class="view" id="profile-view">
+          <button class="back-button" data-view="home">Back to dashboard</button>
+          <div class="page-title"><p class="eyebrow">CHARACTER CLOSET</p><h2>Make your build look like you.</h2><p class="muted">Cosmetics show your story without changing your stats.</p></div>
+          <div class="closet-layout"><div class="character-stage"><div class="big-avatar">O<span>*</span></div><h3>Wrecking Ball</h3><p>3 items equipped</p><button class="primary">Save outfit</button></div><div class="items-grid"><button class="item equipped"><span>*</span><b>Lucky Shades</b><small>Found on a 5K</small></button><button class="item"><span>~</span><b>Sunset Scarf</b><small>Cycle 100 km</small></button><button class="item locked"><span>^</span><b>Marathon Crown</b><small>Complete a marathon</small></button><button class="item"><span>+</span><b>Power Boots</b><small>Strength level 10</small></button></div></div>
+        </section>
+      </main>
+    </div>
+    <script src="app.js"></script>
+  </body>
+</html>
