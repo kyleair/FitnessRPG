@@ -86,6 +86,12 @@ Root `.env` values prefixed `EXPO_PUBLIC_` are public app configuration. Git ign
 - `server/index.mjs`: local HTTP API and persistent token cache.
 - `server/strava.mjs`: Strava token refresh and activity mapping.
 
+## Product and design documentation
+
+The product direction and design decisions live in [`docs/`](docs/). The browser prototype is in [`mockups/`](mockups/); its README explains the current flows and review criteria.
+
+Start with [`docs/product-vision.md`](docs/product-vision.md), [`docs/core-game-model.md`](docs/core-game-model.md), and [`docs/decision-log.md`](docs/decision-log.md).
+
 Next: add a Connect Strava flow, app-user sessions, a database with tokens per user, caching/rate-limit handling, and development builds for OAuth/deep-link testing. Check Strava's current API access limits and data-use rules before adding more users or shared activity views.
 
 No remote GitHub repository is created by this setup. Share this local repo by adding your preferred Git remote, then push and invite your friend. Each developer keeps their own ignored environment files.
