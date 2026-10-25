@@ -21,14 +21,20 @@ export function createStravaClient({ clientId, clientSecret, initialTokens, save
     return pendingRefresh;
   }
   return {
-    async activities() {
+    async activities({ perPage = 30, before } = {}) {
       const token = await accessToken();
-      const response = await fetchImpl('https://www.strava.com/api/v3/athlete/activities?per_page=30', {
+      const query = new URLSearchParams({ per_page: String(perPage) });
+      if (before) query.set('before', String(before));
+      const response = await fetchImpl(`https://www.strava.com/api/v3/athlete/activities?${query}`, {
         headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(15000),
       });
       if (!response.ok) throw new Error(`Strava activities request failed (${response.status}).`);
       const data = await response.json();
-      return data.map(item => ({ id: item.id, name: item.name, sportType: item.sport_type, distance: item.distance, movingTime: item.moving_time, elevationGain: item.total_elevation_gain, startDate: item.start_date }));
+      if (!Array.isArray(data)) throw new Error('Invalid Strava activities response.');
+      const amount = value => Number.isFinite(value) ? Math.max(0, value) : 0;
+      return data.filter(item => Number.isFinite(item.id) && Number.isFinite(Date.parse(item.start_date)))
+        .map(item => ({ id: item.id, name: String(item.name || 'Untitled activity'), sportType: item.sport_type || item.type || 'Workout',
+          distance: amount(item.distance), movingTime: amount(item.moving_time), elevationGain: amount(item.total_elevation_gain), startDate: item.start_date }));
     },
   };
 }
