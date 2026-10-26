@@ -1,6 +1,6 @@
 # Fitness Tracker
 
-An Expo / React Native / TypeScript starter for iPhone and Android, with an optional local Strava backend. The default screen shows clearly labelled sample activities; Strava is not connected yet.
+An Expo / React Native fitness RPG for iPhone and Android, with browser-based Strava connection and a persistent local backend.
 
 ## First run on your phone
 
@@ -16,7 +16,7 @@ Prerequisite: Node.js 22.13+ (Node 24 LTS recommended). Dependencies are already
    ```
 
 4. Sign into the same Expo account in Expo Go. On iPhone, scan the terminal's QR code with the Camera app and open it in Expo Go. On Android, use Expo Go's QR scanner.
-5. You should see the green "Keep moving." dashboard with three demo activities. No `.env`, Strava account, backend, Mac, or Apple developer membership is needed for this demo.
+5. You should see the Classic RPG dashboard with sample activities. No `.env`, Strava account, backend, Mac, or Apple developer membership is needed for this demo.
 6. Edit `App.tsx` and save to see Fast Refresh on your phone. Keep the terminal running; Ctrl+C stops it.
 
 This project uses SDK 58 to match Expo Go 58 on your phone. After an SDK upgrade, stop the old Metro terminal with Ctrl+C and run `npx expo start --clear` before scanning the new QR code. See https://docs.expo.dev/workflow/upgrading-expo-sdk-walkthrough/ for future upgrades.
@@ -29,44 +29,64 @@ This project uses SDK 58 to match Expo Go 58 on your phone. After an SDK upgrade
 - For a stale bundle, run `npx expo start --clear`.
 - `npm run ios` launches a simulator and requires macOS. Use `npm start` for your physical iPhone on Windows.
 
-## Optional: connect one Strava account
+## Connect Strava in Expo Go
 
-The phone calls the local backend; credentials stay server-side. This backend currently serves **one account**, has no app-user authentication, and is intended only for development on a trusted private network. Add app authentication and per-user token storage before hosting it publicly.
+One backend owns the FitnessRPG Strava application credentials; each phone signs into its own Strava account. Your friend does not need a separate developer registration when using that backend. The application must have capacity for both athletes in Strava API settings.
 
-1. Register a Strava API app at https://www.strava.com/settings/api.
-2. Follow https://developers.strava.com/docs/authentication/ to authorize your account with `activity:read` (or `activity:read_all` if you need private activities). Exchange the authorization code server-side using your client ID and secret to obtain a refresh token. The API settings page's default token may not have the activity scope you need. The full in-app OAuth flow is a future feature.
-3. Copy the server example:
+1. Run `npm ci` after pulling. Use Node 22.13+ (Node 24 recommended; older supported releases may print a SQLite experimental warning).
+2. Keep `STRAVA_CLIENT_ID` and `STRAVA_CLIENT_SECRET` in `server/.env`. Copy the example only if your file does not exist. No refresh token or CLI connection command is needed.
+3. Set `PUBLIC_BACKEND_URL=http://YOUR_COMPUTER_LAN_IP:3001` in `server/.env`, and the same URL as `EXPO_PUBLIC_API_URL` in root `.env`. Use the address reachable from the phone, not localhost. Find it with `ipconfig`.
+4. Leave the Strava callback-domain setting unchanged. Authorization now uses `http://127.0.0.1:3001/auth/strava/callback` in your **computer browser**. Strava allows this loopback address regardless of the registered callback domain. If you change `PORT`, the generated browser address and callback use that port.
+5. Start `npm run server`, then `npx expo start --clear` in a second terminal. Open Expo Go on the same network.
+6. Tap **Connect Strava** in Expo Go to get a code. On the computer running the backend, open `http://127.0.0.1:3001/connect`, enter that code, and click **Continue to Strava**. Sign into your own athlete account and approve activity access. On the phone, tap **Check connection** (or leave and return to Expo Go). Do not open the loopback address on your phone.
 
-   ```powershell
-   Copy-Item server/.env.example server/.env
-   ```
+New connections request `activity:read` by default. Existing connections and imported snapshots are retained; broader activity grants remain supported. New connections and reconnections use the computer-browser code flow. The old shared `server/.data/tokens.json` is not automatically assigned to the first phone that connects. The old CLI helper has been removed; `STRAVA_REFRESH_TOKEN` is no longer used by the API.
 
-4. Fill in `STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET`, and `STRAVA_REFRESH_TOKEN` in `server/.env`. Do not put them in the root mobile `.env`.
-5. In a separate terminal, run:
+A dedicated FitnessRPG Strava registration is preferable to the website's registration. Changing a shared application's callback domain can disrupt the website's sign-in flow, and separate processes refreshing the same athlete/application authorization can invalidate each other's tokens. This change does not edit website configuration or Strava settings.
 
-   ```powershell
-   npm run server
-   ```
+### Storage and sessions
 
-6. Find your computer's Wi-Fi IPv4 address with `ipconfig`. Copy the mobile example and edit it:
+- `server/.data/fitness.sqlite` stores each athlete's tokens and activity snapshot, pagination cursor, import-complete flag, and sync time. SQLite commits snapshots atomically; interrupted or failed syncs retain the last successful import. The database and its WAL/SHM files are ignored by Git.
+- Device sessions last 90 days. Native phones keep the opaque session token in Expo SecureStore; the database stores its hash. Strava tokens never go to the phone. Web preview uses tab-scoped sessionStorage. Changing backend addresses starts a separate session.
+- Every activity/dashboard request requires the device's session. Athletes are isolated, while two sessions for the same athlete share a token refresher and cached import in this backend process.
+- **Sign out** revokes this device session and cancels its pending connection. It does not revoke Strava authorization or delete the athlete's saved import. Signing in again as that athlete restores it. Full account deletion/deauthorization is future work.
+- Connection codes and OAuth states expire after ten minutes and are single-use. The callback also requires the browser cookie from the connection flow. Keep the same computer browser throughout. Browser authorization routes accept only loopback connections at the generated 127.0.0.1 address. Expired, denied or cancelled connections can be restarted from the app.
+- The database contains personal activity data and unencrypted server tokens. Keep it local and excluded from sharing/backups to public destinations. This remains a trusted-LAN development server; public deployment needs HTTPS, protected persistent storage, operational rate limiting, and an account deletion/revocation policy. Run one backend process per database so token-refresh coordination stays centralized.
 
-   ```powershell
-   Copy-Item .env.example .env
-   ```
+If your friend is on the same network, both apps can point at this backend and each connect their own Strava account. For separate local setups using the same Strava application, follow the instructions below.
 
-   Uncomment the URL and replace the example IP:
+### Friend setup: own backend, shared Strava application
 
+Each developer runs their own backend and database. Kyle securely supplies only the shared application's **STRAVA_CLIENT_ID** and **STRAVA_CLIENT_SECRET**. These identify the application; you authorize your own athlete account separately. Do not copy Kyle's access token, refresh token, `.data` directory, or entire `.env` files. Keep the supplied secret in your ignored `server/.env` only.
+
+1. Pull the code and run `npm ci`.
+2. Copy `.env.example` to `.env`, and `server/.env.example` to `server/.env`, only if those destination files do not already exist.
+3. Find your computer's active LAN IPv4 address with `ipconfig`. For example, if it is `192.168.1.100`, use:
+
+   Root `.env`:
    ```dotenv
    EXPO_PUBLIC_API_URL=http://192.168.1.100:3001
    ```
 
-   `localhost` on your phone means the phone itself, so use the computer's IP. Allow port 3001 on the private network if needed. Opening `http://YOUR_IP:3001/health` in your phone browser should return JSON.
+   `server/.env`:
+   ```dotenv
+   PORT=3001
+   PUBLIC_BACKEND_URL=http://192.168.1.100:3001
+   STRAVA_CLIENT_ID=VALUE_KYLE_SENDS_YOU
+   STRAVA_CLIENT_SECRET=VALUE_KYLE_SENDS_YOU
+   ```
 
-7. Restart `npm start`. The dashboard now requests your latest 30 Strava activities. Pull down or tap Refresh to fetch again. Failed requests show an error and do not silently switch to demo data.
+4. No callback-domain coordination is needed. Both developers use `http://127.0.0.1:3001/connect` on their own computer. Keep the existing Strava callback setting; the application still needs capacity for both athletes.
+5. Run `npm run server`. In a second terminal, run `npx expo start --clear`. Connect your phone to your own computer's network and open the app in Expo Go. Allow Node through the private-network firewall if needed.
+6. Tap **Connect Strava** on your phone. Open `http://127.0.0.1:3001/connect` on your computer, type the displayed code, and continue to Strava. Sign into **your own account**, approve activity access, then tap **Check connection** on your phone.
 
-Access tokens are refreshed automatically. Rotated tokens are saved in ignored `server/.data/tokens.json` and reused across restarts. To switch Strava accounts, stop the backend, remove that local token file, replace the credentials in `server/.env`, and restart. Never share this token file.
+**Simultaneous testing:** each computer browser connects to its own local backend, so both developers can authorize and sync concurrently without editing the shared callback domain. The phone still uses its computer's LAN IP for API requests. If that IP changes, update both local environment files and restart the backend and Expo; the loopback callback stays the same. Codes expire after ten minutes, are single-use, and are replaced when you tap Generate new code. Only enter a code from your own phone.
 
-Root `.env` values prefixed `EXPO_PUBLIC_` are public app configuration. Git ignores `.env` files and token storage; only credential-free `.env.example` files are tracked.
+Your activities and athlete tokens stay in your own `server/.data/fitness.sqlite`; Kyle's database stays on his computer. Different athlete accounts have separate authorizations. The token-rotation conflict described above applies when multiple backends use the **same athlete and application**, not merely the same application. Both developers share the registration's API request limits.
+
+`GET /connect` is the computer-only pairing form. `GET /health` is public. `POST /api/session` creates a device session; `GET /api/session`, `POST /api/strava/connect`, `POST /api/logout`, `GET /api/dashboard` and `GET /api/activities` use an Authorization bearer token. Opening the dashboard URL directly in a browser now returns 401 by design.
+
+Strava authorization reference: https://developers.strava.com/docs/authentication/.
 
 ## Commands
 
@@ -74,7 +94,7 @@ Root `.env` values prefixed `EXPO_PUBLIC_` are public app configuration. Git ign
 | --- | --- |
 | `npm start` | Expo QR code for a physical phone |
 | `npm run android` | Launch a configured Android emulator/device |
-| `npm run server` | Optional local Strava API, port 3001 |
+| `npm run server` | Local Strava API, port 3001 |
 | `npm run typecheck` | Check app TypeScript |
 | `npm test` | Test token refresh, rotation, concurrent requests, and rejected credentials |
 | `npx expo export --platform ios --platform android` | Verify both native bundles |
@@ -83,7 +103,9 @@ Root `.env` values prefixed `EXPO_PUBLIC_` are public app configuration. Git ign
 
 - `App.tsx`: dashboard, loading/error states, refresh, and demo/backend selection.
 - `src/activities.ts`: normalized activity shape and sample data.
-- `server/index.mjs`: local HTTP API and persistent token cache.
+- `server/index.mjs`: backend entry point.
+- `server/app.mjs`: authenticated API and browser connection routes.
+- `server/database.mjs`: SQLite sessions, tokens, and import snapshots.
 - `server/strava.mjs`: Strava token refresh and activity mapping.
 
 ## Product and design documentation
@@ -92,13 +114,27 @@ The product direction and design decisions live in [`docs/`](docs/). The browser
 
 Start with [`docs/product-vision.md`](docs/product-vision.md), [`docs/core-game-model.md`](docs/core-game-model.md), and [`docs/decision-log.md`](docs/decision-log.md).
 
-Next: add a Connect Strava flow, app-user sessions, a database with tokens per user, caching/rate-limit handling, and development builds for OAuth/deep-link testing. Check Strava's current API access limits and data-use rules before adding more users or shared activity views.
+Next: move to an Expo development build for automatic browser return, add account deletion/revocation handling, and prepare a hosted backend when needed. Check Strava's current API access limits and data-use rules before adding more users or shared activity views.
 
-No remote GitHub repository is created by this setup. Share this local repo by adding your preferred Git remote, then push and invite your friend. Each developer keeps their own ignored environment files.
+Each developer keeps local environment files and database files out of Git. Share the source through the existing FitnessRPG repository.
 
 ## Verification notes
 
-TypeScript checks, backend unit tests, and iOS/Android production bundle exports passed during setup. Actual Expo Go display and real Strava access still need testing on your phones with your credentials.
+TypeScript, lint, backend tests, and iOS/Android production bundle exports pass. The browser flow is integration-tested with simulated Strava responses, including two-athlete isolation, token rotation, replay/expiry, sign-out, restart recovery, and persisted pagination. Complete real consent on your phone after configuring the callback domain.
 
 The SDK 58 dependency tree currently reports five high-severity npm audit entries, stemming from node-forge and zod in Expo tooling. `npm audit fix` has no compatible fix; its forced fix downgrades Expo to SDK 44. Do not run that forced downgrade. Recheck advisories when updating Expo.
 
+
+## Native home dashboard
+
+The Expo home screen now follows the Classic RPG prototype and requests `/api/dashboard`. It shows real recent Strava activities, calculated domain XP/levels, and imported calendar-month distance (UTC). Class identity, avatar, quests, and unsupported performance metrics are labeled previews. Tap a domain for its formula and totals; See activities expands up to 30 recent records.
+
+The server imports 100 recent activities on the first eligible request and then up to 100 older activities on subsequent eligible requests. Syncs are shared and limited to once per minute, with at most two activity-list calls each time. Pull-to-refresh within the minute uses cached results; wait a minute before refreshing to continue older history. History, tokens, import cursor, and the successful-sync cooldown persist in SQLite across backend restarts. Failed refreshes keep the last good snapshot with an explicit stale notice. Unavailable initial data shows an error rather than switching to demo data.
+
+Experimental rules and limitations are recorded in `docs/decision-log.md`. These levels are game progress over imported history, not a fitness assessment. Exact fastest-5K efforts need activity-detail/effort data; bench weight is not present in the current Strava summaries. Older activity changes outside the latest page require a fresh history import.
+
+After pulling these changes, run `npm ci`, restart `npm run server`, and restart Metro with `npx expo start --clear`. All new native dependencies are compatible with Expo Go SDK 58. `npm run web` also supports browser preview on localhost:8081. For a different browser origin, set `DEV_WEB_ORIGIN` in `server/.env` and restart the backend.
+
+### Activity permissions
+
+New authorizations request only `activity:read` by default, which allows activities visible to Everyone or Followers. We also accept `activity:read_all` if granted, and then import private (Only You) activities too. There is no additional private-activity filter. Plain `read` alone is not sufficient; it is a different scope. Dashboard totals and experimental XP cover the activities accessible under the granted permissions. Existing connections and snapshots are not reset by this change.

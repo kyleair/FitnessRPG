@@ -121,3 +121,37 @@ Record decisions here as the project evolves. Keep entries short and link to the
 - **Decision:** Keep Quests and Recent Activities stacked as before.
 - **Decision:** Use the lower-right area of the Current Class panel by placing the three pinned specific-skill levels in a full-width row beneath the class identity and avatar.
 - **Guardrail:** Preserve the phone-width canvas and keep the skill labels wrapped inside their cards.
+
+## 2026-10-25 - Implement the native home screen with real Strava summaries
+
+- Port the Classic RPG home hierarchy into the Expo app: framed class panel, original SVG adventurer and domain emblems, four domain cards, adventure board, and recent activities. Keep the HTML prototype unchanged.
+- Class identity, cosmetics, quests, Fastest 5K, and Bench Press remain clearly labeled previews or unavailable values. Do not infer an exact fastest 5K from whole-activity average pace.
+- Compute imported activity counts, distances, moving minutes, monthly distance, and domain XP on the server. Calendar-month totals use UTC and include all imported sports; they are not a domain performance level.
+- First experimental XP rules: Running 1 km/XP; Cycling 5 km/XP (exclude assisted e-bike types); Swimming 250 m/XP; WeightTraining 10 moving minutes/XP. Other activity types earn no XP yet. These game rules are not physiological equivalences.
+- Cumulative level costs begin at 5 XP; each next cost is `ceil(previous * 1.4)`: 5, 7, 10, 14, etc. Show within-level XP, not total lifetime XP in that meter. Level 0 is valid.
+- `/api/dashboard` performs shared, bounded imports (100 recent activities initially, then recent plus up to 100 older records per eligible refresh), deduplicates IDs, and aggregates the results. Requests within one minute share a cache, including failure cooldown. Failed later imports retain the last successful snapshot with a stale flag.
+- The activity cache is in memory per backend process. Restarting the backend resets history import, not OAuth tokens. Display imported scope and history incompleteness; do not present partial history as lifetime totals. Older edits/deletions outside the latest page are reconciled on a fresh full import, not instantaneously.
+- Domain taps open contextual progress summaries; Quests/avatar open explanatory previews; See activities expands the recent list. Full domain/quest/closet routes remain future work.
+
+## 2026-10-25 - Connect through a backend browser page in Expo Go
+
+- Keep Expo Go and manual browser return. Native foregrounding checks connection status; a Check connection action provides a fallback. A future development build can add automatic return without replacing the backend flow.
+- Give each device a 90-day opaque session stored in SecureStore (web preview: sessionStorage); persist only its hash server-side. Every activity request is authenticated and scoped to that session's athlete.
+- Use one-use, ten-minute browser tickets and OAuth states, browser-cookie binding, explicit browser confirmation, and server-side code exchange. Persist pending attempts so a backend restart need not interrupt authorization.
+- Store per-athlete tokens and atomic activity snapshots/import cursors in ignored local SQLite. Retain the existing bounded import and one-minute cooldown. Account-scoped work is serialized in one backend process. Restarting resumes imports instead of erasing progress; this supersedes the earlier in-memory-only decision.
+- Do not expose the previous shared token cache through a default account. Existing installations authorize once from the app. Sign out revokes a device session; it does not delete the athlete or revoke Strava globally.
+- PUBLIC_BACKEND_URL is explicit, phone-reachable configuration rather than a URL inferred from untrusted request headers. Its hostname/IP must match the Strava callback domain. Do not change the website's application settings automatically.
+- This is a local development foundation, with one process per database. Hosted transport, token encryption at rest, operational abuse controls, and deletion/revocation handling remain deployment work.
+
+## 2026-10-25 - Authorize local development sessions on the computer
+
+- Supersedes the LAN callback instructions: phone API requests still use the computer's LAN IP, but browser authorization always uses 127.0.0.1 and the backend PORT. Strava permits loopback callbacks without changing the shared callback-domain setting.
+- Connect Strava creates a 12-character random hex pairing code, displayed in groups of four. Enter it on the backend computer at /connect, then explicitly confirm and authorize in that browser. The code identifies the originating phone session, not a default shared account.
+- Codes expire in ten minutes, are stored hashed, are invalidated on regeneration/sign-out, and remain protected by the existing form CSRF, browser cookie, and single-use OAuth state checks. Browser routes require a loopback peer and the configured loopback Host; LAN clients can only initiate/check their own session through the authenticated API.
+- Existing sessions and imported data are preserved. No schema migration or extra dependency is needed. This computer-browser handoff is for local development; a future hosted app will need its own HTTPS browser flow.
+
+## 2026-10-26 - Default to basic Strava activity access
+
+- Request activity:read by default, while accepting either activity:read or activity:read_all on the callback. Plain read is not sufficient.
+- Honor broader grants: private activities are imported when activity:read_all is granted. Do not add a separate visibility filter or reset existing connections/history.
+- Label completed imports as all accessible history; the granted permissions determine which activities are accessible.
