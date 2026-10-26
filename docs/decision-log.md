@@ -31,19 +31,19 @@ Record decisions here as the project evolves. Keep entries short and link to the
 - **Why:** Competition can provide context and cosmetics can make progression visible and personal.
 - **Revisit when:** Privacy, anti-cheating, and reward-frequency rules are defined.
 
-## 2026-10-24 - Make domains the primary navigation
+## 2026-10-24 - Make classes the primary navigation
 
-- **Decision:** The dashboard's three main skill cards are the entry points into domain detail, rather than a generic Skills tab.
-- **Decision:** Domain detail contains the specific performance skills and each skill can open its own leaderboard.
+- **Decision:** The dashboard's three main skill cards are the entry points into class detail, rather than a generic Skills tab.
+- **Decision:** Class detail contains the specific performance skills and each skill can open its own leaderboard.
 - **Decision:** Avatar customization is opened by clicking the avatar in the current-class panel.
 - **Decision:** Remove generic top-of-screen slogans, prominent theme controls, and the persistent bottom navigation from the next mockup iteration.
-- **Why:** The user's class, domain levels, activity, and next quest are the important content; navigation should follow the user's mental model of domains and skills.
+- **Why:** The user's class, class levels, activity, and next quest are the important content; navigation should follow the user's mental model of classes and skills.
 
 ## 2026-10-24 - Make Classic RPG the default and add skill emblems
 
 - **Decision:** Use the Classic RPG theme as the default mockup presentation.
-- **Decision:** Represent domains and internal skills with simple original vector symbols inside framed, game-like emblems.
-- **Decision:** Present internal domain skills in a grid so users can scan and compare them quickly.
+- **Decision:** Represent classes and internal skills with simple original vector symbols inside framed, game-like emblems.
+- **Decision:** Present internal class skills in a grid so users can scan and compare them quickly.
 - **Why:** The first mockup's biggest visual gap was a lack of memorable symbols and game-like visual anchors.
 - **Revisit when:** We have a stronger art direction or custom icon assets to evaluate.
 
@@ -56,24 +56,24 @@ Record decisions here as the project evolves. Keep entries short and link to the
 ## 2026-10-24 - Make the prototype intrinsically mobile
 
 - **Decision:** Treat the mockup as a phone-width canvas even when opened in a desktop browser.
-- **Decision:** Force dashboard, domain, history, leaderboard, and closet layouts to fit the phone canvas rather than switching to desktop columns based on the outer browser viewport.
+- **Decision:** Force dashboard, class, history, leaderboard, and closet layouts to fit the phone canvas rather than switching to desktop columns based on the outer browser viewport.
 - **Why:** The eventual product is a mobile app tested through Expo Go; wide-dashboard behavior was causing skill content to overflow the preview.
 - **Implementation note:** The prototype canvas is approximately 430 px wide and centered on desktop for inspection.
 
 ## 2026-10-24 - Add Friends to the primary UI flow
 
 - **Decision:** Add a Friends path to the intended navigation model.
-- **Flow:** Home -> Friends -> Friend profile/levels -> friend domain and skill detail.
+- **Flow:** Home -> Friends -> Friend profile/levels -> friend class and skill detail.
 - **Why:** Users should be able to inspect and compare friends' levels in addition to seeing geographic leaderboard ranks.
 - **Open design question:** Decide whether friend history and private details are visible by default or controlled per skill.
 
 ## 2026-10-24 - Clarify the home dashboard hierarchy
 
 - **Decision:** Keep the clickable avatar inside the top Current Class panel as the entry point to items and cosmetics.
-- **Decision:** Show domain cards in a compact two-column grid: Running beside Strength, then Cycling beside Swimming.
+- **Decision:** Show class cards in a compact two-column grid: Running beside Strength, then Cycling beside Swimming.
 - **Decision:** Add a `QUESTS AND ACTIVITIES` divider before the quest and recent-activity panels.
 - **Decision:** Make the quest action explicit with `Open quest`; label the activity action `See activities` while retaining the recent activity and XP summary.
-- **Why:** The home screen should read as a compact character dashboard: identity first, class domains second, then the next things to do.
+- **Why:** The home screen should read as a compact character dashboard: identity first, classes second, then the next things to do.
 
 ## 2026-10-24 - Split class pages into skill and achievement modes
 
@@ -81,7 +81,7 @@ Record decisions here as the project evolves. Keep entries short and link to the
 - **Skills mode:** Keep Cumulative Level at top left; show the user's `Best Skill` at top right; list unlocked and locked skills in separate two-column grids.
 - **Achievement mode:** Keep Cumulative Level at top left; replace the right summary with `Rarest Achievement`; list unlocked and locked achievements in separate grids.
 - **Examples:** `Fastest Marathon` stays locked until a marathon is completed; achievement examples include `30 Minute 5K` and `3 Hour Marathon`.
-- **Why:** This separates repeatable performance skills from milestone-style accomplishments while keeping both attached to the same class domain.
+- **Why:** This separates repeatable performance skills from milestone-style accomplishments while keeping both attached to the same class.
 
 ## 2026-10-24 - Reflow class cards for the phone grid
 
@@ -98,7 +98,7 @@ Record decisions here as the project evolves. Keep entries short and link to the
 
 ## 2026-10-24 - Make class navigation and skill progress specific
 
-- **Decision:** The Current Class panel highlights specific skills such as Fastest 5K, Bench Press, and Monthly Distance rather than broad domains.
+- **Decision:** The Current Class panel highlights specific skills such as Fastest 5K, Bench Press, and Monthly Distance rather than broad classes.
 - **Decision:** Running, Strength, Cycling, and Swimming cards open their matching class page with unique seeded skills and achievements.
 - **Decision:** Unlocked skill cards show the relevant metric, next-level target, and progress between the current and next level.
 - **Decision:** Add a reusable phone-width design QA checklist before manual review to catch overflow, clipping, blocked click targets, and mismatched routing.
@@ -124,14 +124,14 @@ Record decisions here as the project evolves. Keep entries short and link to the
 
 ## 2026-10-25 - Implement the native home screen with real Strava summaries
 
-- Port the Classic RPG home hierarchy into the Expo app: framed class panel, original SVG adventurer and domain emblems, four domain cards, adventure board, and recent activities. Keep the HTML prototype unchanged.
+- Port the Classic RPG home hierarchy into the Expo app: framed class panel, original SVG adventurer and class emblems, four class cards, adventure board, and recent activities. Keep the HTML prototype unchanged.
 - Class identity, cosmetics, quests, Fastest 5K, and Bench Press remain clearly labeled previews or unavailable values. Do not infer an exact fastest 5K from whole-activity average pace.
-- Compute imported activity counts, distances, moving minutes, monthly distance, and domain XP on the server. Calendar-month totals use UTC and include all imported sports; they are not a domain performance level.
+- Compute imported activity counts, distances, moving minutes, monthly distance, and class XP on the server. Calendar-month totals use UTC and include all imported sports; they are not a class performance level.
 - First experimental XP rules: Running 1 km/XP; Cycling 5 km/XP (exclude assisted e-bike types); Swimming 250 m/XP; WeightTraining 10 moving minutes/XP. Other activity types earn no XP yet. These game rules are not physiological equivalences.
 - Cumulative level costs begin at 5 XP; each next cost is `ceil(previous * 1.4)`: 5, 7, 10, 14, etc. Show within-level XP, not total lifetime XP in that meter. Level 0 is valid.
 - `/api/dashboard` performs shared, bounded imports (100 recent activities initially, then recent plus up to 100 older records per eligible refresh), deduplicates IDs, and aggregates the results. Requests within one minute share a cache, including failure cooldown. Failed later imports retain the last successful snapshot with a stale flag.
 - The activity cache is in memory per backend process. Restarting the backend resets history import, not OAuth tokens. Display imported scope and history incompleteness; do not present partial history as lifetime totals. Older edits/deletions outside the latest page are reconciled on a fresh full import, not instantaneously.
-- Domain taps open contextual progress summaries; Quests/avatar open explanatory previews; See activities expands the recent list. Full domain/quest/closet routes remain future work.
+- Class taps open contextual progress summaries; Quests/avatar open explanatory previews; See activities expands the recent list. Full class/quest/closet routes remain future work.
 
 ## 2026-10-25 - Connect through a backend browser page in Expo Go
 
@@ -155,3 +155,18 @@ Record decisions here as the project evolves. Keep entries short and link to the
 - Request activity:read by default, while accepting either activity:read or activity:read_all on the callback. Plain read is not sufficient.
 - Honor broader grants: private activities are imported when activity:read_all is granted. Do not add a separate visibility filter or reset existing connections/history.
 - Label completed imports as all accessible history; the granted permissions determine which activities are accessible.
+
+## 2026-10-26 - Start with three independent class XP tracks
+
+- Running, Strength, and Cycling are the only active classes. The API exposes a `classes` collection and an activity `classKey`; skills and personal-best ranks are deferred.
+- Class XP measures accumulated activity volume independently of skill performances. Retain experimental rates of 1 km per Running XP and 5 km per Cycling XP. Level costs remain 5, 7, 10, 14, etc., using ceil(previous * 1.4).
+- Strength will use total pounds lifted (weight times completed reps across sets). Its XP conversion remains undecided. Strava summaries provide no lifting volume, so show Level 0 / 0 XP with an explicit unavailable-volume explanation. This supersedes the 10-minute Strength XP experiment; duration earns no Strength XP.
+- Derive totals from the existing deduplicated, persisted per-account activity snapshots for now. This preserves account isolation and restart recovery without introducing a second stored total that could drift. Existing latest-page edit/deletion reconciliation limitations still apply.
+- No schema migration or account reset is required for this slice. Per-activity XP contributions, set logging, and cached class totals can be introduced when supporting weight records or incremental processing.
+- The historical browser mockup remains a design reference; the native app and its demo now expose three classes. Imported-history completeness remains visible; these totals are not claimed as full lifetime totals until history is complete.
+
+## 2026-10-26 - Use class terminology consistently
+
+- Running, Cycling, and Strength are fitness classes; specific performance metrics within them are skills. Playful character labels are titles.
+- Rename the dashboard API collection to `classes` and recent-activity associations to `classKey`, with matching frontend types, backend helpers, tests, mockup identifiers, and documentation. No legacy aliases remain.
+- Saved activity snapshots do not contain these derived fields, so no database migration is required. Restart the backend and reload the app together for the new API contract.

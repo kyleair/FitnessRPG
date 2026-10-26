@@ -4,12 +4,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, AppState, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { Adventurer, Emblem, IconName } from './src/components/Emblem';
-import { Dashboard, demoDashboard, Domain } from './src/dashboard';
+import { Dashboard, demoDashboard, FitnessClass } from './src/dashboard';
 
 import { api, apiUrl, SessionExpiredError, signOut } from './src/api';
 const colors = { ink: '#f3e3bb', muted: '#c0ae83', gold: '#e8c765', border: '#876035', dark: '#211b18' };
-const domainColors = { running: '#d99638', strength: '#d56d55', cycling: '#63a9c6', swimming: '#55b89f' };
-const domainBackgrounds = { running: '#244b36', strength: '#612d29', cycling: '#214c60', swimming: '#225d54' };
+const classColors = { running: '#d99638', strength: '#d56d55', cycling: '#63a9c6' };
+const classBackgrounds = { running: '#244b36', strength: '#612d29', cycling: '#214c60' };
 const serif = Platform.select({ ios: 'Georgia', android: 'serif', default: 'Georgia' });
 const number = (value: number) => value.toLocaleString(undefined, { maximumFractionDigits: 1 });
 function Meter({ value, color = '#d58a36' }: { value: number; color?: string }) {
@@ -66,8 +66,8 @@ function Home() {
     catch (err) { setError(err instanceof Error ? err.message : 'Could not sign out.'); }
     finally { refreshing.current = false; setConnecting(false); }
   }
-  function inspectDomain(domain: Domain) {
-    setDetail({ title: `${domain.name} Class`, body: `${domain.activityCount} imported activities\n${number(domain.distanceKm)} km · ${number(domain.minutes)} minutes\n\nLevel ${domain.level} · ${number(domain.xp)} total XP\n${number(domain.currentXp)} / ${domain.nextLevelXp} XP toward the next level.\n\nExperimental rule: ${domain.formula}. These are game points, not a comparison of athletic ability.\n\n${data?.historyComplete ? 'All accessible history has been imported.' : 'Totals cover imported history so far. More history is loaded on later syncs.'}\n\nSkill trees and achievements are coming next.` });
+  function inspectClass(fitnessClass: FitnessClass) {
+    setDetail({ title: `${fitnessClass.name} Class`, body: `${fitnessClass.activityCount} imported activities\n${number(fitnessClass.distanceKm)} km · ${number(fitnessClass.minutes)} minutes\n\nLevel ${fitnessClass.level} · ${number(fitnessClass.xp)} total XP\n${number(fitnessClass.currentXp)} / ${fitnessClass.nextLevelXp} XP toward the next level.\n\nExperimental rule: ${fitnessClass.formula}. These are game points, not a comparison of athletic ability.\n\n${data?.historyComplete ? 'All accessible history has been imported.' : 'Totals cover imported history so far. More history is loaded on later syncs.'}\n\nClass XP grows from activity volume independently of personal bests. Skills and achievements are coming later.` });
   }
   return <LinearGradient colors={['#3b2a22', '#211b18', '#191513']} style={styles.screen}>
     <StatusBar style="light" />
@@ -90,8 +90,8 @@ function Home() {
         {loading && !data && <View style={styles.loading}><ActivityIndicator color={colors.gold} /><Text style={styles.body}>Gathering your adventure…</Text></View>}
         {data && <>
           <View style={styles.heroFrame}><LinearGradient colors={['#3b291d', '#1e1917']} style={styles.hero}>
-            <View style={styles.heroTop}><View style={styles.heroCopy}><Label>CURRENT CLASS</Label><Text style={styles.heroTitle}>Wrecking Ball</Text><Text style={styles.heroDescription}>A nimble runner with the power to move mountains.</Text><Text style={styles.preview}>CLASS & AVATAR PREVIEW</Text></View>
-              <Pressable accessibilityRole="button" accessibilityLabel="Preview avatar and cosmetics" onPress={() => setDetail({ title: 'Your adventurer', body: 'This is a placeholder avatar from the Classic RPG design. Equipment, cosmetic drops, and class discovery are not connected yet. Your actual Strava data powers the domain cards below.' })} style={styles.avatar}><Adventurer /><Text style={styles.star}>✦</Text></Pressable></View>
+            <View style={styles.heroTop}><View style={styles.heroCopy}><Label>CHARACTER TITLE</Label><Text style={styles.heroTitle}>Wrecking Ball</Text><Text style={styles.heroDescription}>A nimble runner with the power to move mountains.</Text><Text style={styles.preview}>TITLE & AVATAR PREVIEW</Text></View>
+              <Pressable accessibilityRole="button" accessibilityLabel="Preview avatar and cosmetics" onPress={() => setDetail({ title: 'Your adventurer', body: 'This is a placeholder avatar from the Classic RPG design. Equipment, cosmetic drops, and class discovery are not connected yet. Your actual Strava data powers the class cards below.' })} style={styles.avatar}><Adventurer /><Text style={styles.star}>✦</Text></Pressable></View>
             <View style={styles.pinnedRow}>
               <View style={styles.pinned}><Text style={styles.pinnedLabel}>Fastest 5K</Text><Text style={styles.pinnedValue}>—</Text><Text style={styles.pinnedNote}>Not calculated</Text></View>
               <View style={styles.pinned}><Text style={styles.pinnedLabel}>Bench Press</Text><Text style={styles.pinnedValue}>—</Text><Text style={styles.pinnedNote}>Not available</Text></View>
@@ -99,18 +99,18 @@ function Home() {
             </View>
           </LinearGradient></View>
           <View style={styles.section}><Label>YOUR SKILLS</Label><Text style={styles.sectionTitle}>Choose a class to inspect.</Text></View>
-          <View style={styles.grid}>{data.domains.map(domain => <Pressable key={domain.key} accessibilityRole="button" accessibilityLabel={`${domain.name}, level ${domain.level}. View progress`} onPress={() => inspectDomain(domain)} style={({ pressed }) => [styles.domainCard, pressed && styles.pressed]}>
-            <View style={[styles.emblemOuter, { borderColor: domainColors[domain.key] }]}><View style={[styles.emblemInner, { backgroundColor: domainBackgrounds[domain.key] }]}><Emblem name={domain.key} color={domainColors[domain.key]} size={31} /></View></View>
-            <Text style={[styles.domainLabel, { color: domainColors[domain.key] }]}>{domain.name.toUpperCase()}</Text><Text style={styles.level}>Level {domain.level}</Text>
-            <Meter value={domain.progress} color={domainColors[domain.key]} />
-            <Text style={styles.xp}>{number(domain.currentXp)} / {domain.nextLevelXp} XP to next level</Text><Text style={styles.small}>{domain.activityCount} activities · {number(domain.xp)} XP</Text><Text style={styles.cardLink}>Inspect progress  ›</Text>
+          <View style={styles.grid}>{data.classes.map(fitnessClass => <Pressable key={fitnessClass.key} accessibilityRole="button" accessibilityLabel={`${fitnessClass.name}, level ${fitnessClass.level}. View progress`} onPress={() => inspectClass(fitnessClass)} style={({ pressed }) => [styles.classCard, pressed && styles.pressed]}>
+            <View style={[styles.emblemOuter, { borderColor: classColors[fitnessClass.key] }]}><View style={[styles.emblemInner, { backgroundColor: classBackgrounds[fitnessClass.key] }]}><Emblem name={fitnessClass.key} color={classColors[fitnessClass.key]} size={31} /></View></View>
+            <Text style={[styles.classLabel, { color: classColors[fitnessClass.key] }]}>{fitnessClass.name.toUpperCase()}</Text><Text style={styles.level}>Level {fitnessClass.level}</Text>
+            <Meter value={fitnessClass.progress} color={classColors[fitnessClass.key]} />
+            <Text style={styles.xp}>{number(fitnessClass.currentXp)} / {fitnessClass.nextLevelXp} XP toward next level</Text><Text style={styles.small}>{fitnessClass.activityCount} activities · {number(fitnessClass.xp)} XP</Text>{fitnessClass.xpUnavailable && <Text style={styles.small}>Lifting volume unavailable. Strength XP needs weight and reps.</Text>}<Text style={styles.cardLink}>Inspect progress  ›</Text>
           </Pressable>)}</View>
           <View style={styles.scope}><Text style={styles.scopeText}>{data.source === 'demo' ? 'SAMPLE DATA' : `${data.importedCount} ACTIVITIES IMPORTED`}{!data.historyComplete && data.source !== 'demo' ? ' · HISTORY IN PROGRESS' : ''}</Text><Text style={styles.small}>Experimental XP rules. History depends on your granted Strava permissions. {data.historyComplete ? 'All accessible history imported.' : 'Totals cover imported activities, not your full lifetime.'}</Text>{data.stale && <Text style={styles.error}>Strava is unavailable. Showing cached data.</Text>}</View>
           <View style={styles.section}><Label>QUESTS AND ACTIVITIES</Label><Text style={styles.sectionTitle}>Keep your adventure moving.</Text></View>
-          <Pressable accessibilityRole="button" onPress={() => setDetail({ title: 'Adventure board', body: 'Daily, weekly, and monthly quests are coming soon.\n\nPreview: complete three activities in a week, or explore a new fitness domain. Quest targets, rewards, and completion tracking are not active yet.' })} style={({ pressed }) => [styles.questFrame, pressed && styles.pressed]}><LinearGradient colors={['#49331f', '#30231b']} style={styles.quest}><View style={styles.questEmblem}><Emblem name="quest" color="#e8c765" /></View><View style={styles.questCopy}><Label>ADVENTURE BOARD</Label><Text style={styles.questTitle}>Quests</Text><Text style={styles.body}>Daily, weekly, and monthly challenges.</Text><Text style={styles.preview}>COMING SOON</Text></View><Text style={styles.arrow}>›</Text></LinearGradient></Pressable>
+          <Pressable accessibilityRole="button" onPress={() => setDetail({ title: 'Adventure board', body: 'Daily, weekly, and monthly quests are coming soon.\n\nPreview: complete three activities in a week, or explore a new fitness class. Quest targets, rewards, and completion tracking are not active yet.' })} style={({ pressed }) => [styles.questFrame, pressed && styles.pressed]}><LinearGradient colors={['#49331f', '#30231b']} style={styles.quest}><View style={styles.questEmblem}><Emblem name="quest" color="#e8c765" /></View><View style={styles.questCopy}><Label>ADVENTURE BOARD</Label><Text style={styles.questTitle}>Quests</Text><Text style={styles.body}>Daily, weekly, and monthly challenges.</Text><Text style={styles.preview}>COMING SOON</Text></View><Text style={styles.arrow}>›</Text></LinearGradient></Pressable>
           <View style={styles.recent}><View style={styles.recentHeading}><Label>RECENT ACTIVITIES</Label><Text style={styles.strava}>{data.source === 'demo' ? 'DEMO' : 'STRAVA'}</Text></View>
             {!data.recentActivities.length && <Text style={[styles.body, { marginVertical: 20 }]}>Your next adventure starts here. No activities imported yet.</Text>}
-            {(expanded ? data.recentActivities : data.recentActivities.slice(0, 1)).map(activity => <View key={activity.id} style={styles.activity}><View style={styles.activityMark}><Emblem name={(activity.domain || 'quest') as IconName} size={25} /></View><View style={styles.activityCopy}><Text style={styles.activityName}>{activity.name}</Text><Text style={styles.activityMeta}>{number(activity.distance / 1000)} km · {Math.round(activity.movingTime / 60)} min</Text><Text style={styles.activityDate}>{new Date(activity.startDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })} · {activity.sportType}</Text></View><Text style={styles.activityXp}>{activity.domain ? `+${number(activity.xp)} XP` : 'No XP rule'}</Text></View>)}
+            {(expanded ? data.recentActivities : data.recentActivities.slice(0, 1)).map(activity => <View key={activity.id} style={styles.activity}><View style={styles.activityMark}><Emblem name={(activity.classKey || 'quest') as IconName} size={25} /></View><View style={styles.activityCopy}><Text style={styles.activityName}>{activity.name}</Text><Text style={styles.activityMeta}>{number(activity.distance / 1000)} km · {Math.round(activity.movingTime / 60)} min</Text><Text style={styles.activityDate}>{new Date(activity.startDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })} · {activity.sportType}</Text></View><Text style={styles.activityXp}>{activity.classKey === 'strength' ? 'Volume needed' : activity.classKey ? `+${number(activity.xp)} XP` : 'No XP rule'}</Text></View>)}
             {!!data.recentActivities.length && <Pressable accessibilityRole="button" accessibilityState={{ expanded }} onPress={() => setExpanded(value => !value)}><LinearGradient colors={['#e6be68', '#b68b49']} style={styles.activitiesButton}><Text style={styles.buttonText}>{expanded ? 'Show latest activity' : 'See activities'}</Text></LinearGradient></Pressable>}
           </View>
           <Text style={styles.footer}>{data.source === 'demo' ? 'Demo mode · connect your backend to begin.' : `Last synced ${data.syncedAt ? new Date(data.syncedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'just now'} · Pull down to refresh.`}</Text>
@@ -146,11 +146,11 @@ const styles = StyleSheet.create({
   section: { marginTop: 28, marginBottom: 14, gap: 5 },
   sectionTitle: { color: colors.ink, fontFamily: serif, fontSize: 19, fontWeight: '700', lineHeight: 26 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  domainCard: { width: '48%', flexGrow: 1, flexBasis: '46%', padding: 13, backgroundColor: '#302720', borderWidth: 1, borderColor: colors.border, borderRadius: 4 },
+  classCard: { width: '48%', flexGrow: 1, flexBasis: '46%', padding: 13, backgroundColor: '#302720', borderWidth: 1, borderColor: colors.border, borderRadius: 4 },
   pressed: { opacity: 0.72 },
   emblemOuter: { width: 54, height: 54, borderWidth: 2, borderRadius: 27, padding: 4, backgroundColor: '#201914', marginBottom: 12 },
   emblemInner: { flex: 1, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
-  domainLabel: { fontFamily: serif, fontSize: 10, letterSpacing: 1.8 },
+  classLabel: { fontFamily: serif, fontSize: 10, letterSpacing: 1.8 },
   level: { color: colors.ink, fontFamily: serif, fontSize: 21, fontWeight: '700', marginVertical: 8 },
   meter: { height: 10, borderWidth: 1, borderColor: '#79552e', backgroundColor: '#1a1412', padding: 1 },
   fill: { height: '100%' },

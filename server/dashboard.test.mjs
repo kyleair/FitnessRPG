@@ -3,13 +3,19 @@ import test from 'node:test';
 import { activityXp, buildDashboard, createDashboardService, progression } from './dashboard.mjs';
 const activity = (id, sportType = 'Run', distance = 5000, startDate = '2026-10-25T08:00:00Z') => ({ id, name: 'Example', sportType, distance, startDate, movingTime: 1800, elevationGain: 20 });
 
-test('aggregates each domain, deduplicates IDs, and excludes other sports from XP', () => {
+test('aggregates each class, deduplicates IDs, and excludes other sports from XP', () => {
   const run = activity(1);
   const result = buildDashboard([run, run, activity(2, 'Ride', 25000), activity(3, 'Swim', 1000), activity(4, 'WeightTraining', 0), activity(5, 'Walk', 2000)], { now: new Date('2026-10-25T12:00:00Z') });
   assert.equal(result.importedCount, 5);
   assert.equal(result.monthlyDistanceKm, 33);
-  assert.deepEqual(result.domains.map(domain => domain.xp), [5, 3, 5, 4]);
-  assert.equal(result.domains[0].level, 1);
+  assert.deepEqual(result.classes.map(fitnessClass => fitnessClass.xp), [5, 0, 5]);
+  assert.equal(result.classes[0].level, 1);
+  assert.deepEqual(result.classes.map(item => item.key), ['running', 'strength', 'cycling']);
+  assert.equal(result.classes[1].xpUnavailable, true);
+  assert.equal(result.recentActivities.find(item => item.id === 1).classKey, 'running');
+  assert.equal(result.recentActivities.find(item => item.id === 3).classKey, null);
+  assert.equal(activityXp(activity(7, 'WeightTraining', 0)), 0);
+  assert.equal(activityXp(activity(8, 'Swim', 1000)), 0);
   assert.equal(result.recentActivities.find(item => item.id === 5).xp, 0);
   assert.equal(activityXp(activity(6, 'EBikeRide', 10000)), 0);
 });
@@ -20,9 +26,9 @@ test('handles level boundaries and UTC month boundaries without fabricating perf
   assert.equal(progression(22).level, 3);
   const result = buildDashboard([activity(1, 'Run', 5000, '2026-09-30T23:59:59Z'), activity(2, 'Run', 2000, '2026-10-01T00:00:00Z')], { now: new Date('2026-10-25T12:00:00Z') });
   assert.equal(result.monthlyDistanceKm, 2);
-  assert.equal(result.domains[0].xp, 7);
+  assert.equal(result.classes[0].xp, 7);
   assert.equal(result.historyComplete, false);
-  assert.equal(buildDashboard([]).domains.every(domain => domain.level === 0), true);
+  assert.equal(buildDashboard([]).classes.every(fitnessClass => fitnessClass.level === 0), true);
 });
 
 test('coalesces requests, caches for a minute, backfills, and reconciles latest edits', async () => {
@@ -44,7 +50,7 @@ test('coalesces requests, caches for a minute, backfills, and reconciles latest 
   assert.equal(calls, 3);
   assert.equal(second.importedCount, 101);
   assert.equal(second.historyComplete, true);
-  assert.equal(second.domains[0].xp, 101);
+  assert.equal(second.classes[0].xp, 101);
   client.activities = async () => { throw new Error('rate limited'); };
   now += 60001;
   const stale = await service.get();
@@ -68,7 +74,7 @@ test('failed backfill keeps the successful snapshot and applies a retry cooldown
   latest[0] = { ...latest[0], distance: 9000 };
   now += 60001;
   const failed = await service.get();
-  assert.equal(failed.domains[0].xp, 100);
+  assert.equal(failed.classes[0].xp, 100);
   assert.equal(failed.historyComplete, false);
   assert.equal(failed.stale, true);
   const attempts = calls;
@@ -99,6 +105,13 @@ test('restored snapshots resume pagination and failed disk writes keep the last 
   });
   const unchanged = await failedWrite.get();
   assert.equal(unchanged.importedCount, 101);
-  assert.equal(unchanged.domains[0].xp, 102);
+  assert.equal(unchanged.classes[0].xp, 102);
   assert.equal(unchanged.stale, true);
+});
+
+test('class XP reflects corrections and deletions independently of personal bests', () => {
+  const runs = [activity(1), activity(2, 'Run', 2000)];
+  assert.equal(buildDashboard(runs).classes[0].xp, 7);
+  assert.equal(buildDashboard([runs[0], { ...runs[1], distance: 1000 }]).classes[0].xp, 6);
+  assert.equal(buildDashboard([runs[1]]).classes[0].xp, 2);
 });

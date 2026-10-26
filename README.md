@@ -131,7 +131,7 @@ The SDK 58 dependency tree currently reports five high-severity npm audit entrie
 
 ## Native home dashboard
 
-The Expo home screen now follows the Classic RPG prototype and requests `/api/dashboard`. It shows real recent Strava activities, calculated domain XP/levels, and imported calendar-month distance (UTC). Class identity, avatar, quests, and unsupported performance metrics are labeled previews. Tap a domain for its formula and totals; See activities expands up to 30 recent records.
+The Expo home screen now follows the Classic RPG prototype and requests `/api/dashboard`. It shows real recent Strava activities, calculated class XP/levels, and imported calendar-month distance (UTC). Class identity, avatar, quests, and unsupported performance metrics are labeled previews. Tap a class for its formula and totals; See activities expands up to 30 recent records.
 
 The server imports 100 recent activities on the first eligible request and then up to 100 older activities on subsequent eligible requests. Syncs are shared and limited to once per minute, with at most two activity-list calls each time. Pull-to-refresh within the minute uses cached results; wait a minute before refreshing to continue older history. History, tokens, import cursor, and the successful-sync cooldown persist in SQLite across backend restarts. Failed refreshes keep the last good snapshot with an explicit stale notice. Unavailable initial data shows an error rather than switching to demo data.
 
@@ -142,3 +142,7 @@ After pulling these changes, run `npm ci`, restart `npm run server`, and restart
 ### Activity permissions
 
 New authorizations request only `activity:read` by default, which allows activities visible to Everyone or Followers. We also accept `activity:read_all` if granted, and then import private (Only You) activities too. There is no additional private-activity filter. Plain `read` alone is not sufficient; it is a different scope. Dashboard totals and experimental XP cover the activities accessible under the granted permissions. Existing connections and snapshots are not reset by this change.
+
+### Three-class XP foundation
+
+The app and demo show Running, Strength, and Cycling, each with its own level, total XP, and within-level progress. Running earns 1 XP/km and Cycling earns 1 XP/5 km (experimental). Class XP is independent of future personal-best skills. Strength is based on lifting volume rather than workout duration; until sets/reps/weights are supported, it shows Level 0 with a volume-unavailable explanation and earns no XP from Strava summaries. Existing saved imports are preserved; restart the backend to apply the new rules. Totals are derived from saved activities, so no database migration is necessary.
