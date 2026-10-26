@@ -3,7 +3,20 @@ export const skillDefinitions = {
   cycling: [["5k", "5K", 5000], ["20k", "20K", 20000], ["50k", "50K", 50000], ["75k", "75K", 75000], ["100k", "100K", 100000]],
   strength: [["deadlift", "Deadlift", null], ["squat", "Squat", null], ["bench_press", "Bench press", null]],
 };
-export const calculationVersion = 1;
+export const calculationVersion = classKey => classKey === 'running' ? 2 : 1;
+
+export function runningBestTimes(details) {
+  if (!Array.isArray(details?.best_efforts)) return null;
+  const times = {};
+  for (const effort of details.best_efforts) {
+    if (!effort || !Number.isFinite(effort.elapsed_time) || effort.elapsed_time <= 0 || !Number.isFinite(effort.distance)) continue;
+    const definition = skillDefinitions.running.find(([, , distance]) => Math.abs(effort.distance - distance) <= 1);
+    if (!definition) continue;
+    const key = definition[0], ms = Math.round(effort.elapsed_time * 1000);
+    if (!times[key] || ms < times[key]) times[key] = ms;
+  }
+  return times;
+}
 export const fingerprint = activity => JSON.stringify([activity.sportType, activity.distance, activity.movingTime, activity.startDate]);
 
 // Piecewise-linear distance/time trace. A minimum occurs when either endpoint
@@ -41,9 +54,9 @@ export function classSkills(classKey, activities, cache) {
     for (const activity of activities) {
       const entry = cache[activity.id];
       const timeMs = entry?.times?.[key];
-      if (entry?.fingerprint !== fingerprint(activity) || entry?.version !== calculationVersion || !Number.isFinite(timeMs)) continue;
+      if (entry?.fingerprint !== fingerprint(activity) || entry?.version !== calculationVersion(classKey) || !Number.isFinite(timeMs)) continue;
       if (!best || timeMs < best.timeMs || (timeMs === best.timeMs && activity.startDate < best.achievedAt)) {
-        best = { timeMs, activityId: activity.id, activityName: activity.name, achievedAt: activity.startDate, source: 'strava', method: 'distance_time_stream_v1' };
+        best = { timeMs, activityId: activity.id, activityName: activity.name, achievedAt: activity.startDate, source: 'strava', method: classKey === 'running' ? 'strava_best_efforts' : 'distance_time_stream_v1' };
       }
     }
     return { key: `${classKey}_${key}`, name, distanceMeters, best };

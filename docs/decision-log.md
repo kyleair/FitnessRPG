@@ -187,3 +187,9 @@ Record decisions here as the project evolves. Keep entries short and link to the
 - Reuse the mockup's framed summaries, emblems, two-column skill tiles, and separate unlocked/locked sections. Recorded results appear above locked tiles; locked means no recorded result, including unprocessed or unavailable activity data. Empty strength skills remain locked until strength entry exists.
 - Show cumulative class level and recorded skill count in the top summaries. A cross-distance best-skill ranking, achievement mode, tiers, and skill-level progress bars remain deferred rather than showing invented values or inactive controls.
 - Share the loaded dashboard across routes, support direct class URLs and platform back navigation, and allow pull-to-refresh on class pages. Keep source activity/date on recorded tiles and import/processing explanations below the grids.
+
+## 2026-10-26 - Prefer Strava running best efforts
+
+- Running now requests activity details and uses positive elapsed times from `best_efforts` for our five target distances. Accept up to one meter of provider distance rounding, including 21,097 m for the half marathon. Ignore unrelated distances and invalid times. No running stream fallback.
+- Cycling retains distance/time stream calculations. Result attribution distinguishes `strava_best_efforts` from `distance_time_stream_v1`.
+- Running cache version increments to 2; existing calculated running results are hidden and reprocessed through the bounded sync queue. Cycling stays at version 1 so its cached results survive. Missing running best efforts remain empty and are eligible for the existing daily recheck. Class XP and the three-activity sync budget are unchanged.

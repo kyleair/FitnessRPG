@@ -27,6 +27,7 @@ test('browser connection isolates athletes and persists sessions, rotating token
         expires_at: refresh ? now / 1000 + 10000 : 1, athlete: { id } });
     }
     if (url.includes('/streams?')) return Response.json({ distance: { data: [0, 2000] }, time: { data: [0, 600] } });
+    if (/\/activities\/\d+$/.test(url)) return Response.json({ best_efforts: [{ distance: 1000, elapsed_time: 300 }] });
     activityCalls++;
     const id = Number(options.headers.Authorization.split('-')[1]);
     return Response.json([{ id: id * 10, name: `Athlete ${id} run`, sport_type: 'Run', distance: id * 1000,

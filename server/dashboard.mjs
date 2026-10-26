@@ -1,4 +1,4 @@
-import { skillDefinitions, calculationVersion, fingerprint, bestTimes, classSkills } from './skills.mjs';
+import { skillDefinitions, calculationVersion, fingerprint, bestTimes, runningBestTimes, classSkills } from './skills.mjs';
 const classTypes = {
   running: ['Run', 'TrailRun', 'VirtualRun'],
   strength: ['WeightTraining'],
@@ -42,7 +42,7 @@ export function buildDashboard(activities, { now = new Date(), historyComplete =
   return {
     source: 'strava', syncedAt, stale, skillsStale,
     skillsUnavailable: unique.filter(a => skillCache[a.id]?.unavailable && skillCache[a.id]?.fingerprint === fingerprint(a)).length,
-    skillsPending: unique.filter(a => skillDefinitions[classFor(a.sportType)]?.[0][2] && a.distance >= skillDefinitions[classFor(a.sportType)][0][2] && (!skillCache[a.id] || skillCache[a.id].fingerprint !== fingerprint(a) || skillCache[a.id].version !== calculationVersion)).length, historyComplete, importedCount: unique.length,
+    skillsPending: unique.filter(a => skillDefinitions[classFor(a.sportType)]?.[0][2] && a.distance >= skillDefinitions[classFor(a.sportType)][0][2] && (!skillCache[a.id] || skillCache[a.id].fingerprint !== fingerprint(a) || skillCache[a.id].version !== calculationVersion(classFor(a.sportType)))).length, historyComplete, importedCount: unique.length,
     month, monthlyDistanceKm: unique.filter(activity => activity.startDate.slice(0, 7) === month)
       .reduce((total, activity) => total + activity.distance, 0) / 1000,
     classes, recentActivities: unique.slice(0, 30).map(activity => ({ ...activity, classKey: classFor(activity.sportType), xp: activityXp(activity) })),
@@ -50,7 +50,7 @@ export function buildDashboard(activities, { now = new Date(), historyComplete =
 }
 
 // One import per minute, shared by concurrent requests. History progresses one page
-// per refresh; at most two activity-list calls and three skill-stream calls.
+// per refresh; at most two activity-list calls and three skill-detail/stream calls.
 export function createDashboardService({ client, clock = () => Date.now(), initial = {}, persist = async () => {} }) {
   let records = new Map((initial.activities || []).map(activity => [activity.id, activity]));
   let { before, historyComplete = false, syncedAt = null } = initial;
@@ -82,16 +82,19 @@ export function createDashboardService({ client, clock = () => Date.now(), initi
     let attempts = 0;
     skillsStale = false;
     for (const activity of [...staged.values()].sort((a, b) => (nextCache[a.id]?.attemptedAt || 0) - (nextCache[b.id]?.attemptedAt || 0))) {
-      const definitions = skillDefinitions[classFor(activity.sportType)];
-      if (!definitions?.[0][2] || activity.distance < definitions[0][2] || !client.streams) continue;
+      const classKey = classFor(activity.sportType);
+      const definitions = skillDefinitions[classKey];
+      if (!definitions?.[0][2] || activity.distance < definitions[0][2] || !(classKey === 'running' ? client.details : client.streams)) continue;
       const cached = nextCache[activity.id];
-      const matching = cached?.fingerprint === fingerprint(activity) && cached?.version === calculationVersion;
+      const matching = cached?.fingerprint === fingerprint(activity) && cached?.version === calculationVersion(classKey);
       if (matching && clock() - cached.checkedAt < 86400000) continue;
       if (cached?.retryAt > clock()) { skillsStale = true; continue; }
       if (attempts++ >= 3) break;
       try {
-        const times = bestTimes(await client.streams(activity.id), definitions);
-        nextCache[activity.id] = { fingerprint: fingerprint(activity), version: calculationVersion, checkedAt: clock(), attemptedAt: clock(), times, unavailable: times === null };
+        const times = classKey === 'running'
+          ? runningBestTimes(await client.details(activity.id))
+          : bestTimes(await client.streams(activity.id), definitions);
+        nextCache[activity.id] = { fingerprint: fingerprint(activity), version: calculationVersion(classKey), checkedAt: clock(), attemptedAt: clock(), times, unavailable: times === null };
       } catch {
         skillsStale = true;
         nextCache[activity.id] = { ...cached, attemptedAt: clock(), retryAt: clock() + 60000 };

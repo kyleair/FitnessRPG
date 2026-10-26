@@ -43,3 +43,9 @@ test('requests keyed distance/time streams and treats missing streams as unavail
   status = 404; assert.equal(await client.streams(42), null);
   status = 429; await assert.rejects(client.streams(42), /429/);
 });
+
+test('fetches activity details for provider best efforts', async () => {
+  const client = createStravaClient({ initialTokens: { access_token: 'test', expires_at: Date.now() / 1000 + 3600 }, saveTokens: async () => {},
+    fetchImpl: async (url, options) => { assert.equal(url, 'https://www.strava.com/api/v3/activities/42'); assert.equal(options.headers.Authorization, 'Bearer test'); return Response.json({ best_efforts: [{ distance: 5000, elapsed_time: 1519 }] }); } });
+  assert.equal((await client.details(42)).best_efforts[0].elapsed_time, 1519);
+});

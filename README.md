@@ -149,12 +149,14 @@ The app and demo show Running, Strength, and Cycling, each with its own level, t
 
 ### Class skills
 
-Tap **View skills & progress** on a class card to open a dedicated page with running/cycling best times or empty strength 1RM skills. Times use elapsed distance/time samples from Strava, including stops within each effort; they are calculated estimates, not Strava-certified race results. Each value shows its activity, date, and source. There are no tiers.
+Tap **View skills & progress** on a class card to open a dedicated page with running/cycling best times or empty strength 1RM skills. Running times come from Strava best efforts. Cycling times are calculated estimates from elapsed distance/time samples, including stops within each effort. Neither is an official race result. Each value shows its activity, date, and source. There are no tiers.
 
-Restart the backend and reload the app after pulling. No reconnect or database migration is needed. On each eligible sync (at least one minute apart), up to three activities have their streams processed; older imports and skill processing continue gradually. Class details show pending/unavailable data and refresh failures. Missing streams remain empty. Results persist across restarts, and class XP is unchanged by skill processing.
+Restart the backend and reload the app after pulling. No reconnect or database migration is needed. On each eligible sync (at least one minute apart), up to three activities have their running details or cycling streams processed; older imports and skill processing continue gradually. Class details show pending/unavailable data and refresh failures. Missing best efforts or streams remain empty. Results persist across restarts, and class XP is unchanged by skill processing.
 
 ### Class pages and navigation
 
 Expo Router now owns navigation in `src/app/`. Class pages live at `/classes/running`, `/classes/cycling`, and `/classes/strength`; shared screen components stay in `src/screens/`. Each page follows the Classic RPG mockup: cumulative level and recorded-skill summaries, a two-column unlocked skill grid, then a two-column locked skill grid. A skill unlocks when it has a recorded result; pending or unavailable import data does not imply the user has never completed the distance.
 
 After pulling, run `npm ci` and restart Metro with `npx expo start --clear` because the entry point and navigation dependencies changed. Strength metrics and skill tiers remain deferred.
+
+Running skills now use elapsed times supplied in Strava activity-detail `best_efforts`, without a stream fallback. Cycling skills still use calculated distance/time stream efforts. Restart the backend and sync to replace previous calculated running records; processing remains bounded to three activities per eligible sync. Missing provider efforts remain locked/empty. No reconnect or database migration is required.
