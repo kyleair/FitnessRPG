@@ -21,7 +21,7 @@ Prerequisite: Node.js 22.13+ (Node 24 LTS recommended). Dependencies are already
 
 4. Sign into the same Expo account in Expo Go. On iPhone, scan the terminal's QR code with the Camera app and open it in Expo Go. On Android, use Expo Go's QR scanner.
 5. You should see the Classic RPG dashboard with sample activities. No `.env`, Strava account, backend, Mac, or Apple developer membership is needed for this demo.
-6. Edit `App.tsx` and save to see Fast Refresh on your phone. Keep the terminal running; Ctrl+C stops it.
+6. Edit `src/screens/HomeScreen.tsx` and save to see Fast Refresh on your phone. Keep the terminal running; Ctrl+C stops it.
 
 This project uses SDK 58 to match Expo Go 58 on your phone. After an SDK upgrade, stop the old Metro terminal with Ctrl+C and run `npx expo start --clear` before scanning the new QR code. See https://docs.expo.dev/workflow/upgrading-expo-sdk-walkthrough/ for future upgrades.
 
@@ -105,7 +105,7 @@ Strava authorization reference: https://developers.strava.com/docs/authenticatio
 
 ## Layout and next steps
 
-- `App.tsx`: dashboard, loading/error states, refresh, and demo/backend selection.
+- `src/screens/HomeScreen.tsx`: dashboard, loading/error states, refresh, and demo/backend selection.
 - `src/activities.ts`: normalized activity shape and sample data.
 - `server/index.mjs`: backend entry point.
 - `server/app.mjs`: authenticated API and browser connection routes.
@@ -149,6 +149,12 @@ The app and demo show Running, Strength, and Cycling, each with its own level, t
 
 ### Class skills
 
-Tap **View skills & progress** on a class card to see running/cycling best times or empty strength 1RM skills. Times use elapsed distance/time samples from Strava, including stops within each effort; they are calculated estimates, not Strava-certified race results. Each value shows its activity, date, and source. There are no tiers.
+Tap **View skills & progress** on a class card to open a dedicated page with running/cycling best times or empty strength 1RM skills. Times use elapsed distance/time samples from Strava, including stops within each effort; they are calculated estimates, not Strava-certified race results. Each value shows its activity, date, and source. There are no tiers.
 
 Restart the backend and reload the app after pulling. No reconnect or database migration is needed. On each eligible sync (at least one minute apart), up to three activities have their streams processed; older imports and skill processing continue gradually. Class details show pending/unavailable data and refresh failures. Missing streams remain empty. Results persist across restarts, and class XP is unchanged by skill processing.
+
+### Class pages and navigation
+
+Expo Router now owns navigation in `src/app/`. Class pages live at `/classes/running`, `/classes/cycling`, and `/classes/strength`; shared screen components stay in `src/screens/`. Each page follows the Classic RPG mockup: cumulative level and recorded-skill summaries, a two-column unlocked skill grid, then a two-column locked skill grid. A skill unlocks when it has a recorded result; pending or unavailable import data does not imply the user has never completed the distance.
+
+After pulling, run `npm ci` and restart Metro with `npx expo start --clear` because the entry point and navigation dependencies changed. Strength metrics and skill tiers remain deferred.

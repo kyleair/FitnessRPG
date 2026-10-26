@@ -180,3 +180,10 @@ Record decisions here as the project evolves. Keep entries short and link to the
 - Each eligible sync fetches at most three streams, in addition to the existing bounded activity imports. Requests coalesce; processing resumes across restarts. Transient stream failures preserve cached results and XP and retry later, with fair ordering so failures do not block older activities. Successful/missing streams are eligible for rechecking after 24 hours; changed summary fingerprints invalidate results immediately.
 - Show pending activity count, unavailable-stream count, failed-refresh state, and imported-history scope in class details. Processing continues on eligible refreshes, not on a standalone background scheduler. Older edits/deletions outside the latest import page still require a fresh history reconciliation.
 - Class details use the existing dashboard modal; adding navigation routes is outside this slice. XP remains independent of all skill calculations. Demo skills are empty and explicitly sample data.
+
+## 2026-10-26 - Match class pages to the Classic RPG design
+
+- Class cards navigate with Expo Router to dedicated class routes instead of opening the dashboard modal. Router owns the app entry and a stack in `src/app/`; non-route UI stays in `src/screens/`.
+- Reuse the mockup's framed summaries, emblems, two-column skill tiles, and separate unlocked/locked sections. Recorded results appear above locked tiles; locked means no recorded result, including unprocessed or unavailable activity data. Empty strength skills remain locked until strength entry exists.
+- Show cumulative class level and recorded skill count in the top summaries. A cross-distance best-skill ranking, achievement mode, tiers, and skill-level progress bars remain deferred rather than showing invented values or inactive controls.
+- Share the loaded dashboard across routes, support direct class URLs and platform back navigation, and allow pull-to-refresh on class pages. Keep source activity/date on recorded tiles and import/processing explanations below the grids.

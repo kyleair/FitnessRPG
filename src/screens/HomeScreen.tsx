@@ -2,28 +2,25 @@ import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, AppState, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { Adventurer, Emblem, IconName } from './src/components/Emblem';
-import { Dashboard, demoDashboard, FitnessClass, ClassKey } from './src/dashboard';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Adventurer, Emblem, IconName } from '../components/Emblem';
+import { Dashboard, FitnessClass } from '../dashboard';
+import { router } from 'expo-router';
+import { useDashboard } from '../DashboardContext';
+import { formatTime } from '../format';
 
-import { api, apiUrl, SessionExpiredError, signOut } from './src/api';
+import { api, apiUrl, SessionExpiredError, signOut } from '../api';
 const colors = { ink: '#f3e3bb', muted: '#c0ae83', gold: '#e8c765', border: '#876035', dark: '#211b18' };
 const classColors = { running: '#d99638', strength: '#d56d55', cycling: '#63a9c6' };
 const classBackgrounds = { running: '#244b36', strength: '#612d29', cycling: '#214c60' };
 const serif = Platform.select({ ios: 'Georgia', android: 'serif', default: 'Georgia' });
-function formatTime(ms: number) {
-  const total = Math.round(ms / 1000), hours = Math.floor(total / 3600);
-  const minutes = Math.floor(total / 60) % 60, seconds = String(total % 60).padStart(2, '0');
-  return hours ? `${hours}:${String(minutes).padStart(2, '0')}:${seconds}` : `${minutes}:${seconds}`;
-}
 const number = (value: number) => value.toLocaleString(undefined, { maximumFractionDigits: 1 });
 function Meter({ value, color = '#d58a36' }: { value: number; color?: string }) {
   return <View style={styles.meter} accessible accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: 100, now: Math.round(value * 100) }}><View style={[styles.fill, { backgroundColor: color, width: `${Math.max(0, Math.min(1, value)) * 100}%` }]} /></View>;
 }
 function Label({ children }: { children: React.ReactNode }) { return <Text style={styles.label}>{children}</Text>; }
-export default function App() { return <SafeAreaProvider><Home /></SafeAreaProvider>; }
-function Home() {
-  const [data, setData] = useState<Dashboard | null>(apiUrl ? null : demoDashboard);
+export default function HomeScreen() {
+  const { data, setData } = useDashboard();
   const [loading, setLoading] = useState(!!apiUrl);
   const [error, setError] = useState('');
   const [connected, setConnected] = useState(false);
@@ -31,7 +28,7 @@ function Home() {
   const [connection, setConnection] = useState<{ code: string; computerUrl: string } | null>(null);
   const refreshing = useRef(false);
   const [expanded, setExpanded] = useState(false);
-  const [detail, setDetail] = useState<{ title: string; body: string; classKey?: ClassKey } | null>(null);
+  const [detail, setDetail] = useState<{ title: string; body: string } | null>(null);
   const refresh = useCallback(async () => {
     if (!apiUrl || refreshing.current) return;
     refreshing.current = true;
@@ -47,7 +44,7 @@ function Home() {
       setError(err instanceof Error ? err.message : 'Unable to connect.');
     }
     finally { refreshing.current = false; setLoading(false); }
-  }, []);
+  }, [setData]);
   useEffect(() => {
     const initial = setTimeout(() => { void refresh(); }, 0);
     const subscription = AppState.addEventListener('change', state => { if (state === 'active') void refresh(); });
@@ -72,7 +69,7 @@ function Home() {
     finally { refreshing.current = false; setConnecting(false); }
   }
   function inspectClass(fitnessClass: FitnessClass) {
-    setDetail({ classKey: fitnessClass.key, title: `${fitnessClass.name} Class`, body: `${fitnessClass.activityCount} imported activities\n${number(fitnessClass.distanceKm)} km · ${number(fitnessClass.minutes)} minutes\n\nLevel ${fitnessClass.level} · ${number(fitnessClass.xp)} total XP\n${number(fitnessClass.currentXp)} / ${fitnessClass.nextLevelXp} XP toward the next level.\n\nExperimental rule: ${fitnessClass.formula}. These are game points, not a comparison of athletic ability.\n\n${data?.historyComplete ? 'All accessible history has been imported.' : 'Totals cover imported history so far. More history is loaded on later syncs.'}\n\nClass XP grows from activity volume independently of personal bests. Skills track all-time bests across processed imported history. No tiers yet.` });
+    router.push({ pathname: '/classes/[classKey]', params: { classKey: fitnessClass.key } });
   }
   const best5k = data?.classes.find(item => item.key === 'running')?.skills.find(skill => skill.key === 'running_5k')?.best;
   return <LinearGradient colors={['#3b2a22', '#211b18', '#191513']} style={styles.screen}>
@@ -104,7 +101,7 @@ function Home() {
               <View style={styles.pinned}><Text style={styles.pinnedLabel}>Monthly Distance</Text><Text style={styles.pinnedValue}>{number(data.monthlyDistanceKm)} <Text style={{ fontSize: 11 }}>km</Text></Text><Text style={styles.pinnedNote}>Imported · UTC</Text></View>
             </View>
           </LinearGradient></View>
-          <View style={styles.section}><Label>YOUR SKILLS</Label><Text style={styles.sectionTitle}>Choose a class to inspect.</Text></View>
+          <View style={styles.section}><Label>YOUR CLASSES</Label><Text style={styles.sectionTitle}>Choose a class to inspect.</Text></View>
           <View style={styles.grid}>{data.classes.map(fitnessClass => <Pressable key={fitnessClass.key} accessibilityRole="button" accessibilityLabel={`${fitnessClass.name}, level ${fitnessClass.level}. View progress`} onPress={() => inspectClass(fitnessClass)} style={({ pressed }) => [styles.classCard, pressed && styles.pressed]}>
             <View style={[styles.emblemOuter, { borderColor: classColors[fitnessClass.key] }]}><View style={[styles.emblemInner, { backgroundColor: classBackgrounds[fitnessClass.key] }]}><Emblem name={fitnessClass.key} color={classColors[fitnessClass.key]} size={31} /></View></View>
             <Text style={[styles.classLabel, { color: classColors[fitnessClass.key] }]}>{fitnessClass.name.toUpperCase()}</Text><Text style={styles.level}>Level {fitnessClass.level}</Text>
@@ -123,21 +120,11 @@ function Home() {
         </>}
       </ScrollView>
       <Modal visible={!!detail} transparent animationType="fade" onRequestClose={() => setDetail(null)}><View style={styles.overlay}><View style={styles.sheet} accessibilityViewIsModal><ScrollView><Label>FITNESS RPG</Label><Text style={styles.sectionTitle}>{detail?.title}</Text><Text style={[styles.body, { marginVertical: 20 }]}>{detail?.body}</Text>
-          {detail?.classKey && <>
-            <Label>SKILLS</Label>
-            {detail.classKey !== 'strength' && <Text style={styles.small}>Fastest continuous distance efforts, using elapsed time including stops. Times are calculated from Strava samples and may differ from Strava best efforts. {data?.skillsPending ? `${data.skillsPending} activities still awaiting processing. Sync again after a minute to continue.` : 'Best across processed imported activities.'}{data?.skillsUnavailable ? ` ${data.skillsUnavailable} activities have unavailable or invalid distance/time samples.` : ''}{data?.skillsStale ? ' Some effort data could not be refreshed; saved results are shown.' : ''}</Text>}
-            {data?.classes.find(item => item.key === detail.classKey)?.skills.map(skill => <View key={skill.key} style={styles.skillRow}>
-              <Text style={styles.activityName}>{skill.name}</Text>
-              <Text style={styles.level}>{skill.best ? formatTime(skill.best.timeMs) : '—'}</Text>
-              <Text style={styles.small}>{skill.best ? `${skill.best.activityName} · ${new Date(skill.best.achievedAt).toLocaleDateString()} · Strava` : detail.classKey === 'strength' ? 'No 1RM recorded yet' : 'No recorded effort yet'}</Text>
-            </View>)}
-          </>}
         </ScrollView><Pressable accessibilityRole="button" onPress={() => setDetail(null)} style={styles.close}><Text style={styles.buttonText}>Back to dashboard</Text></Pressable></View></View></Modal>
     </SafeAreaView>
   </LinearGradient>;
 }
 const styles = StyleSheet.create({
-  skillRow: { paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.border, gap: 6 },
   screen: { flex: 1 },
   connection: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
   content: { width: '100%', maxWidth: 470, alignSelf: 'center', padding: 16, paddingBottom: 48 },

@@ -23,7 +23,9 @@
     },
     "plugins": [
       "expo-status-bar",
-      "expo-secure-store"
-    ]
+      "expo-secure-store",
+      "expo-router"
+    ],
+    "scheme": "fitnessrpg"
   }
 }
