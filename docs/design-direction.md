@@ -46,14 +46,14 @@ The first browser prototype should compare A and C, with B reserved as a higher-
 
 - Avoid decorative slogans or generic motivational copy at the top of the dashboard.
 - Treat visual themes as a secondary comparison/control, not primary product content.
-- Pin the user's three highest cumulative domain levels in the current-class panel.
-- Make the three main domains (Running, Strength, Cycling) the primary dashboard entry points.
-- Clicking a domain opens the skills inside it, such as Fastest 5K, Fastest Marathon, or Monthly Distance.
+- Pin the user's three highest cumulative class levels in the current-class panel.
+- Make the three main classes (Running, Strength, Cycling) the primary dashboard entry points.
+- Clicking a class opens the skills inside it, such as Fastest 5K, Fastest Marathon, or Monthly Distance.
 - Each specific performance skill should link to its own leaderboard.
 - Make avatar customization accessible by clicking the avatar in the current-class panel.
 - Keep recent activity and next quest visible on the dashboard.
 - Avoid a persistent bottom navigation bar until the product information architecture actually needs one.
-- Use simple original symbols and framed emblems to make domains and internal skills visually memorable.
+- Use simple original symbols and framed emblems to make classes and internal skills visually memorable.
 - Treat the skill detail view as a grid of individual skill tiles, not only a vertical list.
 - Write skill values explicitly as `Level 50`, not bare numbers.
 - Keep the tile focused on current level; expose peak/current progression history through a separate `History` action.
@@ -69,8 +69,8 @@ For the Classic RPG treatment, use a fantasy display font for headings and expli
 ## Current interaction model
 
 - Dashboard class panel comes first.
-- Domain cards open domain detail.
-- Domain detail uses a mobile-safe grid of internal skills.
+- Class cards open class detail.
+- Class detail uses a mobile-safe grid of internal skills.
 - `Ranks` opens the leaderboard for that specific skill.
 - `History` opens a timeline showing current level, peak level, and the six-month active-performance window.
 - Avatar click opens the cosmetic closet.

@@ -42,7 +42,7 @@ Docs: https://docs.expo.dev/eas/index.md
 
 ## Product context
 
-FitnessRPG turns real-world exercise into friendly, lightly absurd RPG progression. Users earn understandable progress from activities, develop separate fitness domains, and combine them into playful character classes.
+FitnessRPG turns real-world exercise into friendly, lightly absurd RPG progression. Users earn understandable progress from activities, progress in separate fitness classes (Running, Cycling, and Strength), and track specific performance skills within each class.
 
 - Read `README.md` and the relevant files in `docs/` before changing product behavior.
 - The app is mobile-first; judge the browser prototype in `mockups/` at approximately 430px wide.

@@ -131,7 +131,7 @@ The SDK 58 dependency tree currently reports five high-severity npm audit entrie
 
 ## Native home dashboard
 
-The Expo home screen now follows the Classic RPG prototype and requests `/api/dashboard`. It shows real recent Strava activities, calculated domain XP/levels, and imported calendar-month distance (UTC). Class identity, avatar, quests, and unsupported performance metrics are labeled previews. Tap a domain for its formula and totals; See activities expands up to 30 recent records.
+The Expo home screen now follows the Classic RPG prototype and requests `/api/dashboard`. It shows real recent Strava activities, calculated class XP/levels, and imported calendar-month distance (UTC). Class identity, avatar, quests, and unsupported performance metrics are labeled previews. Tap a class for its formula and totals; See activities expands up to 30 recent records.
 
 The server imports 100 recent activities on the first eligible request and then up to 100 older activities on subsequent eligible requests. Syncs are shared and limited to once per minute, with at most two activity-list calls each time. Pull-to-refresh within the minute uses cached results; wait a minute before refreshing to continue older history. History, tokens, import cursor, and the successful-sync cooldown persist in SQLite across backend restarts. Failed refreshes keep the last good snapshot with an explicit stale notice. Unavailable initial data shows an error rather than switching to demo data.
 

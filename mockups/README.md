@@ -26,10 +26,10 @@ The current prototype incorporates the first design critique:
 
 - The dashboard no longer opens with a generic slogan.
 - Theme switching is tucked into a small secondary control.
-- The current-class panel pins the three highest cumulative domain levels.
+- The current-class panel pins the three highest cumulative class levels.
 - The class panel includes a clickable example avatar that opens the items/cosmetics view.
-- Running, Strength, Cycling, and Swimming cards are compact two-column domain entry points on the phone canvas.
-- Domain detail separates cumulative class level from internal performance skills.
+- Running, Strength, Cycling, and Swimming cards are compact two-column class entry points on the phone canvas.
+- Class detail separates cumulative class level from internal performance skills.
 - Class detail has a Skills/Achievements toggle; each mode preserves cumulative level and separates unlocked from locked content.
 - Skills mode summarizes the user's Best Skill; Achievement mode summarizes the Rarest Achievement.
 - Class emblems use distinct colors and icon treatments so Running, Strength, Cycling, and Swimming scan differently at a glance.
@@ -41,9 +41,9 @@ The current prototype incorporates the first design critique:
 
 The fourth theme, `Classic RPG`, explores an old-school game aesthetic using parchment-like hierarchy, stone/leather tones, gold borders, serif display type, and menu-panel framing. It is intentionally a visual direction rather than a claim that the final product should imitate any one game.
 
-The current default is now `Classic RPG`. The domain detail view also uses a grid of original inline vector emblems for Running, Strength, Cycling, Speed, Endurance, Consistency, and Quest/Milestone skills.
+The current default is now `Classic RPG`. The class detail view also uses a grid of original inline vector emblems for Running, Strength, Cycling, Speed, Endurance, Consistency, and Quest/Milestone skills.
 
-The intended action map is available in [ui-flow.html](ui-flow.html). It includes the new Friends path: Home -> Friends -> Friend levels -> Friend domain/skill detail.
+The intended action map is available in [ui-flow.html](ui-flow.html). It includes the new Friends path: Home -> Friends -> Friend levels -> Friend class/skill detail.
 
 Before handing off visual changes, use the [design QA checklist](../docs/design-qa.md) to check phone-width overflow, long text, click targets, and view-specific routing.
 

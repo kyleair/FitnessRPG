@@ -1,8 +1,8 @@
 const themeButtons = document.querySelectorAll('[data-theme-choice]');
 const views = document.querySelectorAll('.view');
-let currentDomain = 'running';
+let currentClass = 'running';
 
-const domainData = {
+const classData = {
   running: {
     title: 'Running Class', level: 'Level 24', xp: '720 / 1,000 lifetime XP', best: 'Fastest 5K', bestLevel: 'Level 50', rarest: 'Long Haul', rarestDetail: 'Earned by 8% of runners',
     skills: [
@@ -75,25 +75,25 @@ function achievementCard(achievement) {
   return `<article class="achievement-card${locked}"><div class="achievement-mark">${achievement.icon}</div><div><p class="eyebrow">${achievement.category}</p><h3>${achievement.title}</h3><p>${achievement.detail}</p></div><strong>${achievement.status}</strong></article>`;
 }
 
-function renderDomain(domain = currentDomain) {
-  currentDomain = domain;
-  const data = domainData[domain];
+function renderClass(classKey = currentClass) {
+  currentClass = classKey;
+  const data = classData[classKey];
   if (!data) return;
-  document.getElementById('domain-title').textContent = data.title;
-  document.getElementById('domain-level').textContent = data.level;
-  document.getElementById('domain-xp').textContent = data.xp;
-  document.getElementById('domain-best-skill').textContent = data.best;
-  document.getElementById('domain-best-level').textContent = data.bestLevel;
-  document.getElementById('achievement-domain-level').textContent = data.level;
-  document.getElementById('achievement-domain-xp').textContent = data.xp;
-  document.getElementById('domain-rarest').textContent = data.rarest;
-  document.getElementById('domain-rarest-detail').textContent = data.rarestDetail;
-  document.getElementById('domain-skills-content').innerHTML = `<div class="subsection-heading"><p class="eyebrow">UNLOCKED SKILLS</p><h3>Skills you can train now</h3></div><div class="subskill-grid">${data.skills.filter((skill) => !skill.locked).map(skillCard).join('')}</div><div class="subsection-heading"><p class="eyebrow">LOCKED SKILLS</p><h3>Milestones still ahead</h3></div><div class="subskill-grid">${data.skills.filter((skill) => skill.locked).map(skillCard).join('')}</div>`;
-  document.getElementById('domain-achievements-content').innerHTML = `<div class="subsection-heading"><p class="eyebrow">UNLOCKED ACHIEVEMENTS</p><h3>Proof of your progress</h3></div><div class="achievement-grid">${data.achievements.filter((achievement) => achievement.status !== 'Locked').map(achievementCard).join('')}</div><div class="subsection-heading"><p class="eyebrow">LOCKED ACHIEVEMENTS</p><h3>Challenges still ahead</h3></div><div class="achievement-grid">${data.achievements.filter((achievement) => achievement.status === 'Locked').map(achievementCard).join('')}</div>`;
+  document.getElementById('class-title').textContent = data.title;
+  document.getElementById('class-level').textContent = data.level;
+  document.getElementById('class-xp').textContent = data.xp;
+  document.getElementById('class-best-skill').textContent = data.best;
+  document.getElementById('class-best-level').textContent = data.bestLevel;
+  document.getElementById('achievement-class-level').textContent = data.level;
+  document.getElementById('achievement-class-xp').textContent = data.xp;
+  document.getElementById('class-rarest').textContent = data.rarest;
+  document.getElementById('class-rarest-detail').textContent = data.rarestDetail;
+  document.getElementById('class-skills-content').innerHTML = `<div class="subsection-heading"><p class="eyebrow">UNLOCKED SKILLS</p><h3>Skills you can train now</h3></div><div class="subskill-grid">${data.skills.filter((skill) => !skill.locked).map(skillCard).join('')}</div><div class="subsection-heading"><p class="eyebrow">LOCKED SKILLS</p><h3>Milestones still ahead</h3></div><div class="subskill-grid">${data.skills.filter((skill) => skill.locked).map(skillCard).join('')}</div>`;
+  document.getElementById('class-achievements-content').innerHTML = `<div class="subsection-heading"><p class="eyebrow">UNLOCKED ACHIEVEMENTS</p><h3>Proof of your progress</h3></div><div class="achievement-grid">${data.achievements.filter((achievement) => achievement.status !== 'Locked').map(achievementCard).join('')}</div><div class="subsection-heading"><p class="eyebrow">LOCKED ACHIEVEMENTS</p><h3>Challenges still ahead</h3></div><div class="achievement-grid">${data.achievements.filter((achievement) => achievement.status === 'Locked').map(achievementCard).join('')}</div>`;
 }
 
-function showView(name, domain) {
-  if (name === 'domain') renderDomain(domain || currentDomain);
+function showView(name, classKey) {
+  if (name === 'class') renderClass(classKey || currentClass);
   views.forEach((view) => view.classList.toggle('active', view.id === `${name}-view`));
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -107,7 +107,7 @@ themeButtons.forEach((button) => {
 
 document.addEventListener('click', (event) => {
   const viewButton = event.target.closest('[data-view]');
-  if (viewButton && !viewButton.matches('[data-theme-choice]')) showView(viewButton.dataset.view, viewButton.dataset.domain);
+  if (viewButton && !viewButton.matches('[data-theme-choice]')) showView(viewButton.dataset.view, viewButton.dataset.classKey);
 });
 
 document.querySelectorAll('.toggle, .scope').forEach((button) => {
@@ -128,4 +128,4 @@ document.querySelectorAll('[data-mode]').forEach((button) => {
   });
 });
 
-renderDomain();
+renderClass();

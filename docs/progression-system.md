@@ -51,7 +51,7 @@ The exact threshold above is illustrative only.
 
 ## Cross-skill identity
 
-Classes are a playful summary of a user's current mix of skills, not a performance ranking.
+Character titles are a proposed playful summary of a user's current mix of skills, not a performance ranking.
 
 Possible examples:
 

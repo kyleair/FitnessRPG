@@ -20,22 +20,17 @@ Suggested fields:
 - `rawSummary` for source attribution
 - `xpAwarded`
 
+### Fitness class
+
+Running, Cycling, and Strength are the initial fitness classes. Each tracks cumulative XP and a level independently of personal-best skills. Every eligible activity contributes volume, whether or not it sets a record.
+
 ### Skill
 
-A progression tree representing a fitness domain, such as Running, Strength, or Cycling.
+A specific performance metric within a class: for example, fastest 5K within Running or bench-press one-rep maximum within Strength. Skill performances do not determine class XP. Implementation and rank mappings are deferred.
 
-- `key`
-- `displayName`
-- `level`
-- `currentXp`
-- `xpToNextLevel`
-- `unlocks`
+### Character title
 
-### Character class
-
-A playful label derived from a combination of skill levels. Classes should be understandable, optional, and never imply a permanent identity.
-
-Example: Running 2 + Strength 4 → `Wrecking Ball`.
+The character panel currently previews a playful title such as `Wrecking Ball`. Titles are separate from the three fitness classes; deriving or selecting titles remains future work.
 
 ### Avatar and cosmetics
 

@@ -13,7 +13,7 @@ Use this checklist before handing a mockup to the user for manual review. The pr
 
 ## Content and navigation
 
-- Every home domain card must open the matching class page and show unique seeded content.
+- Every home class card must open the matching class page and show unique seeded content.
 - Every interactive avatar or cosmetic action must open the equipment/cosmetics view.
 - Verify the mode toggle does not overlap the summary panels and has enough spacing above and below.
 - Verify current, next-level, and progress values are visible without relying on hover.
