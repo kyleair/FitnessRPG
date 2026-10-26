@@ -4,6 +4,8 @@ An Expo / React Native fitness RPG for iPhone and Android, with browser-based St
 
 ## First run on your phone
 
+GitHub Actions runs `npm test`, `npm run lint`, and `npm run typecheck` on pull requests and pushes to `main`, using Node 24. Run the same commands locally before opening a PR. Tests use simulated Strava responses and temporary databases; no `.env` files or Strava credentials are needed in CI.
+
 Prerequisite: Node.js 22.13+ (Node 24 LTS recommended). Dependencies are already installed on this computer. After cloning on another computer, run `npm ci` first.
 
 1. Install Expo Go on your iPhone or Android.
