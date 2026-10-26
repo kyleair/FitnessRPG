@@ -8,8 +8,12 @@ test('aggregates each domain, deduplicates IDs, and excludes other sports from X
   const result = buildDashboard([run, run, activity(2, 'Ride', 25000), activity(3, 'Swim', 1000), activity(4, 'WeightTraining', 0), activity(5, 'Walk', 2000)], { now: new Date('2026-10-25T12:00:00Z') });
   assert.equal(result.importedCount, 5);
   assert.equal(result.monthlyDistanceKm, 33);
-  assert.deepEqual(result.domains.map(domain => domain.xp), [5, 3, 5, 4]);
+  assert.deepEqual(result.domains.map(domain => domain.xp), [5, 0, 5]);
   assert.equal(result.domains[0].level, 1);
+  assert.deepEqual(result.domains.map(item => item.key), ['running', 'strength', 'cycling']);
+  assert.equal(result.domains[1].xpUnavailable, true);
+  assert.equal(activityXp(activity(7, 'WeightTraining', 0)), 0);
+  assert.equal(activityXp(activity(8, 'Swim', 1000)), 0);
   assert.equal(result.recentActivities.find(item => item.id === 5).xp, 0);
   assert.equal(activityXp(activity(6, 'EBikeRide', 10000)), 0);
 });
@@ -101,4 +105,11 @@ test('restored snapshots resume pagination and failed disk writes keep the last 
   assert.equal(unchanged.importedCount, 101);
   assert.equal(unchanged.domains[0].xp, 102);
   assert.equal(unchanged.stale, true);
+});
+
+test('class XP reflects corrections and deletions independently of personal bests', () => {
+  const runs = [activity(1), activity(2, 'Run', 2000)];
+  assert.equal(buildDashboard(runs).domains[0].xp, 7);
+  assert.equal(buildDashboard([runs[0], { ...runs[1], distance: 1000 }]).domains[0].xp, 6);
+  assert.equal(buildDashboard([runs[1]]).domains[0].xp, 2);
 });

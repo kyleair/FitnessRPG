@@ -155,3 +155,12 @@ Record decisions here as the project evolves. Keep entries short and link to the
 - Request activity:read by default, while accepting either activity:read or activity:read_all on the callback. Plain read is not sufficient.
 - Honor broader grants: private activities are imported when activity:read_all is granted. Do not add a separate visibility filter or reset existing connections/history.
 - Label completed imports as all accessible history; the granted permissions determine which activities are accessible.
+
+## 2026-10-26 - Start with three independent class XP tracks
+
+- Running, Strength, and Cycling are the only active classes. The API retains its existing `domains` field for compatibility; skills and personal-best ranks are deferred.
+- Class XP measures accumulated activity volume independently of skill performances. Retain experimental rates of 1 km per Running XP and 5 km per Cycling XP. Level costs remain 5, 7, 10, 14, etc., using ceil(previous * 1.4).
+- Strength will use total pounds lifted (weight times completed reps across sets). Its XP conversion remains undecided. Strava summaries provide no lifting volume, so show Level 0 / 0 XP with an explicit unavailable-volume explanation. This supersedes the 10-minute Strength XP experiment; duration earns no Strength XP.
+- Derive totals from the existing deduplicated, persisted per-account activity snapshots for now. This preserves account isolation and restart recovery without introducing a second stored total that could drift. Existing latest-page edit/deletion reconciliation limitations still apply.
+- No schema migration or account reset is required for this slice. Per-activity XP contributions, set logging, and cached class totals can be introduced when supporting weight records or incremental processing.
+- The historical browser mockup remains a design reference; the native app and its demo now expose three classes. Imported-history completeness remains visible; these totals are not claimed as full lifetime totals until history is complete.
