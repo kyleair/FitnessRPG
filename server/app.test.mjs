@@ -59,7 +59,7 @@ test('browser connection isolates athletes and persists sessions, rotating token
     assert.equal(consent.searchParams.get('redirect_uri'), origin + '/auth/strava/callback');
     return { state: consent.searchParams.get('state'), cookie };
   }
-  const callback = (flow, id, scope = 'read,activity:read_all') => request(`/auth/strava/callback?state=${flow.state}&code=${id}&scope=${scope}`, null, 'GET', { Cookie: flow.cookie });
+  const callback = (flow, id, scope = 'read,activity:read') => request(`/auth/strava/callback?state=${flow.state}&code=${id}&scope=${scope}`, null, 'GET', { Cookie: flow.cookie });
   assert.equal((await request('/api/dashboard')).status, 401);
   const wrongHost = await new Promise((resolve, reject) => {
     get(origin + '/connect', { headers: { Host: '192.168.1.230:3001' } }, response => { response.resume(); resolve(response.statusCode); }).on('error', reject);

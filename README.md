@@ -40,7 +40,7 @@ One backend owns the FitnessRPG Strava application credentials; each phone signs
 5. Start `npm run server`, then `npx expo start --clear` in a second terminal. Open Expo Go on the same network.
 6. Tap **Connect Strava** in Expo Go to get a code. On the computer running the backend, open `http://127.0.0.1:3001/connect`, enter that code, and click **Continue to Strava**. Sign into your own athlete account and approve activity access. On the phone, tap **Check connection** (or leave and return to Expo Go). Do not open the loopback address on your phone.
 
-Existing connected sessions continue to work. New connections and reconnections use the computer-browser code flow. The old shared `server/.data/tokens.json` is not automatically assigned to the first phone that connects. The old CLI helper has been removed; `STRAVA_REFRESH_TOKEN` is no longer used by the API.
+New connections request `activity:read` by default. Existing connections and imported snapshots are retained; broader activity grants remain supported. New connections and reconnections use the computer-browser code flow. The old shared `server/.data/tokens.json` is not automatically assigned to the first phone that connects. The old CLI helper has been removed; `STRAVA_REFRESH_TOKEN` is no longer used by the API.
 
 A dedicated FitnessRPG Strava registration is preferable to the website's registration. Changing a shared application's callback domain can disrupt the website's sign-in flow, and separate processes refreshing the same athlete/application authorization can invalidate each other's tokens. This change does not edit website configuration or Strava settings.
 
@@ -51,7 +51,7 @@ A dedicated FitnessRPG Strava registration is preferable to the website's regist
 - Every activity/dashboard request requires the device's session. Athletes are isolated, while two sessions for the same athlete share a token refresher and cached import in this backend process.
 - **Sign out** revokes this device session and cancels its pending connection. It does not revoke Strava authorization or delete the athlete's saved import. Signing in again as that athlete restores it. Full account deletion/deauthorization is future work.
 - Connection codes and OAuth states expire after ten minutes and are single-use. The callback also requires the browser cookie from the connection flow. Keep the same computer browser throughout. Browser authorization routes accept only loopback connections at the generated 127.0.0.1 address. Expired, denied or cancelled connections can be restarted from the app.
-- The database contains private activities and unencrypted server tokens. Keep it local and excluded from sharing/backups to public destinations. This remains a trusted-LAN development server; public deployment needs HTTPS, protected persistent storage, operational rate limiting, and an account deletion/revocation policy. Run one backend process per database so token-refresh coordination stays centralized.
+- The database contains personal activity data and unencrypted server tokens. Keep it local and excluded from sharing/backups to public destinations. This remains a trusted-LAN development server; public deployment needs HTTPS, protected persistent storage, operational rate limiting, and an account deletion/revocation policy. Run one backend process per database so token-refresh coordination stays centralized.
 
 If your friend is on the same network, both apps can point at this backend and each connect their own Strava account. For separate local setups using the same Strava application, follow the instructions below.
 
@@ -134,3 +134,7 @@ The server imports 100 recent activities on the first eligible request and then 
 Experimental rules and limitations are recorded in `docs/decision-log.md`. These levels are game progress over imported history, not a fitness assessment. Exact fastest-5K efforts need activity-detail/effort data; bench weight is not present in the current Strava summaries. Older activity changes outside the latest page require a fresh history import.
 
 After pulling these changes, run `npm ci`, restart `npm run server`, and restart Metro with `npx expo start --clear`. All new native dependencies are compatible with Expo Go SDK 58. `npm run web` also supports browser preview on localhost:8081. For a different browser origin, set `DEV_WEB_ORIGIN` in `server/.env` and restart the backend.
+
+### Activity permissions
+
+New authorizations request only `activity:read` by default, which allows activities visible to Everyone or Followers. We also accept `activity:read_all` if granted, and then import private (Only You) activities too. There is no additional private-activity filter. Plain `read` alone is not sufficient; it is a different scope. Dashboard totals and experimental XP cover the activities accessible under the granted permissions. Existing connections and snapshots are not reset by this change.

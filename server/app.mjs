@@ -94,7 +94,7 @@ export function createApp({ db, env, fetchImpl = fetch, clock = Date.now }) {
         if (request.method === 'GET') {
           const nonce = secret();
           response.setHeader('Set-Cookie', `fitness_oauth=${nonce}; HttpOnly; SameSite=Lax; Path=/auth/strava; Max-Age=600${origin.startsWith('https:') ? '; Secure' : ''}`);
-          return page(200, 'Connect your Strava', `<p>Link your own Strava account to the device where you started this connection. Allow activity access to import your workouts.</p><form method="post" action="/auth/strava?ticket=${escapeHtml(ticket)}"><input type="hidden" name="csrf" value="${hash(nonce + ':' + ticket)}"><button>Continue to Strava</button></form><p>After approval, switch back to Expo Go.</p>`);
+          return page(200, 'Connect your Strava', `<p>Link your own Strava account to the device where you started this connection. Allow basic activity access to import workouts visible to Everyone or Followers. If you grant broader activity access, Only You activities are included too.</p><form method="post" action="/auth/strava?ticket=${escapeHtml(ticket)}"><input type="hidden" name="csrf" value="${hash(nonce + ':' + ticket)}"><button>Continue to Strava</button></form><p>After approval, switch back to Expo Go.</p>`);
         }
         const submittedOrigin = request.headers.origin;
         if (submittedOrigin && submittedOrigin !== 'null' && submittedOrigin !== origin) return page(403, 'Start again', '<p>Open a new connection from Expo Go.</p>');

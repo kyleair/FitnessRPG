@@ -67,7 +67,7 @@ function Home() {
     finally { refreshing.current = false; setConnecting(false); }
   }
   function inspectDomain(domain: Domain) {
-    setDetail({ title: `${domain.name} Class`, body: `${domain.activityCount} imported activities\n${number(domain.distanceKm)} km · ${number(domain.minutes)} minutes\n\nLevel ${domain.level} · ${number(domain.xp)} total XP\n${number(domain.currentXp)} / ${domain.nextLevelXp} XP toward the next level.\n\nExperimental rule: ${domain.formula}. These are game points, not a comparison of athletic ability.\n\n${data?.historyComplete ? 'All available history has been imported.' : 'Totals cover imported history so far. More history is loaded on later syncs.'}\n\nSkill trees and achievements are coming next.` });
+    setDetail({ title: `${domain.name} Class`, body: `${domain.activityCount} imported activities\n${number(domain.distanceKm)} km · ${number(domain.minutes)} minutes\n\nLevel ${domain.level} · ${number(domain.xp)} total XP\n${number(domain.currentXp)} / ${domain.nextLevelXp} XP toward the next level.\n\nExperimental rule: ${domain.formula}. These are game points, not a comparison of athletic ability.\n\n${data?.historyComplete ? 'All accessible history has been imported.' : 'Totals cover imported history so far. More history is loaded on later syncs.'}\n\nSkill trees and achievements are coming next.` });
   }
   return <LinearGradient colors={['#3b2a22', '#211b18', '#191513']} style={styles.screen}>
     <StatusBar style="light" />
@@ -77,7 +77,7 @@ function Home() {
         {!!error && <View style={styles.notice}><Text style={styles.error} accessibilityRole="alert">{error}{data ? ' Showing the last loaded data.' : ''}</Text><Pressable accessibilityRole="button" onPress={refresh}><Text style={styles.link}>Try again</Text></Pressable></View>}
         {!!apiUrl && !connected && !loading && <View style={styles.notice}>
           <Label>YOUR ADVENTURE STARTS HERE</Label><Text style={styles.sectionTitle}>Connect your Strava</Text>
-          <Text style={styles.body}>Authorize in the browser on the computer running your backend, then check the connection here.</Text>
+          <Text style={styles.body}>Basic access imports activities visible to Everyone or Followers. If you grant broader access, private activities are included too. Authorize on your computer, then check the connection here.</Text>
           {connection && <>
             <Text style={styles.body}>1. On your computer, open:</Text><Text selectable style={styles.link}>{connection.computerUrl}</Text>
             <Text style={styles.body}>2. Enter this code from your phone:</Text><Text selectable style={styles.sectionTitle}>{connection.code}</Text>
@@ -105,7 +105,7 @@ function Home() {
             <Meter value={domain.progress} color={domainColors[domain.key]} />
             <Text style={styles.xp}>{number(domain.currentXp)} / {domain.nextLevelXp} XP to next level</Text><Text style={styles.small}>{domain.activityCount} activities · {number(domain.xp)} XP</Text><Text style={styles.cardLink}>Inspect progress  ›</Text>
           </Pressable>)}</View>
-          <View style={styles.scope}><Text style={styles.scopeText}>{data.source === 'demo' ? 'SAMPLE DATA' : `${data.importedCount} ACTIVITIES IMPORTED`}{!data.historyComplete && data.source !== 'demo' ? ' · HISTORY IN PROGRESS' : ''}</Text><Text style={styles.small}>Experimental XP rules. {data.historyComplete ? 'All available history imported.' : 'Totals cover imported activities, not your full lifetime.'}</Text>{data.stale && <Text style={styles.error}>Strava is unavailable. Showing cached data.</Text>}</View>
+          <View style={styles.scope}><Text style={styles.scopeText}>{data.source === 'demo' ? 'SAMPLE DATA' : `${data.importedCount} ACTIVITIES IMPORTED`}{!data.historyComplete && data.source !== 'demo' ? ' · HISTORY IN PROGRESS' : ''}</Text><Text style={styles.small}>Experimental XP rules. History depends on your granted Strava permissions. {data.historyComplete ? 'All accessible history imported.' : 'Totals cover imported activities, not your full lifetime.'}</Text>{data.stale && <Text style={styles.error}>Strava is unavailable. Showing cached data.</Text>}</View>
           <View style={styles.section}><Label>QUESTS AND ACTIVITIES</Label><Text style={styles.sectionTitle}>Keep your adventure moving.</Text></View>
           <Pressable accessibilityRole="button" onPress={() => setDetail({ title: 'Adventure board', body: 'Daily, weekly, and monthly quests are coming soon.\n\nPreview: complete three activities in a week, or explore a new fitness domain. Quest targets, rewards, and completion tracking are not active yet.' })} style={({ pressed }) => [styles.questFrame, pressed && styles.pressed]}><LinearGradient colors={['#49331f', '#30231b']} style={styles.quest}><View style={styles.questEmblem}><Emblem name="quest" color="#e8c765" /></View><View style={styles.questCopy}><Label>ADVENTURE BOARD</Label><Text style={styles.questTitle}>Quests</Text><Text style={styles.body}>Daily, weekly, and monthly challenges.</Text><Text style={styles.preview}>COMING SOON</Text></View><Text style={styles.arrow}>›</Text></LinearGradient></Pressable>
           <View style={styles.recent}><View style={styles.recentHeading}><Label>RECENT ACTIVITIES</Label><Text style={styles.strava}>{data.source === 'demo' ? 'DEMO' : 'STRAVA'}</Text></View>

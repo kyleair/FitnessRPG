@@ -149,3 +149,9 @@ Record decisions here as the project evolves. Keep entries short and link to the
 - Connect Strava creates a 12-character random hex pairing code, displayed in groups of four. Enter it on the backend computer at /connect, then explicitly confirm and authorize in that browser. The code identifies the originating phone session, not a default shared account.
 - Codes expire in ten minutes, are stored hashed, are invalidated on regeneration/sign-out, and remain protected by the existing form CSRF, browser cookie, and single-use OAuth state checks. Browser routes require a loopback peer and the configured loopback Host; LAN clients can only initiate/check their own session through the authenticated API.
 - Existing sessions and imported data are preserved. No schema migration or extra dependency is needed. This computer-browser handoff is for local development; a future hosted app will need its own HTTPS browser flow.
+
+## 2026-10-26 - Default to basic Strava activity access
+
+- Request activity:read by default, while accepting either activity:read or activity:read_all on the callback. Plain read is not sufficient.
+- Honor broader grants: private activities are imported when activity:read_all is granted. Do not add a separate visibility filter or reset existing connections/history.
+- Label completed imports as all accessible history; the granted permissions determine which activities are accessible.

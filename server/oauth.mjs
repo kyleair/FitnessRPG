@@ -3,7 +3,7 @@ import { randomBytes } from 'node:crypto';
 export function createOAuthSession({ clientId, clientSecret, redirectUri, saveTokens, fetchImpl = fetch, state = randomBytes(32).toString('hex') }) {
   const url = new URL('https://www.strava.com/oauth/authorize');
   for (const [key, value] of Object.entries({ client_id: clientId, redirect_uri: redirectUri,
-    response_type: 'code', approval_prompt: 'force', scope: 'activity:read_all', state })) url.searchParams.set(key, value);
+    response_type: 'code', approval_prompt: 'force', scope: 'activity:read', state })) url.searchParams.set(key, value);
   let completed = false;
   return {
     url: url.href,
@@ -12,7 +12,7 @@ export function createOAuthSession({ clientId, clientSecret, redirectUri, saveTo
       if (callback.searchParams.get('state') !== state) throw new Error('Invalid authorization state. Start again.');
       if (callback.searchParams.has('error')) throw new Error('Strava authorization was declined.');
       const scopes = (callback.searchParams.get('scope') || '').split(/[ ,]+/);
-      if (!scopes.includes('activity:read_all')) throw new Error('Activity permission is required. Start again and approve activity access.');
+      if (!scopes.some(scope => ['activity:read', 'activity:read_all'].includes(scope))) throw new Error('Activity permission is required. Start again and approve activity access.');
       const code = callback.searchParams.get('code');
       if (!code) throw new Error('Authorization code missing. Start again.');
       completed = true;
