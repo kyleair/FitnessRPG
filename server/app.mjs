@@ -11,10 +11,11 @@ const safeTokens = tokens => {
 const escapeHtml = text => String(text).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 
 export function createApp({ db, env, fetchImpl = fetch, clock = Date.now }) {
-  const origin = env.PUBLIC_BACKEND_URL ? new URL(env.PUBLIC_BACKEND_URL).origin : null;
+  const origin = `http://127.0.0.1:${Number(env.PORT || 3001)}`;
+  const publicOrigin = env.PUBLIC_BACKEND_URL ? new URL(env.PUBLIC_BACKEND_URL).origin : null;
   const configured = !!(origin && env.STRAVA_CLIENT_ID && env.STRAVA_CLIENT_SECRET);
   const namespace = hash(`${env.STRAVA_CLIENT_ID}:${env.STRAVA_CLIENT_SECRET}`) + ':';
-  const origins = new Set(['http://localhost:8081', 'http://127.0.0.1:8081', env.DEV_WEB_ORIGIN, origin].filter(Boolean));
+  const origins = new Set(['http://localhost:8081', 'http://127.0.0.1:8081', env.DEV_WEB_ORIGIN, publicOrigin, origin].filter(Boolean));
   const services = new Map(), locks = new Map(), rates = new Map();
   async function exclusive(account, fn) {
     const previous = locks.get(account) || Promise.resolve();
@@ -42,7 +43,10 @@ export function createApp({ db, env, fetchImpl = fetch, clock = Date.now }) {
     };
     const url = new URL(request.url, 'http://local');
     const path = url.pathname;
-    const browserRoute = path === '/auth/strava' || path === '/auth/strava/callback';
+    const browserRoute = path === '/connect' || path === '/auth/strava' || path === '/auth/strava/callback';
+    if (browserRoute && (!['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(request.socket.remoteAddress) || request.headers.host !== new URL(origin).host)) {
+      return page(403, 'Use your computer browser', `<p>Open ${origin}/connect on the computer running the backend, then enter the code shown in Expo Go.</p>`);
+    }
     // Browser navigations are not API CORS requests. In particular our
     // no-referrer policy can make a normal form submission send Origin: null.
     if (!browserRoute && request.headers.origin && !origins.has(request.headers.origin)) return json(403, { error: 'Origin not allowed.' });
@@ -55,6 +59,9 @@ export function createApp({ db, env, fetchImpl = fetch, clock = Date.now }) {
     if (request.method === 'OPTIONS') { response.writeHead(204); return response.end(); }
     const browser = (request.headers.cookie || '').split('; ').find(value => value.startsWith('fitness_oauth='))?.slice(14) || '';
     try {
+      if (path === '/connect' && request.method === 'GET') {
+        return page(200, 'Connect your phone', '<p>Tap Connect Strava in Expo Go, then enter the code from your phone. Only use a code from your own device.</p><form method="get" action="/auth/strava"><label for="ticket">Connection code</label><p><input id="ticket" name="ticket" required maxlength="14" autocomplete="off" spellcheck="false" style="font-size:22px;width:100%;box-sizing:border-box;padding:12px"></p><button>Continue</button></form>');
+      }
       if (path === '/health' && request.method === 'GET') return json(200, { ok: true, stravaConfigured: configured });
       if (path === '/api/session' && request.method === 'POST') {
         for (const [ip, value] of rates) if (value.until <= clock()) rates.delete(ip);
@@ -80,8 +87,8 @@ export function createApp({ db, env, fetchImpl = fetch, clock = Date.now }) {
         return page(200, 'Strava connected', '<p>You can now return to Expo Go. Your activities will load automatically, or tap Check connection.</p>');
       }
       if (path === '/auth/strava' && ['GET', 'POST'].includes(request.method)) {
-        if (!configured) return page(503, 'Setup needed', '<p>The backend needs Strava credentials and PUBLIC_BACKEND_URL.</p>');
-        const ticket = url.searchParams.get('ticket') || '';
+        if (!configured) return page(503, 'Setup needed', '<p>The backend needs Strava client credentials.</p>');
+        const ticket = (url.searchParams.get('ticket') || '').replace(/[-\s]/g, '').toLowerCase();
         const attempt = db.attempt(ticket);
         if (!attempt || attempt.state) return page(400, 'Connection expired', '<p>Return to Expo Go and start a new connection.</p>');
         if (request.method === 'GET') {
@@ -113,8 +120,9 @@ export function createApp({ db, env, fetchImpl = fetch, clock = Date.now }) {
       if (path === '/api/session' && request.method === 'GET') return json(200, { connected: !!account, configured });
       if (path === '/api/logout' && request.method === 'POST') { db.logout(session.id); return json(200, { ok: true }); }
       if (path === '/api/strava/connect' && request.method === 'POST') {
-        if (!configured) return json(503, { error: 'Set STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET and PUBLIC_BACKEND_URL in server/.env.' });
-        return json(200, { url: `${origin}/auth/strava?ticket=${db.ticket(session.id)}` });
+        if (!configured) return json(503, { error: 'Set STRAVA_CLIENT_ID and STRAVA_CLIENT_SECRET in server/.env.' });
+        const ticket = db.ticket(session.id);
+        return json(200, { code: ticket.toUpperCase().match(/.{4}/g).join('-'), computerUrl: `${origin}/connect` });
       }
       if (['/api/dashboard', '/api/activities'].includes(path) && request.method === 'GET') {
         if (!account) return json(409, { error: 'Connect Strava to view your activities.' });

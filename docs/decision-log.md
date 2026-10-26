@@ -142,3 +142,10 @@ Record decisions here as the project evolves. Keep entries short and link to the
 - Do not expose the previous shared token cache through a default account. Existing installations authorize once from the app. Sign out revokes a device session; it does not delete the athlete or revoke Strava globally.
 - PUBLIC_BACKEND_URL is explicit, phone-reachable configuration rather than a URL inferred from untrusted request headers. Its hostname/IP must match the Strava callback domain. Do not change the website's application settings automatically.
 - This is a local development foundation, with one process per database. Hosted transport, token encryption at rest, operational abuse controls, and deletion/revocation handling remain deployment work.
+
+## 2026-10-25 - Authorize local development sessions on the computer
+
+- Supersedes the LAN callback instructions: phone API requests still use the computer's LAN IP, but browser authorization always uses 127.0.0.1 and the backend PORT. Strava permits loopback callbacks without changing the shared callback-domain setting.
+- Connect Strava creates a 12-character random hex pairing code, displayed in groups of four. Enter it on the backend computer at /connect, then explicitly confirm and authorize in that browser. The code identifies the originating phone session, not a default shared account.
+- Codes expire in ten minutes, are stored hashed, are invalidated on regeneration/sign-out, and remain protected by the existing form CSRF, browser cookie, and single-use OAuth state checks. Browser routes require a loopback peer and the configured loopback Host; LAN clients can only initiate/check their own session through the authenticated API.
+- Existing sessions and imported data are preserved. No schema migration or extra dependency is needed. This computer-browser handoff is for local development; a future hosted app will need its own HTTPS browser flow.

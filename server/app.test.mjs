@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createServer } from 'node:http';
+import { createServer, get } from 'node:http';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -15,7 +15,7 @@ test('browser connection isolates athletes and persists sessions, rotating token
   const server = createServer((req, res) => app(req, res));
   server.listen(0, '127.0.0.1'); await once(server, 'listening');
   const origin = `http://127.0.0.1:${server.address().port}`;
-  const env = { PUBLIC_BACKEND_URL: origin, STRAVA_CLIENT_ID: 'test', STRAVA_CLIENT_SECRET: 'test-secret' };
+  const env = { PORT: String(server.address().port), PUBLIC_BACKEND_URL: 'http://192.168.1.230:3001', STRAVA_CLIENT_ID: 'test', STRAVA_CLIENT_SECRET: 'test-secret' };
   let activityCalls = 0, refreshCalls = 0, offline = false;
   const fetchImpl = async (url, options) => {
     if (offline) throw new Error('Offline');
@@ -37,7 +37,12 @@ test('browser connection isolates athletes and persists sessions, rotating token
   const request = (path, token, method = 'GET', extra = {}) => fetch(origin + path, { method, redirect: 'manual', headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...extra } });
   const newSession = async () => (await (await request('/api/session', null, 'POST')).json()).token;
   async function begin(token, formOrigin = origin) {
-    const { url } = await (await request('/api/strava/connect', token, 'POST')).json();
+    const { code, computerUrl } = await (await request('/api/strava/connect', token, 'POST')).json();
+    assert.match(code, /^[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}$/);
+    assert.equal(computerUrl, origin + '/connect');
+    const entry = await fetch(computerUrl);
+    assert.match(await entry.text(), /Connection code/);
+    const url = `${origin}/auth/strava?ticket=${code}`;
     assert.ok(!url.includes(token));
     const page = await fetch(url, { headers: { Origin: 'null' } });
     const cookie = page.headers.get('set-cookie').split(';')[0];
@@ -56,14 +61,23 @@ test('browser connection isolates athletes and persists sessions, rotating token
   }
   const callback = (flow, id, scope = 'read,activity:read_all') => request(`/auth/strava/callback?state=${flow.state}&code=${id}&scope=${scope}`, null, 'GET', { Cookie: flow.cookie });
   assert.equal((await request('/api/dashboard')).status, 401);
+  const wrongHost = await new Promise((resolve, reject) => {
+    get(origin + '/connect', { headers: { Host: '192.168.1.230:3001' } }, response => { response.resume(); resolve(response.statusCode); }).on('error', reject);
+  });
+  assert.equal(wrongHost, 403);
+  assert.equal((await request('/auth/strava?ticket=not-a-code')).status, 400);
   const a = await newSession(), b = await newSession();
+  const oldCode = await (await request('/api/strava/connect', a, 'POST')).json();
+  await request('/api/strava/connect', a, 'POST');
+  assert.equal((await request('/auth/strava?ticket=' + oldCode.code)).status, 400, 'a new code cancels the previous one');
   assert.equal((await request('/api/dashboard', b)).status, 409);
   const flow = await begin(a, 'null');
+  const friendFlow = await begin(b, null);
   assert.equal((await callback({ ...flow, cookie: 'fitness_oauth=wrong' }, 1)).status, 400);
   restart(); // A pending browser authorization also survives a restart.
   assert.equal((await callback(flow, 1)).status, 200);
   assert.equal((await callback(flow, 1)).status, 400);
-  assert.equal((await callback(await begin(b, null), 2)).status, 200);
+  assert.equal((await callback(friendFlow, 2)).status, 200);
   const [one, two] = await Promise.all([request('/api/dashboard', a).then(r => r.json()), request('/api/dashboard', b).then(r => r.json())]);
   assert.equal(one.recentActivities[0].id, 10);
   assert.equal(two.recentActivities[0].id, 20);

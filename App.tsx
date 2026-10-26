@@ -1,7 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, AppState, Linking, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, AppState, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { Adventurer, Emblem, IconName } from './src/components/Emblem';
 import { Dashboard, demoDashboard, Domain } from './src/dashboard';
@@ -23,7 +23,7 @@ function Home() {
   const [error, setError] = useState('');
   const [connected, setConnected] = useState(false);
   const [connecting, setConnecting] = useState(false);
-  const [waiting, setWaiting] = useState(false);
+  const [connection, setConnection] = useState<{ code: string; computerUrl: string } | null>(null);
   const refreshing = useRef(false);
   const [expanded, setExpanded] = useState(false);
   const [detail, setDetail] = useState<{ title: string; body: string } | null>(null);
@@ -34,7 +34,7 @@ function Home() {
     try {
       const status = await api<{ connected: boolean }>('/api/session');
       setConnected(status.connected);
-      if (status.connected) { setWaiting(false); setData(await api<Dashboard>('/api/dashboard')); }
+      if (status.connected) { setConnection(null); setData(await api<Dashboard>('/api/dashboard')); }
       else setData(null);
     }
     catch (err) {
@@ -53,17 +53,16 @@ function Home() {
   async function connect() {
     setConnecting(true); setError('');
     try {
-      const result = await api<{ url: string }>('/api/strava/connect', 'POST');
-      setWaiting(true);
-      await Linking.openURL(result.url);
-    } catch (err) { setError(err instanceof Error ? err.message : 'Could not open the browser.'); }
+      const result = await api<{ code: string; computerUrl: string }>('/api/strava/connect', 'POST');
+      setConnection(result);
+    } catch (err) { setError(err instanceof Error ? err.message : 'Could not start the connection.'); }
     finally { setConnecting(false); }
   }
   async function logout() {
     if (refreshing.current) return;
     refreshing.current = true;
     setConnecting(true); setError('');
-    try { await signOut(); setData(null); setConnected(false); setWaiting(false); }
+    try { await signOut(); setData(null); setConnected(false); setConnection(null); }
     catch (err) { setError(err instanceof Error ? err.message : 'Could not sign out.'); }
     finally { refreshing.current = false; setConnecting(false); }
   }
@@ -76,7 +75,17 @@ function Home() {
       <ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={loading} onRefresh={refresh} tintColor={colors.gold} />}>
         <View style={styles.topbar}><Text style={styles.wordmark}>FITNESS <Text style={{ color: colors.gold }}>RPG</Text></Text><Pressable accessibilityRole="button" accessibilityLabel="Refresh Strava activities" disabled={loading} onPress={refresh} style={styles.refresh}><Text style={styles.refreshText}>{loading ? 'Syncing…' : '↻  Sync Strava'}</Text></Pressable></View>
         {!!error && <View style={styles.notice}><Text style={styles.error} accessibilityRole="alert">{error}{data ? ' Showing the last loaded data.' : ''}</Text><Pressable accessibilityRole="button" onPress={refresh}><Text style={styles.link}>Try again</Text></Pressable></View>}
-        {!!apiUrl && !connected && !loading && <View style={styles.notice}><Label>YOUR ADVENTURE STARTS HERE</Label><Text style={styles.sectionTitle}>Connect your Strava</Text><Text style={styles.body}>{waiting ? 'Finish approval in your browser, then return here. If you cancelled or the link expired, start again below.' : 'Bring your activities into FitnessRPG. Sign into your own Strava account in the browser, then return to Expo Go.'}</Text><Pressable accessibilityRole="button" disabled={connecting} onPress={connect} style={styles.close}><Text style={styles.buttonText}>{connecting ? 'Opening browser…' : 'Connect Strava'}</Text></Pressable>{waiting && <Pressable accessibilityRole="button" onPress={refresh}><Text style={styles.link}>Check connection</Text></Pressable>}</View>}
+        {!!apiUrl && !connected && !loading && <View style={styles.notice}>
+          <Label>YOUR ADVENTURE STARTS HERE</Label><Text style={styles.sectionTitle}>Connect your Strava</Text>
+          <Text style={styles.body}>Authorize in the browser on the computer running your backend, then check the connection here.</Text>
+          {connection && <>
+            <Text style={styles.body}>1. On your computer, open:</Text><Text selectable style={styles.link}>{connection.computerUrl}</Text>
+            <Text style={styles.body}>2. Enter this code from your phone:</Text><Text selectable style={styles.sectionTitle}>{connection.code}</Text>
+            <Text style={styles.small}>Expires after 10 minutes. Sign into your own Strava account, then tap Check connection. Generate a new code if you cancel or it expires.</Text>
+            <Pressable accessibilityRole="button" disabled={connecting} onPress={refresh}><Text style={styles.link}>Check connection</Text></Pressable>
+          </>}
+          <Pressable accessibilityRole="button" disabled={connecting} onPress={connect} style={styles.close}><Text style={styles.buttonText}>{connecting ? 'Creating code…' : connection ? 'Generate new code' : 'Connect Strava'}</Text></Pressable>
+        </View>}
         {!!apiUrl && connected && <View style={styles.connection}><Text style={styles.small}>Strava connected</Text><Pressable accessibilityRole="button" disabled={loading || connecting} onPress={logout}><Text style={styles.link}>Sign out</Text></Pressable></View>}
         {loading && !data && <View style={styles.loading}><ActivityIndicator color={colors.gold} /><Text style={styles.body}>Gathering your adventure…</Text></View>}
         {data && <>

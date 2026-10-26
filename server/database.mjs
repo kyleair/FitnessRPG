@@ -30,7 +30,8 @@ export function openDatabase(path, clock = Date.now) {
     },
     ticket(session) {
       db.prepare('DELETE FROM attempts WHERE expires <= ? OR session = ?').run(clock(), session);
-      const ticket = secret();
+      // 48-bit, short-lived pairing code; browser redemption is loopback-only.
+      const ticket = secret().slice(0, 12);
       db.prepare('INSERT INTO attempts (id, session, expires) VALUES (?, ?, ?)').run(hash(ticket), session, clock() + 600000);
       return ticket;
     },

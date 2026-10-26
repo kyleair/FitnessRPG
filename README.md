@@ -36,11 +36,11 @@ One backend owns the FitnessRPG Strava application credentials; each phone signs
 1. Run `npm ci` after pulling. Use Node 22.13+ (Node 24 recommended; older supported releases may print a SQLite experimental warning).
 2. Keep `STRAVA_CLIENT_ID` and `STRAVA_CLIENT_SECRET` in `server/.env`. Copy the example only if your file does not exist. No refresh token or CLI connection command is needed.
 3. Set `PUBLIC_BACKEND_URL=http://YOUR_COMPUTER_LAN_IP:3001` in `server/.env`, and the same URL as `EXPO_PUBLIC_API_URL` in root `.env`. Use the address reachable from the phone, not localhost. Find it with `ipconfig`.
-4. In the Strava application's API settings, set **Authorization Callback Domain** to that LAN IP only (no protocol, port or path). The full callback is `http://YOUR_COMPUTER_LAN_IP:3001/auth/strava/callback`. For remote testers, use one reachable HTTPS backend and its hostname instead. Expo's Metro tunnel does not tunnel this backend.
+4. Leave the Strava callback-domain setting unchanged. Authorization now uses `http://127.0.0.1:3001/auth/strava/callback` in your **computer browser**. Strava allows this loopback address regardless of the registered callback domain. If you change `PORT`, the generated browser address and callback use that port.
 5. Start `npm run server`, then `npx expo start --clear` in a second terminal. Open Expo Go on the same network.
-6. Tap **Connect Strava**, then **Continue to Strava** in the browser. Sign into your own account and approve activity access, including private activities. Return manually to Expo Go; foregrounding refreshes the connection. **Check connection** or pull-to-refresh also works.
+6. Tap **Connect Strava** in Expo Go to get a code. On the computer running the backend, open `http://127.0.0.1:3001/connect`, enter that code, and click **Continue to Strava**. Sign into your own athlete account and approve activity access. On the phone, tap **Check connection** (or leave and return to Expo Go). Do not open the loopback address on your phone.
 
-Your existing server credentials are retained, but you must connect once through the app. The old shared `server/.data/tokens.json` is not automatically assigned to the first phone that connects. The old CLI helper has been removed; `STRAVA_REFRESH_TOKEN` is no longer used by the API.
+Existing connected sessions continue to work. New connections and reconnections use the computer-browser code flow. The old shared `server/.data/tokens.json` is not automatically assigned to the first phone that connects. The old CLI helper has been removed; `STRAVA_REFRESH_TOKEN` is no longer used by the API.
 
 A dedicated FitnessRPG Strava registration is preferable to the website's registration. Changing a shared application's callback domain can disrupt the website's sign-in flow, and separate processes refreshing the same athlete/application authorization can invalidate each other's tokens. This change does not edit website configuration or Strava settings.
 
@@ -50,7 +50,7 @@ A dedicated FitnessRPG Strava registration is preferable to the website's regist
 - Device sessions last 90 days. Native phones keep the opaque session token in Expo SecureStore; the database stores its hash. Strava tokens never go to the phone. Web preview uses tab-scoped sessionStorage. Changing backend addresses starts a separate session.
 - Every activity/dashboard request requires the device's session. Athletes are isolated, while two sessions for the same athlete share a token refresher and cached import in this backend process.
 - **Sign out** revokes this device session and cancels its pending connection. It does not revoke Strava authorization or delete the athlete's saved import. Signing in again as that athlete restores it. Full account deletion/deauthorization is future work.
-- Browser links and OAuth states expire after ten minutes and are single-use. The callback also requires the browser cookie from the connection flow. Keep the same browser throughout. Expired, denied or cancelled connections can be restarted from the app.
+- Connection codes and OAuth states expire after ten minutes and are single-use. The callback also requires the browser cookie from the connection flow. Keep the same computer browser throughout. Browser authorization routes accept only loopback connections at the generated 127.0.0.1 address. Expired, denied or cancelled connections can be restarted from the app.
 - The database contains private activities and unencrypted server tokens. Keep it local and excluded from sharing/backups to public destinations. This remains a trusted-LAN development server; public deployment needs HTTPS, protected persistent storage, operational rate limiting, and an account deletion/revocation policy. Run one backend process per database so token-refresh coordination stays centralized.
 
 If your friend is on the same network, both apps can point at this backend and each connect their own Strava account. For separate local setups using the same Strava application, follow the instructions below.
@@ -76,15 +76,15 @@ Each developer runs their own backend and database. Kyle securely supplies only 
    STRAVA_CLIENT_SECRET=VALUE_KYLE_SENDS_YOU
    ```
 
-4. Before authorizing, ask Kyle to set the shared Strava application's **Authorization Callback Domain** to your computer's LAN IP only, e.g. `192.168.1.100`. This is changed in Strava API settings, not in `.env`. The application must have capacity for your athlete.
+4. No callback-domain coordination is needed. Both developers use `http://127.0.0.1:3001/connect` on their own computer. Keep the existing Strava callback setting; the application still needs capacity for both athletes.
 5. Run `npm run server`. In a second terminal, run `npx expo start --clear`. Connect your phone to your own computer's network and open the app in Expo Go. Allow Node through the private-network firewall if needed.
-6. Tap **Connect Strava**, continue in the browser, sign into **your own Strava account**, and approve activity access. Return to Expo Go to load your activities. Authorization is handled entirely through the app and browser.
+6. Tap **Connect Strava** on your phone. Open `http://127.0.0.1:3001/connect` on your computer, type the displayed code, and continue to Strava. Sign into **your own account**, approve activity access, then tap **Check connection** on your phone.
 
-**Shared callback limitation:** this registration has one callback-domain setting. When developers have different local IPs, coordinate changes for initial authorization or reconnection. After your connection is complete, Kyle can change it back for his own authorization; normal activity requests and token refreshes do not use the callback domain. If you see `redirect_uri invalid`, check this setting first. An IP change also requires updating both local environment files and restarting the backend and Expo. `localhost` and `127.0.0.1` are allowed by Strava, but on a phone they point to the phone, not the computer.
+**Simultaneous testing:** each computer browser connects to its own local backend, so both developers can authorize and sync concurrently without editing the shared callback domain. The phone still uses its computer's LAN IP for API requests. If that IP changes, update both local environment files and restart the backend and Expo; the loopback callback stays the same. Codes expire after ten minutes, are single-use, and are replaced when you tap Generate new code. Only enter a code from your own phone.
 
 Your activities and athlete tokens stay in your own `server/.data/fitness.sqlite`; Kyle's database stays on his computer. Different athlete accounts have separate authorizations. The token-rotation conflict described above applies when multiple backends use the **same athlete and application**, not merely the same application. Both developers share the registration's API request limits.
 
-`GET /health` is public. `POST /api/session` creates a device session; `GET /api/session`, `POST /api/strava/connect`, `POST /api/logout`, `GET /api/dashboard` and `GET /api/activities` use an Authorization bearer token. Opening the dashboard URL directly in a browser now returns 401 by design.
+`GET /connect` is the computer-only pairing form. `GET /health` is public. `POST /api/session` creates a device session; `GET /api/session`, `POST /api/strava/connect`, `POST /api/logout`, `GET /api/dashboard` and `GET /api/activities` use an Authorization bearer token. Opening the dashboard URL directly in a browser now returns 401 by design.
 
 Strava authorization reference: https://developers.strava.com/docs/authentication/.
 
