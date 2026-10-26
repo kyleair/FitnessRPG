@@ -135,7 +135,7 @@ The Expo home screen now follows the Classic RPG prototype and requests `/api/da
 
 The server imports 100 recent activities on the first eligible request and then up to 100 older activities on subsequent eligible requests. Syncs are shared and limited to once per minute, with at most two activity-list calls each time. Pull-to-refresh within the minute uses cached results; wait a minute before refreshing to continue older history. History, tokens, import cursor, and the successful-sync cooldown persist in SQLite across backend restarts. Failed refreshes keep the last good snapshot with an explicit stale notice. Unavailable initial data shows an error rather than switching to demo data.
 
-Experimental rules and limitations are recorded in `docs/decision-log.md`. These levels are game progress over imported history, not a fitness assessment. Exact fastest-5K efforts need activity-detail/effort data; bench weight is not present in the current Strava summaries. Older activity changes outside the latest page require a fresh history import.
+Experimental rules and limitations are recorded in `docs/decision-log.md`. These levels are game progress over imported history, not a fitness assessment. Distance skills now use separately fetched distance/time streams; bench weight is not present in the current Strava summaries. Older activity changes outside the latest page require a fresh history import.
 
 After pulling these changes, run `npm ci`, restart `npm run server`, and restart Metro with `npx expo start --clear`. All new native dependencies are compatible with Expo Go SDK 58. `npm run web` also supports browser preview on localhost:8081. For a different browser origin, set `DEV_WEB_ORIGIN` in `server/.env` and restart the backend.
 
@@ -146,3 +146,9 @@ New authorizations request only `activity:read` by default, which allows activit
 ### Three-class XP foundation
 
 The app and demo show Running, Strength, and Cycling, each with its own level, total XP, and within-level progress. Running earns 1 XP/km and Cycling earns 1 XP/5 km (experimental). Class XP is independent of future personal-best skills. Strength is based on lifting volume rather than workout duration; until sets/reps/weights are supported, it shows Level 0 with a volume-unavailable explanation and earns no XP from Strava summaries. Existing saved imports are preserved; restart the backend to apply the new rules. Totals are derived from saved activities, so no database migration is necessary.
+
+### Class skills
+
+Tap **View skills & progress** on a class card to see running/cycling best times or empty strength 1RM skills. Times use elapsed distance/time samples from Strava, including stops within each effort; they are calculated estimates, not Strava-certified race results. Each value shows its activity, date, and source. There are no tiers.
+
+Restart the backend and reload the app after pulling. No reconnect or database migration is needed. On each eligible sync (at least one minute apart), up to three activities have their streams processed; older imports and skill processing continue gradually. Class details show pending/unavailable data and refresh failures. Missing streams remain empty. Results persist across restarts, and class XP is unchanged by skill processing.

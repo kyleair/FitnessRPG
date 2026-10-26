@@ -30,3 +30,16 @@ test('reports rejected Strava credentials without disclosing secrets', async () 
   const client = createStravaClient({ clientId: 'id', clientSecret: 'secret', initialTokens: { refresh_token: 'private' }, saveTokens: async () => {}, fetchImpl: async () => new Response('', { status: 401 }) });
   await assert.rejects(client.activities(), /Strava token refresh failed \(401\)/);
 });
+
+test('requests keyed distance/time streams and treats missing streams as unavailable', async () => {
+  let status = 200;
+  const client = createStravaClient({ clientId: 'id', clientSecret: 'secret', initialTokens: { access_token: 'test', expires_at: Date.now() / 1000 + 3600 }, saveTokens: async () => {},
+    fetchImpl: async (url, options) => {
+      assert.match(url, /activities\/42\/streams\?keys=time,distance&key_by_type=true/);
+      assert.equal(options.headers.Authorization, 'Bearer test');
+      return status === 200 ? Response.json({ distance: { data: [0, 1000] }, time: { data: [0, 300] } }) : new Response(null, { status });
+    } });
+  assert.equal((await client.streams(42)).time.data[1], 300);
+  status = 404; assert.equal(await client.streams(42), null);
+  status = 429; await assert.rejects(client.streams(42), /429/);
+});

@@ -26,7 +26,7 @@ Running, Cycling, and Strength are the initial fitness classes. Each tracks cumu
 
 ### Skill
 
-A specific performance metric within a class: for example, fastest 5K within Running or bench-press one-rep maximum within Strength. Skill performances do not determine class XP. Implementation and rank mappings are deferred.
+A specific performance metric within a class: for example, fastest 5K within Running or bench-press one-rep maximum within Strength. Skill performances do not determine class XP. Running and cycling now show all-time best elapsed distance efforts from processed imported history. Strength values and rank mappings are deferred. The earlier recent-performance level proposal below remains speculative and does not apply to current skill values.
 
 ### Character title
 
