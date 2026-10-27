@@ -31,6 +31,7 @@ This project uses SDK 58 to match Expo Go 58 on your phone. After an SDK upgrade
 - Guest/public Wi-Fi may block devices from talking to one another. Try a home network or hotspot.
 - If the QR connection fails, stop Expo and try `npx expo start --tunnel`. Accept the tunnel dependency installation if prompted. This tunnels Metro only; it does not expose the optional backend.
 - For a stale bundle, run `npx expo start --clear`.
+- If Metro reports `Unable to resolve module ./index`, pull the latest branch and restart Expo with `npx expo start --clear`, then scan the new QR code. The root `index.ts` delegates to Expo Router and is also the configured package entry; no alternate launch command is needed.
 - `npm run ios` launches a simulator and requires macOS. Use `npm start` for your physical iPhone on Windows.
 
 ## Connect Strava in Expo Go
