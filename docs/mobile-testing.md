@@ -22,9 +22,9 @@ Use backend mode when testing real imports, sessions, refresh behavior, or the S
 3. In PowerShell, open the repository:
 
    ```powershell
-   cd E:\Art\Websites\FitnessRPG
+   # Run from your local FitnessRPG repository folder
    npm ci
-   npx expo start
+   npx expo start --clear
    ```
 
 4. Open Expo Go on Android and choose **Scan QR code**.
@@ -35,7 +35,7 @@ Android does not require the Expo CLI and Expo Go accounts to match, but signing
 
 ## Physical iPhone: Expo Go
 
-1. Install an Expo Go build compatible with SDK 58. Physical iOS devices may require an SDK 58 Expo Go build distributed through EAS/TestFlight rather than the App Store.
+1. Check [Expo Go compatibility](https://expo.dev/go) for SDK 58 on a physical iPhone and install the indicated build. If no compatible iPhone build is available, use a development build; changing the JavaScript entry cannot fix an SDK mismatch.
 2. Sign into the same Expo account in both the computer's Expo CLI and Expo Go:
 
    ```powershell
@@ -46,9 +46,9 @@ Android does not require the Expo CLI and Expo Go accounts to match, but signing
 4. Start Expo from the repository:
 
    ```powershell
-   cd E:\Art\Websites\FitnessRPG
+   # Run from your local FitnessRPG repository folder
    npm ci
-   npx expo start
+   npx expo start --clear
    ```
 
 5. Scan the terminal QR code with the iPhone Camera app and open it in Expo Go.
@@ -60,11 +60,11 @@ Use two PowerShell windows. Complete the one-time environment setup described in
 
 ```powershell
 # Terminal 1: backend
-cd E:\Art\Websites\FitnessRPG
+# Run from your local FitnessRPG repository folder
 npm run server
 
 # Terminal 2: Expo
-cd E:\Art\Websites\FitnessRPG
+# Run from your local FitnessRPG repository folder
 npx expo start --clear
 ```
 
@@ -83,13 +83,15 @@ Do not use `127.0.0.1` as the phone's API address. The phone must use the comput
 
 - Dashboard opens without clipped content at the phone's portrait width.
 - Current Class avatar opens its preview modal, and the modal can be dismissed.
-- Each domain card opens its progress details.
+- Each Running, Cycling, and Strength class card opens its matching class page. The back control returns to the dashboard.
+- Class pages show recorded skills above locked skills in two-column grids. Demo skills and unsupported strength metrics remain empty; recorded skills show their activity, date, and source.
+- Pull-to-refresh on a class page updates the shared dashboard data; a direct class URL also loads the matching class.
 - Progress meters do not overflow their cards.
 - **See activities** expands and collapses the recent activity list.
 - Pull-to-refresh shows a loading state and does not create duplicate requests.
 - A backend failure shows an error or stale-data notice; it does not silently replace real data with demo data.
 - An empty Strava account shows an empty state rather than fabricated activity.
-- On Android, the system back action closes the modal where applicable.
+- On Android, the system back action returns from a class page and closes preview modals where applicable.
 - Text remains readable with the device's normal accessibility font settings.
 
 ## Before reporting a failure
@@ -116,8 +118,9 @@ Record these details for the next debugging session:
 ## Common fixes
 
 - **QR code does not connect:** verify both devices are on the same private Wi-Fi, allow Node.js through Windows Firewall, then try `npx expo start --tunnel`. Tunnel mode is for Metro only; it does not expose the backend.
+- **Development-server 404 / `Unable to resolve module ./index`:** pull the latest PR #5 changes, verify root `index.ts` imports `expo-router/entry` and `package.json` points `main` at `index.ts`, stop the previous Metro process, then run `npx expo start --clear` and scan its new QR code. The root entry delegates registration to Expo Router; do not restore the old App registration. A successful production export alone does not validate the development bundle path.
 - **Stale or broken bundle:** stop Expo and restart with `npx expo start --clear`.
-- **Expo Go version mismatch:** install the Expo Go build matching SDK 58, or run `npx expo-doctor` and `npx expo install --fix` after reviewing the proposed changes.
+- **Expo Go version mismatch:** use the SDK 58 build listed at [expo.dev/go](https://expo.dev/go), or use a compatible development build. `npx expo-doctor` diagnoses project dependencies; `npx expo install --fix` aligns them with the configured SDK and does not upgrade Expo Go on the phone.
 - **iPhone account error:** sign into the same account in Expo CLI and Expo Go, then reload the project.
 - **Backend works on the computer but not the phone:** replace `localhost`/`127.0.0.1` in the phone's API configuration with the computer's LAN IPv4 address, confirm the Windows firewall allows port 3001, and restart Expo after changing `.env`.
 - **Strava connection is stuck:** keep the same computer browser throughout the pairing flow, generate a new code, and make sure the browser is opening the loopback URL on the computer rather than on the phone.
