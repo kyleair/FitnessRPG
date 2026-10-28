@@ -6,10 +6,11 @@ const classData = {
   running: {
     title: 'Running Class', level: 'Level 24', xp: '720 / 1,000 lifetime XP', best: 'Fastest 5K', bestLevel: 'Level 50', rarest: 'Long Haul', rarestDetail: 'Earned by 8% of runners',
     skills: [
+      { category: 'SPEED', title: 'Fastest 1K', icon: 'icon-speed', level: 'Level 14', currentValue: '5:28', nextValue: '5:10', progress: 48 },
       { category: 'SPEED', title: 'Fastest 5K', icon: 'icon-speed', level: 'Level 50', currentValue: '27:14', nextValue: '26:30', progress: 72 },
-      { category: 'CONSISTENCY', title: 'Monthly Distance', icon: 'icon-consistency', level: 'Level 18', currentValue: '61 mi', nextValue: '65 mi', progress: 25 },
-      { category: 'ENDURANCE', title: 'Fastest Marathon', icon: 'icon-endurance', locked: 'Complete a marathon to unlock' },
-      { category: 'MILESTONE', title: 'Trail Mastery', icon: 'icon-quest', locked: 'Unlock after 10 trail runs' }
+      { category: 'SPEED', title: 'Fastest 10K', icon: 'icon-speed', level: 'Level 34', currentValue: '58:42', nextValue: '57:30', progress: 56 },
+      { category: 'ENDURANCE', title: 'Fastest Half Marathon', icon: 'icon-endurance', level: 'Level 27', currentValue: '2:11:08', nextValue: '2:05:00', progress: 44 },
+      { category: 'ENDURANCE', title: 'Fastest Marathon', icon: 'icon-endurance', locked: 'Complete a marathon to unlock' }
     ],
     achievements: [
       { icon: '*', category: 'SPEED', title: '30 Minute 5K', detail: 'Run 5K in under 30 minutes.', status: 'Earned' },
@@ -21,10 +22,9 @@ const classData = {
   strength: {
     title: 'Strength Class', level: 'Level 12', xp: '180 / 400 lifetime XP', best: 'Bench Press', bestLevel: 'Level 42', rarest: 'Iron Will', rarestDetail: 'Earned by 11% of lifters',
     skills: [
-      { category: 'POWER', title: 'Bench Press', icon: 'icon-strength', level: 'Level 42', currentValue: '185 lb', nextValue: '200 lb', progress: 82 },
-      { category: 'VOLUME', title: 'Weekly Volume', icon: 'icon-consistency', level: 'Level 28', currentValue: '18,400 lb', nextValue: '20,000 lb', progress: 80 },
-      { category: 'POWER', title: 'Deadlift', icon: 'icon-strength', locked: 'Complete 5 strength sessions to unlock' },
-      { category: 'MILESTONE', title: 'One Plate Club', icon: 'icon-quest', locked: 'Bench press 135 lb to unlock' }
+      { category: 'POWER', title: 'Bench press', icon: 'icon-strength', level: 'Level 42', currentValue: '185 lb', nextValue: '200 lb', progress: 82 },
+      { category: 'POWER', title: 'Deadlift', icon: 'icon-strength', locked: 'Record a one-rep max to unlock' },
+      { category: 'POWER', title: 'Squat', icon: 'icon-strength', locked: 'Record a one-rep max to unlock' }
     ],
     achievements: [
       { icon: '+', category: 'POWER', title: 'One Plate Club', detail: 'Bench press 135 lb.', status: 'Earned' },
@@ -34,12 +34,13 @@ const classData = {
     ]
   },
   cycling: {
-    title: 'Cycling Class', level: 'Level 11', xp: '300 / 1,000 lifetime XP', best: 'Monthly Distance', bestLevel: 'Level 31', rarest: 'Century Rider', rarestDetail: 'Earned by 6% of cyclists',
+    title: 'Cycling Class', level: 'Level 11', xp: '300 / 1,000 lifetime XP', best: 'Fastest 20K', bestLevel: 'Level 24', rarest: 'Century Rider', rarestDetail: 'Earned by 6% of cyclists',
     skills: [
-      { category: 'DISTANCE', title: 'Monthly Distance', icon: 'icon-cycle', level: 'Level 31', currentValue: '410 km', nextValue: '450 km', progress: 64 },
+      { category: 'SPEED', title: 'Fastest 5K', icon: 'icon-speed', level: 'Level 12', currentValue: '8:42', nextValue: '8:20', progress: 38 },
       { category: 'SPEED', title: 'Fastest 20K', icon: 'icon-speed', level: 'Level 24', currentValue: '34:12', nextValue: '33:30', progress: 58 },
-      { category: 'ENDURANCE', title: 'Century Ride', icon: 'icon-endurance', locked: 'Complete a 100 km ride to unlock' },
-      { category: 'CLIMBING', title: 'Mountain Gain', icon: 'icon-quest', locked: 'Climb 1,000 m in one ride to unlock' }
+      { category: 'SPEED', title: 'Fastest 50K', icon: 'icon-speed', locked: 'Complete a 50 km effort to unlock' },
+      { category: 'ENDURANCE', title: 'Fastest 75K', icon: 'icon-endurance', locked: 'Complete a 75 km effort to unlock' },
+      { category: 'ENDURANCE', title: 'Fastest 100K', icon: 'icon-endurance', locked: 'Complete a 100 km effort to unlock' }
     ],
     achievements: [
       { icon: '~', category: 'DISTANCE', title: 'Century Rider', detail: 'Complete a 100 km ride.', status: 'Earned' },
@@ -48,21 +49,6 @@ const classData = {
       { icon: '*', category: 'SPEED', title: 'Breakaway', detail: 'Ride 20 km in under 30 minutes.', status: 'Locked' }
     ]
   },
-  swimming: {
-    title: 'Swimming Class', level: 'Level 2', xp: '6 / 30 lifetime XP', best: 'Fastest 1K', bestLevel: 'Level 14', rarest: 'Deep End', rarestDetail: 'Earned by 14% of swimmers',
-    skills: [
-      { category: 'SPEED', title: 'Fastest 1K', icon: 'icon-swimming', level: 'Level 14', currentValue: '21:40', nextValue: '21:00', progress: 48 },
-      { category: 'CONSISTENCY', title: 'Monthly Laps', icon: 'icon-consistency', level: 'Level 7', currentValue: '62 laps', nextValue: '75 laps', progress: 52 },
-      { category: 'ENDURANCE', title: 'Open Water Swim', icon: 'icon-endurance', locked: 'Complete a 2 km open-water swim' },
-      { category: 'TECHNIQUE', title: 'Stroke Mastery', icon: 'icon-quest', locked: 'Log all four strokes to unlock' }
-    ],
-    achievements: [
-      { icon: '~', category: 'DISTANCE', title: 'Deep End', detail: 'Swim 2 km without stopping.', status: 'Earned' },
-      { icon: '+', category: 'TECHNIQUE', title: 'Full Arsenal', detail: 'Log all four swimming strokes.', status: 'Earned' },
-      { icon: '!', category: 'ENDURANCE', title: 'Open Water', detail: 'Complete a 5 km open-water swim.', status: 'Locked' },
-      { icon: '*', category: 'SPEED', title: 'Lane Lightning', detail: 'Swim 1 km in under 18 minutes.', status: 'Locked' }
-    ]
-  }
 };
 
 function skillCard(skill) {
