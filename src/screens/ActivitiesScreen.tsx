@@ -1,16 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { ActivityRow } from '../components/ActivityRow';
 import { Emblem } from '../components/Emblem';
 import { useDashboard } from '../DashboardContext';
 import { type ActivityPage, type ActivityRecord, type Dashboard } from '../dashboard';
 import { api, apiUrl, SessionExpiredError } from '../api';
 
-function back() { if (router.canGoBack()) router.back(); else router.replace('/'); }
+function back() { router.dismissTo('/'); }
 export default function ActivitiesScreen() {
   const { data, setData } = useDashboard();
   const [expanded, setExpanded] = useState(false);
@@ -20,12 +20,11 @@ export default function ActivitiesScreen() {
   const [loadingPage, setLoadingPage] = useState(false);
   const [error, setError] = useState('');
   const [status, setStatus] = useState('');
-  const [preview, setPreview] = useState<'workout' | 'manual' | null>(null);
   const busy = useRef(false), mounted = useRef(true);
   const list = useRef<FlatList<ActivityRecord>>(null);
   // History can grow while the import queue is running. A previous last page
   // may now have older records after it, without needing to restart the list.
-  const nextCursor = page?.nextCursor ?? (page && records.length && (data?.importedCount || 0) > page.total ? String(records[records.length - 1].id) : null);
+  const nextCursor = page?.nextCursor ?? (page && records.length && (data?.activityCount ?? data?.importedCount ?? 0) > page.total ? String(records[records.length - 1].id) : null);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
 
   const refresh = useCallback(async () => {
@@ -47,6 +46,11 @@ export default function ActivitiesScreen() {
       setError(err instanceof Error ? err.message : 'Unable to load activities.');
     } finally { busy.current = false; if (mounted.current) setLoading(false); }
   }, [expanded, setData]);
+  useFocusEffect(useCallback(() => {
+    if (!apiUrl) return;
+    const timer = setTimeout(() => { void refresh(); }, 0);
+    return () => clearTimeout(timer);
+  }, [refresh]));
   useEffect(() => {
     if (data || !apiUrl) return;
     const timer = setTimeout(() => { void refresh(); }, 0);
@@ -72,7 +76,7 @@ export default function ActivitiesScreen() {
     else { setExpanded(true); if (apiUrl && !page) void loadHistory(); }
   }
   const items = !data ? [] : expanded && apiUrl && page ? records : expanded && !apiUrl ? data.recentActivities : data.recentActivities.slice(0, 3);
-  const total = Math.max(page?.total ?? 0, data?.importedCount ?? 0);
+  const total = Math.max(page?.total ?? 0, data?.activityCount ?? data?.importedCount ?? 0);
   const waiting = loading || loadingPage;
   return <LinearGradient colors={['#3b2a22', '#211b18', '#191513']} style={styles.screen}>
     <StatusBar style="light" />
@@ -85,13 +89,13 @@ export default function ActivitiesScreen() {
           <Pressable accessibilityRole="button" onPress={back} style={styles.back}><Text style={styles.backText}>‹  Back to dashboard</Text></Pressable>
           <Text style={styles.eyebrow}>RECENT ACTIVITIES</Text>
           <Text style={styles.title}>Keep your{ '\n' }adventure moving.</Text>
-          <Text style={styles.body}>Imported activity records show their source, contribution, and any limits on the current XP rules.</Text>
+          <Text style={styles.body}>Activity records show their source, contribution, and any limits on the current XP rules.</Text>
           <View style={styles.actions}>
-            <Pressable accessibilityRole="button" accessibilityLabel="Start workout, coming soon" onPress={() => setPreview('workout')} style={[styles.action, styles.primaryAction]}>
-              <Emblem name="strength" size={26} /><Text style={styles.actionTitle}>Start workout</Text><Text style={styles.actionCopy}>Track exercises, sets, and reps.</Text><Text style={styles.coming}>COMING SOON</Text>
+            <Pressable accessibilityRole="button" accessibilityLabel="Start workout" onPress={() => router.push('/workout')} style={[styles.action, styles.primaryAction]}>
+              <Emblem name="strength" size={26} /><Text style={styles.actionTitle}>Start workout</Text><Text style={styles.actionCopy}>Track exercises, sets, and reps.</Text>
             </Pressable>
-            <Pressable accessibilityRole="button" accessibilityLabel="Log activity, coming soon" onPress={() => setPreview('manual')} style={styles.action}>
-              <Emblem name="cycling" size={26} /><Text style={styles.actionTitle}>Log activity</Text><Text style={styles.actionCopy}>Enter something you already finished.</Text><Text style={styles.coming}>COMING SOON</Text>
+            <Pressable accessibilityRole="button" accessibilityLabel="Log activity" onPress={() => router.push('/log-activity')} style={styles.action}>
+              <Emblem name="cycling" size={26} /><Text style={styles.actionTitle}>Log activity</Text><Text style={styles.actionCopy}>Enter something you already finished.</Text>
             </Pressable>
             <Pressable accessibilityRole="button" disabled={waiting} accessibilityState={{ disabled: waiting, busy: loading }} onPress={refresh} style={[styles.action, waiting && styles.disabled]}>
               <Text style={styles.syncIcon}>↻</Text><Text style={styles.actionTitle}>{loading ? 'Checking…' : 'Sync Strava'}</Text><Text style={styles.actionCopy}>Check for newly imported activities.</Text>
@@ -102,29 +106,24 @@ export default function ActivitiesScreen() {
             <Pressable accessibilityRole="button" onPress={() => expanded && apiUrl && data ? loadHistory() : refresh()} style={styles.textButton}><Text style={styles.link}>Try again</Text></Pressable></View>}
           {data?.syncInProgress && <Text style={styles.status}>{data.importedCount} activities imported · {data.skillsPending || 0} awaiting skill processing.{data.syncRetryAt ? ` Sync resumes at ${new Date(data.syncRetryAt).toLocaleTimeString()}.` : ' Processing continues while the server runs.'}</Text>}
           <View style={[styles.panel, styles.panelHeader]}>
-            <View style={styles.heading}><View style={styles.headingCopy}><Text style={styles.eyebrow}>ACTIVITY HISTORY</Text><Text style={styles.sectionTitle}>{expanded ? 'All activities' : 'Recent activities'}</Text></View><Text style={styles.source}>{data?.source === 'demo' ? 'DEMO' : 'STRAVA'}</Text></View>
+            <View style={styles.heading}><View style={styles.headingCopy}><Text style={styles.eyebrow}>ACTIVITY HISTORY</Text><Text style={styles.sectionTitle}>{expanded ? 'All activities' : 'Recent activities'}</Text></View><Text style={styles.source}>{data?.source === 'demo' ? 'DEMO' : data?.manualCount ? 'HISTORY' : 'STRAVA'}</Text></View>
             {expanded && <Pressable accessibilityRole="button" accessibilityState={{ expanded }} onPress={toggleHistory} style={styles.textButton}><Text style={styles.link}>Show recent activities</Text></Pressable>}
           </View>
         </>}
-        renderItem={({ item }) => <View style={[styles.panel, styles.row]}><ActivityRow activity={item} /></View>}
+        renderItem={({ item }) => <View style={[styles.panel, styles.row]}><ActivityRow activity={item} disabled={waiting} onChanged={() => { if (expanded) void loadHistory(); }} /></View>}
         ListEmptyComponent={<View style={[styles.panel, styles.row]}>{waiting ? <ActivityIndicator color="#e8c765" style={styles.spinner} /> : <Text style={styles.empty}>{!data ? 'Connect Strava from the dashboard to see your activity history.' : 'No activities imported yet. Your next adventure starts here.'}</Text>}</View>}
         ListFooterComponent={<>
           <View style={[styles.panel, styles.panelFooter]}>
             {loadingPage && !!items.length && <ActivityIndicator color="#e8c765" style={styles.spinner} />}
             {expanded && !!nextCursor && <Pressable accessibilityRole="button" disabled={waiting} onPress={() => loadHistory(true)} style={styles.outlineButton}><Text style={styles.link}>{loadingPage ? 'Loading…' : 'Load older activities'}</Text></Pressable>}
-            {!!data && <Text style={styles.count}>Showing {items.length} of {total} {data.source === 'demo' ? 'sample' : 'imported'} activities{data.source !== 'demo' && !data.historyComplete ? ' · History import in progress' : ''}</Text>}
+            {!!data && <Text style={styles.count}>Showing {items.length} of {total} {data.source === 'demo' ? 'sample' : 'recorded'} activities{data.source !== 'demo' && !data.historyComplete ? ' · History import in progress' : ''}</Text>}
             {!!data && total > 0 && <Pressable accessibilityRole="button" accessibilityState={{ expanded }} disabled={waiting} onPress={toggleHistory} style={styles.outlineButton}><Text style={styles.link}>{expanded ? 'Show recent activities' : 'Show all activities'}</Text></Pressable>}
             <Pressable accessibilityRole="button" onPress={back}><LinearGradient colors={['#e6be68', '#b68b49']} style={styles.backButton}><Text style={styles.buttonText}>Back to dashboard</Text></LinearGradient></Pressable>
           </View>
-          <Text style={styles.footer}>{data?.source === 'demo' ? 'Demo data only. Connect Strava from the dashboard to see your own adventures.' : 'Imported from Strava and visible only to the connected athlete. XP rules are experimental; unsupported activities are kept in your history.'}</Text>
+          <Text style={styles.footer}>{data?.source === 'demo' ? 'Demo data only. Connect Strava from the dashboard to see your own adventures.' : 'Strava imports and manual entries are visible only to the connected athlete. Manual entries earn class XP but never create fastest-time records.'}</Text>
         </>} />
     </SafeAreaView>
-    <Modal visible={!!preview} transparent animationType="fade" onRequestClose={() => setPreview(null)}>
-      <View style={styles.overlay}><View style={styles.sheet} accessibilityViewIsModal><Text style={styles.eyebrow}>COMING SOON</Text><Text style={styles.sectionTitle}>{preview === 'workout' ? 'Start a workout' : 'Log an activity'}</Text>
-        <Text style={styles.body}>{preview === 'workout' ? 'Exercise, set, and rep tracking is planned. For now, record your workout in Strava to include it in your imported history.' : 'Manual activity entry is planned. For now, activities come from your connected Strava account.'}</Text>
-        <Pressable accessibilityRole="button" onPress={() => setPreview(null)} style={styles.backButton}><Text style={styles.buttonText}>Back to activities</Text></Pressable>
-      </View></View>
-    </Modal>
+
   </LinearGradient>;
 }
 const serif = Platform.select({ ios: 'Georgia', android: 'serif', default: 'Georgia' });

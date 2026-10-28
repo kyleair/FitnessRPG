@@ -13,6 +13,7 @@ export interface FitnessClass {
   nextLevelXp: number; progress: number; activityCount: number; distanceKm: number; minutes: number; formula: string; xpUnavailable?: boolean;
 }
 export interface Dashboard {
+  activityCount?: number; manualCount?: number;
   syncInProgress?: boolean; syncRetryAt?: string | null;
   skillsUnavailable?: number; skillsPending?: number; skillsStale?: boolean; source: string; syncedAt: string | null; stale: boolean; historyComplete: boolean; importedCount: number;
   month: string; monthlyDistanceKm: number; classes: FitnessClass[];
