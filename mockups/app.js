@@ -1,15 +1,17 @@
 const themeButtons = document.querySelectorAll('[data-theme-choice]');
 const views = document.querySelectorAll('.view');
 let currentClass = 'running';
+const exerciseOptions = ['Back squat', 'Deadlift', 'Overhead press', 'Barbell row', 'Pull-up', 'Romanian deadlift', 'Walking lunge'];
 
 const classData = {
   running: {
     title: 'Running Class', level: 'Level 24', xp: '720 / 1,000 lifetime XP', best: 'Fastest 5K', bestLevel: 'Level 50', rarest: 'Long Haul', rarestDetail: 'Earned by 8% of runners',
     skills: [
-      { category: 'SPEED', title: 'Fastest 5K', icon: 'icon-speed', level: 'Level 50', metric: '27:14 best -> 26:30 for Level 51', progress: 72, progressText: '72% toward Level 51' },
-      { category: 'CONSISTENCY', title: 'Monthly Distance', icon: 'icon-consistency', level: 'Level 18', metric: '61 / 65 mi', progress: 25, progressText: '1 mi into Level 18' },
-      { category: 'ENDURANCE', title: 'Fastest Marathon', icon: 'icon-endurance', locked: 'Complete a marathon to unlock' },
-      { category: 'MILESTONE', title: 'Trail Mastery', icon: 'icon-quest', locked: 'Unlock after 10 trail runs' }
+      { category: 'SPEED', title: 'Fastest 1K', icon: 'icon-speed', level: 'Level 14', currentValue: '5:28', nextValue: '5:10', progress: 48 },
+      { category: 'SPEED', title: 'Fastest 5K', icon: 'icon-speed', level: 'Level 50', currentValue: '27:14', nextValue: '26:30', progress: 72 },
+      { category: 'SPEED', title: 'Fastest 10K', icon: 'icon-speed', level: 'Level 34', currentValue: '58:42', nextValue: '57:30', progress: 56 },
+      { category: 'ENDURANCE', title: 'Fastest Half Marathon', icon: 'icon-endurance', level: 'Level 27', currentValue: '2:11:08', nextValue: '2:05:00', progress: 44 },
+      { category: 'ENDURANCE', title: 'Fastest Marathon', icon: 'icon-endurance', locked: 'Complete a marathon to unlock' }
     ],
     achievements: [
       { icon: '*', category: 'SPEED', title: '30 Minute 5K', detail: 'Run 5K in under 30 minutes.', status: 'Earned' },
@@ -21,10 +23,9 @@ const classData = {
   strength: {
     title: 'Strength Class', level: 'Level 12', xp: '180 / 400 lifetime XP', best: 'Bench Press', bestLevel: 'Level 42', rarest: 'Iron Will', rarestDetail: 'Earned by 11% of lifters',
     skills: [
-      { category: 'POWER', title: 'Bench Press', icon: 'icon-strength', level: 'Level 42', metric: '185 / 200 lb', progress: 82, progressText: '15 lb from Level 43' },
-      { category: 'VOLUME', title: 'Weekly Volume', icon: 'icon-consistency', level: 'Level 28', metric: '18,400 / 20,000 lb', progress: 80, progressText: '1,600 lb to Level 29' },
-      { category: 'POWER', title: 'Deadlift', icon: 'icon-strength', locked: 'Complete 5 strength sessions to unlock' },
-      { category: 'MILESTONE', title: 'One Plate Club', icon: 'icon-quest', locked: 'Bench press 135 lb to unlock' }
+      { category: 'POWER', title: 'Bench press', icon: 'icon-strength', level: 'Level 42', currentValue: '185 lb', nextValue: '200 lb', progress: 82 },
+      { category: 'POWER', title: 'Deadlift', icon: 'icon-strength', locked: 'Record a one-rep max to unlock' },
+      { category: 'POWER', title: 'Squat', icon: 'icon-strength', locked: 'Record a one-rep max to unlock' }
     ],
     achievements: [
       { icon: '+', category: 'POWER', title: 'One Plate Club', detail: 'Bench press 135 lb.', status: 'Earned' },
@@ -34,12 +35,13 @@ const classData = {
     ]
   },
   cycling: {
-    title: 'Cycling Class', level: 'Level 11', xp: '300 / 1,000 lifetime XP', best: 'Monthly Distance', bestLevel: 'Level 31', rarest: 'Century Rider', rarestDetail: 'Earned by 6% of cyclists',
+    title: 'Cycling Class', level: 'Level 11', xp: '300 / 1,000 lifetime XP', best: 'Fastest 20K', bestLevel: 'Level 24', rarest: 'Century Rider', rarestDetail: 'Earned by 6% of cyclists',
     skills: [
-      { category: 'DISTANCE', title: 'Monthly Distance', icon: 'icon-cycle', level: 'Level 31', metric: '410 / 450 km', progress: 64, progressText: '40 km to Level 32' },
-      { category: 'SPEED', title: 'Fastest 20K', icon: 'icon-speed', level: 'Level 24', metric: '34:12 -> 33:30 target', progress: 58, progressText: '58% toward Level 25' },
-      { category: 'ENDURANCE', title: 'Century Ride', icon: 'icon-endurance', locked: 'Complete a 100 km ride to unlock' },
-      { category: 'CLIMBING', title: 'Mountain Gain', icon: 'icon-quest', locked: 'Climb 1,000 m in one ride to unlock' }
+      { category: 'SPEED', title: 'Fastest 5K', icon: 'icon-speed', level: 'Level 12', currentValue: '8:42', nextValue: '8:20', progress: 38 },
+      { category: 'SPEED', title: 'Fastest 20K', icon: 'icon-speed', level: 'Level 24', currentValue: '34:12', nextValue: '33:30', progress: 58 },
+      { category: 'SPEED', title: 'Fastest 50K', icon: 'icon-speed', locked: 'Complete a 50 km effort to unlock' },
+      { category: 'ENDURANCE', title: 'Fastest 75K', icon: 'icon-endurance', locked: 'Complete a 75 km effort to unlock' },
+      { category: 'ENDURANCE', title: 'Fastest 100K', icon: 'icon-endurance', locked: 'Complete a 100 km effort to unlock' }
     ],
     achievements: [
       { icon: '~', category: 'DISTANCE', title: 'Century Rider', detail: 'Complete a 100 km ride.', status: 'Earned' },
@@ -48,31 +50,65 @@ const classData = {
       { icon: '*', category: 'SPEED', title: 'Breakaway', detail: 'Ride 20 km in under 30 minutes.', status: 'Locked' }
     ]
   },
-  swimming: {
-    title: 'Swimming Class', level: 'Level 2', xp: '6 / 30 lifetime XP', best: 'Fastest 1K', bestLevel: 'Level 14', rarest: 'Deep End', rarestDetail: 'Earned by 14% of swimmers',
-    skills: [
-      { category: 'SPEED', title: 'Fastest 1K', icon: 'icon-swimming', level: 'Level 14', metric: '21:40 -> 21:00 target', progress: 48, progressText: '48% toward Level 15' },
-      { category: 'CONSISTENCY', title: 'Monthly Laps', icon: 'icon-consistency', level: 'Level 7', metric: '62 / 75 laps', progress: 52, progressText: '13 laps to Level 8' },
-      { category: 'ENDURANCE', title: 'Open Water Swim', icon: 'icon-endurance', locked: 'Complete a 2 km open-water swim' },
-      { category: 'TECHNIQUE', title: 'Stroke Mastery', icon: 'icon-quest', locked: 'Log all four strokes to unlock' }
-    ],
-    achievements: [
-      { icon: '~', category: 'DISTANCE', title: 'Deep End', detail: 'Swim 2 km without stopping.', status: 'Earned' },
-      { icon: '+', category: 'TECHNIQUE', title: 'Full Arsenal', detail: 'Log all four swimming strokes.', status: 'Earned' },
-      { icon: '!', category: 'ENDURANCE', title: 'Open Water', detail: 'Complete a 5 km open-water swim.', status: 'Locked' },
-      { icon: '*', category: 'SPEED', title: 'Lane Lightning', detail: 'Swim 1 km in under 18 minutes.', status: 'Locked' }
-    ]
-  }
 };
 
 function skillCard(skill) {
-  if (skill.locked) return `<article class="subskill-card locked-skill"><div class="subskill-icon"><svg><use href="#${skill.icon}"></use></svg></div><div class="subskill-copy"><p class="eyebrow">${skill.category}</p><h3>${skill.title}</h3><p>${skill.locked}</p></div><div class="subskill-stat"><strong>Locked</strong></div></article>`;
-  return `<article class="subskill-card"><div class="subskill-icon"><svg><use href="#${skill.icon}"></use></svg></div><div class="subskill-copy"><p class="eyebrow">${skill.category}</p><h3>${skill.title}</h3></div><div class="subskill-stat"><strong>${skill.level}</strong></div><div class="skill-progress"><div class="metric-row"><span>${skill.metric}</span><b>${skill.progressText}</b></div><div class="meter"><span style="width:${skill.progress}%"></span></div></div><div class="subskill-actions"><button class="text-button" data-view="leaderboard">Ranks</button><button class="text-button" data-view="history">History</button></div></article>`;
+  if (skill.locked) return `<article class="subskill-card locked-skill"><div class="subskill-header"><div class="subskill-icon"><svg><use href="#${skill.icon}"></use></svg></div><div class="subskill-copy"><p class="eyebrow">${skill.category}</p><h3>${skill.title}</h3></div><div class="subskill-stat"><strong>Locked</strong></div></div><div class="skill-divider"></div><p class="locked-copy">${skill.locked}</p></article>`;
+  return `<article class="subskill-card"><div class="subskill-header"><div class="subskill-icon"><svg><use href="#${skill.icon}"></use></svg></div><div class="subskill-copy"><p class="eyebrow">${skill.category}</p><h3>${skill.title}</h3></div></div><div class="skill-divider"></div><div class="subskill-level"><span>${skill.level}</span></div><div class="skill-progress"><div class="meter-row"><span class="meter-step" aria-hidden="true">−</span><div class="meter"><span style="width:${skill.progress}%"></span></div><span class="meter-step" aria-hidden="true">+</span></div><div class="metric-row"><span>${skill.currentValue}</span><b>${skill.nextValue}</b></div></div><div class="subskill-actions"><button class="text-button" data-view="leaderboard"><svg><use href="#icon-ranks"></use></svg>Ranks</button><button class="text-button" data-view="history"><svg><use href="#icon-history"></use></svg>History</button></div></article>`;
 }
 
 function achievementCard(achievement) {
   const locked = achievement.status === 'Locked' ? ' locked-skill' : '';
   return `<article class="achievement-card${locked}"><div class="achievement-mark">${achievement.icon}</div><div><p class="eyebrow">${achievement.category}</p><h3>${achievement.title}</h3><p>${achievement.detail}</p></div><strong>${achievement.status}</strong></article>`;
+}
+
+function renderExerciseOptions(query = '') {
+  const container = document.getElementById('exercise-options');
+  if (!container) return;
+  const matches = exerciseOptions.filter((exercise) => exercise.toLowerCase().includes(query.trim().toLowerCase()));
+  container.innerHTML = matches.length ? matches.map((exercise) => `<button class="exercise-option" data-action="choose-exercise" data-exercise="${exercise}"><span class="exercise-option-icon">+</span><span><b>${exercise}</b><small>Strength exercise · Add to today’s session</small></span><span class="exercise-option-arrow">›</span></button>`).join('') : '<p class="exercise-empty">No exercises found. Try another search.</p>';
+}
+
+function setExercisePicker(open) {
+  const picker = document.getElementById('exercise-picker');
+  if (!picker) return;
+  picker.classList.toggle('is-hidden', !open);
+  picker.setAttribute('aria-hidden', String(!open));
+  if (open) {
+    const search = document.getElementById('exercise-search');
+    renderExerciseOptions();
+    search.value = '';
+    window.setTimeout(() => search.focus(), 0);
+  }
+}
+
+function ensureExercisePicker() {
+  if (document.getElementById('exercise-picker')) return;
+  const picker = document.createElement('div');
+  picker.className = 'modal-backdrop is-hidden';
+  picker.id = 'exercise-picker';
+  picker.setAttribute('aria-hidden', 'true');
+  picker.innerHTML = '<section class="exercise-picker" role="dialog" aria-modal="true" aria-labelledby="exercise-picker-title"><div class="exercise-picker-heading"><div><p class="eyebrow">WORKOUT BUILDER</p><h2 id="exercise-picker-title">Add an exercise</h2></div><button class="modal-close" data-action="close-exercise-picker" aria-label="Close exercise picker">×</button></div><input class="exercise-search" id="exercise-search" type="search" placeholder="Search exercises" aria-label="Search exercises" /><div class="exercise-options" id="exercise-options"></div></section>';
+  document.body.appendChild(picker);
+  document.getElementById('exercise-search').addEventListener('input', (event) => renderExerciseOptions(event.target.value));
+}
+
+function addExercise(name) {
+  const workoutPanel = document.querySelector('.workout-panel');
+  if (!workoutPanel) return;
+  let container = document.getElementById('workout-exercises');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'workout-exercises';
+    const firstBlock = workoutPanel.querySelector('.exercise-block');
+    const addButton = workoutPanel.querySelector('.secondary.full');
+    addButton.parentNode.insertBefore(container, addButton);
+    container.appendChild(firstBlock);
+  }
+  const block = document.createElement('div');
+  block.className = 'exercise-block';
+  block.innerHTML = `<div class="exercise-heading"><div><b>${name}</b><small>Strength · 3 sets</small></div><button class="text-button" data-action="remove-exercise">Remove</button></div><div class="set-row set-heading"><span>SET</span><span>WEIGHT</span><span>REPS</span><span></span></div><div class="set-row"><b>1</b><input placeholder="lb" aria-label="${name} set 1 weight" /><input placeholder="reps" aria-label="${name} set 1 reps" /><span class="set-check">○</span></div><div class="set-row"><b>2</b><input placeholder="lb" aria-label="${name} set 2 weight" /><input placeholder="reps" aria-label="${name} set 2 reps" /><span class="set-check">○</span></div><button class="text-button add-set">+ Add set</button>`;
+  container.appendChild(block);
 }
 
 function renderClass(classKey = currentClass) {
@@ -106,6 +142,32 @@ themeButtons.forEach((button) => {
 });
 
 document.addEventListener('click', (event) => {
+  const actionButton = event.target.closest('[data-action]');
+  if (event.target.closest('.workout-panel .secondary.full')) {
+    ensureExercisePicker();
+    setExercisePicker(true);
+    return;
+  }
+  if (actionButton?.dataset.action === 'sync') {
+    const status = document.getElementById('sync-status');
+    if (status) status.textContent = 'Sync complete · 3 activities checked';
+  }
+  if (actionButton?.dataset.action === 'save-manual') {
+    const status = document.getElementById('sync-status');
+    if (status) status.textContent = 'Manual activity ready to review';
+  }
+  if (actionButton?.dataset.action === 'complete-workout') {
+    const status = document.getElementById('sync-status');
+    if (status) status.textContent = 'Workout saved · Strength volume recorded';
+  }
+  if (actionButton?.dataset.action === 'open-exercise-picker') setExercisePicker(true);
+  if (actionButton?.dataset.action === 'close-exercise-picker') setExercisePicker(false);
+  if (actionButton?.dataset.action === 'choose-exercise') {
+    addExercise(actionButton.dataset.exercise);
+    setExercisePicker(false);
+  }
+  if (actionButton?.dataset.action === 'remove-exercise') actionButton.closest('.exercise-block')?.remove();
+  if (event.target.id === 'exercise-picker') setExercisePicker(false);
   const viewButton = event.target.closest('[data-view]');
   if (viewButton && !viewButton.matches('[data-theme-choice]')) showView(viewButton.dataset.view, viewButton.dataset.classKey);
 });
@@ -128,4 +190,5 @@ document.querySelectorAll('[data-mode]').forEach((button) => {
   });
 });
 
+ensureExercisePicker();
 renderClass();

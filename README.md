@@ -117,6 +117,8 @@ Strava authorization reference: https://developers.strava.com/docs/authenticatio
 
 The product direction and design decisions live in [`docs/`](docs/). The browser prototype is in [`mockups/`](mockups/); its README explains the current flows and review criteria.
 
+For physical-device testing, use [`docs/mobile-testing.md`](docs/mobile-testing.md). It covers demo mode, Android and iPhone Expo Go flows, backend/Strava testing, validation checks, and troubleshooting.
+
 Start with [`docs/product-vision.md`](docs/product-vision.md), [`docs/core-game-model.md`](docs/core-game-model.md), and [`docs/decision-log.md`](docs/decision-log.md).
 
 Next: move to an Expo development build for automatic browser return, add account deletion/revocation handling, and prepare a hosted backend when needed. Check Strava's current API access limits and data-use rules before adding more users or shared activity views.
