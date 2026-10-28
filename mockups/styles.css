@@ -180,11 +180,11 @@ body[data-theme="classic"] .history-summary > div,body[data-theme="classic"] .hi
 .app-shell .subskill-level { text-align:center; margin-bottom:12px; }
 .app-shell .subskill-level span { color:#f0a33f; font-size:clamp(2.35rem,10vw,3.2rem); font-weight:700; line-height:1; text-shadow:2px 2px #4a2815; }
 .app-shell .skill-progress { width:100%; margin:0; }
-.app-shell .meter-row { display:grid; grid-template-columns:42px minmax(0,1fr) 42px; align-items:center; gap:8px; }
+.app-shell .meter-row { display:grid; grid-template-columns:18px minmax(0,1fr) 18px; align-items:center; gap:5px; }
 .app-shell .meter-row .meter { min-width:0; height:18px; border:2px solid #876035; border-radius:4px; background:#120e0c; padding:2px; }
 .app-shell .meter-row .meter span { background:linear-gradient(90deg,#f0a33f,#ffbe5b); }
-.app-shell .meter-step { width:42px; height:42px; display:grid; place-items:center; border:2px solid #876035; border-radius:9px; color:#f3e3bb; background:#2a2019; font:700 1.8rem Georgia,serif; line-height:1; }
-.app-shell .metric-row { margin:8px 42px 0; color:#f3e3bb; font-size:.92rem; }
+.app-shell .meter-step { width:18px; height:18px; display:grid; place-items:center; color:#c0ae83; background:transparent; font:400 1rem Georgia,serif; line-height:1; }
+.app-shell .metric-row { margin:8px 23px 0; color:#f3e3bb; font-size:.92rem; }
 .app-shell .metric-row b { color:#f3e3bb; font-weight:400; }
 .app-shell .metric-caption { margin:4px 0 0; text-align:center; color:#c0ae83; font:500 .62rem DM Mono,monospace; }
 .app-shell .subskill-actions { display:flex; gap:10px; margin-top:16px; padding-top:13px; border-top:1px solid #634b33; }
@@ -207,9 +207,9 @@ body[data-theme="classic"] .history-summary > div,body[data-theme="classic"] .hi
 .app-shell .skill-divider { margin:10px 0 8px; }
 .app-shell .subskill-level { margin-bottom:9px; }
 .app-shell .subskill-level span { font-size:clamp(1.8rem,7vw,2.35rem); white-space:nowrap; }
-.app-shell .meter-row { grid-template-columns:24px minmax(0,1fr) 24px; gap:4px; }
+.app-shell .meter-row { grid-template-columns:16px minmax(0,1fr) 16px; gap:3px; }
 .app-shell .meter-row .meter { height:14px; border-width:1px; padding:1px; }
-.app-shell .meter-step { width:24px; height:24px; border-width:1px; border-radius:5px; font-size:1.1rem; }
+.app-shell .meter-step { width:16px; height:16px; font-size:.88rem; }
 .app-shell .metric-row { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); margin:5px 0 0; font-size:.68rem; line-height:1.1; }
 .app-shell .metric-row b { text-align:right; }
 .app-shell .subskill-actions { gap:5px; margin-top:10px; padding-top:8px; }
