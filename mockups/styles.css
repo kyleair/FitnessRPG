@@ -164,3 +164,107 @@ body[data-theme="classic"] .history-summary > div,body[data-theme="classic"] .hi
 .app-shell .player { min-width:0; overflow:hidden; }
 .app-shell .player span:last-child { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 @media (max-width:390px) { .app-shell .subskill-grid,.app-shell .achievement-grid,.app-shell .class-summary { grid-template-columns:1fr; }.app-shell .subskill-grid .subskill-card { grid-template-columns:48px minmax(0,1fr); }.app-shell .subskill-grid .subskill-icon { width:48px; height:48px; }.app-shell .subskill-grid .subskill-card .subskill-actions { grid-column:1/-1; }.class-page-head { display:block; }.mode-toggle { margin:0 0 12px; } }
+
+/* Reference skill tile: framed RPG panel with a contextual progress value. */
+.app-shell .subskill-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+.app-shell .subskill-card { display:block; min-height:0; padding:16px; background:linear-gradient(145deg,#33261c,#211914); }
+.app-shell .subskill-header { display:grid; grid-template-columns:74px minmax(0,1fr) auto; align-items:center; gap:14px; min-width:0; }
+.app-shell .subskill-icon { width:70px; height:70px; border:3px solid #b88949; border-radius:50%; background:radial-gradient(circle,#f6d58e 0 43%,#8e5c2c 45% 53%,#17110f 55% 73%,#b88949 75% 78%,#17110f 80%); color:#4b2d18; box-shadow:0 0 0 4px #17110f,0 0 0 6px #c18b3c; }
+.app-shell .subskill-icon svg { width:36px; height:36px; stroke-width:3.5; }
+.app-shell .subskill-copy { min-width:0; }
+.app-shell .subskill-copy .eyebrow { margin:0 0 4px; font-size:.7rem; }
+.app-shell .subskill-copy h3 { margin:0; color:#f3e3bb; font-size:clamp(1.1rem,5vw,1.55rem); line-height:1.05; overflow-wrap:anywhere; }
+.app-shell .subskill-stat { align-self:center; padding:0; text-align:right; }
+.app-shell .subskill-stat strong { color:#e8c765; font-size:1rem; white-space:nowrap; }
+.app-shell .skill-divider { height:1px; margin:16px 0 13px; background:#876035; }
+.app-shell .subskill-level { text-align:center; margin-bottom:12px; }
+.app-shell .subskill-level span { color:#f0a33f; font-size:clamp(2.35rem,10vw,3.2rem); font-weight:700; line-height:1; text-shadow:2px 2px #4a2815; }
+.app-shell .skill-progress { width:100%; margin:0; }
+.app-shell .meter-row { display:grid; grid-template-columns:42px minmax(0,1fr) 42px; align-items:center; gap:8px; }
+.app-shell .meter-row .meter { min-width:0; height:18px; border:2px solid #876035; border-radius:4px; background:#120e0c; padding:2px; }
+.app-shell .meter-row .meter span { background:linear-gradient(90deg,#f0a33f,#ffbe5b); }
+.app-shell .meter-step { width:42px; height:42px; display:grid; place-items:center; border:2px solid #876035; border-radius:9px; color:#f3e3bb; background:#2a2019; font:700 1.8rem Georgia,serif; line-height:1; }
+.app-shell .metric-row { margin:8px 42px 0; color:#f3e3bb; font-size:.92rem; }
+.app-shell .metric-row b { color:#f3e3bb; font-weight:400; }
+.app-shell .metric-caption { margin:4px 0 0; text-align:center; color:#c0ae83; font:500 .62rem DM Mono,monospace; }
+.app-shell .subskill-actions { display:flex; gap:10px; margin-top:16px; padding-top:13px; border-top:1px solid #634b33; }
+.app-shell .subskill-actions .text-button { flex:1; display:flex; align-items:center; justify-content:center; gap:7px; min-height:42px; padding:8px 10px; border:2px solid #876035; border-radius:6px; color:#f3e3bb; background:#2a2019; font-family:Georgia,serif; font-size:.9rem; }
+.app-shell .subskill-actions .text-button:hover { border-color:#e8c765; color:#e8c765; }
+.app-shell .subskill-actions .text-button svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:3; stroke-linecap:round; stroke-linejoin:round; }
+.app-shell .locked-copy { margin:0; color:#c0ae83; font-size:.8rem; line-height:1.35; }
+.app-shell .locked-skill .subskill-icon { opacity:.65; filter:saturate(.55); }
+@media (max-width:390px) { .app-shell .subskill-grid { grid-template-columns:1fr; }.app-shell .subskill-header { grid-template-columns:60px minmax(0,1fr); gap:11px; }.app-shell .subskill-icon { width:56px; height:56px; }.app-shell .subskill-icon svg { width:29px; height:29px; }.app-shell .subskill-stat { grid-column:2; justify-self:start; margin-top:-4px; }.app-shell .metric-row { margin-left:0; margin-right:0; } }
+
+/* Compact two-up tile spacing for the 430px phone canvas. */
+.app-shell .subskill-card { padding:10px; }
+.app-shell .subskill-header { grid-template-columns:56px minmax(0,1fr); gap:8px; }
+.app-shell .subskill-icon { width:52px; height:52px; border-width:2px; box-shadow:0 0 0 3px #17110f,0 0 0 5px #c18b3c; }
+.app-shell .subskill-icon svg { width:28px; height:28px; }
+.app-shell .subskill-copy { min-width:0; min-height:52px; padding-left:8px; border-left:1px solid #876035; display:flex; flex-direction:column; justify-content:center; }
+.app-shell .subskill-copy .eyebrow { margin-bottom:3px; font-size:.52rem; letter-spacing:.1em; overflow-wrap:anywhere; }
+.app-shell .subskill-copy h3 { font-size:clamp(.82rem,3.8vw,1.08rem); line-height:1.05; }
+.app-shell .subskill-stat { display:none; }
+.app-shell .skill-divider { margin:10px 0 8px; }
+.app-shell .subskill-level { margin-bottom:9px; }
+.app-shell .subskill-level span { font-size:clamp(1.8rem,7vw,2.35rem); white-space:nowrap; }
+.app-shell .meter-row { grid-template-columns:24px minmax(0,1fr) 24px; gap:4px; }
+.app-shell .meter-row .meter { height:14px; border-width:1px; padding:1px; }
+.app-shell .meter-step { width:24px; height:24px; border-width:1px; border-radius:5px; font-size:1.1rem; }
+.app-shell .metric-row { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); margin:5px 0 0; font-size:.68rem; line-height:1.1; }
+.app-shell .metric-row b { text-align:right; }
+.app-shell .subskill-actions { gap:5px; margin-top:10px; padding-top:8px; }
+.app-shell .subskill-actions .text-button { min-width:0; min-height:30px; gap:4px; padding:4px 3px; border-width:1px; border-radius:4px; font-size:.68rem; white-space:nowrap; }
+.app-shell .subskill-actions .text-button svg { width:14px; height:14px; }
+@media (max-width:390px) { .app-shell .subskill-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }.app-shell .subskill-header { grid-template-columns:56px minmax(0,1fr); gap:8px; }.app-shell .subskill-icon { width:52px; height:52px; }.app-shell .subskill-icon svg { width:28px; height:28px; }.app-shell .metric-row { margin-left:0; margin-right:0; } }
+
+/* Class cards inspired by the layered elemental class-icon reference. */
+.app-shell .skill-grid .skill-card { min-height:270px; padding:14px 10px 16px; display:flex; flex-direction:column; align-items:stretch; justify-content:flex-start; text-align:center; background:linear-gradient(145deg,#33261c,#1d1511); }
+.app-shell .skill-grid .skill-emblem { position:relative; flex:0 0 auto; width:82px; height:82px; margin:9px auto 18px; border:3px solid #d58a36; border-radius:50%; background:radial-gradient(circle,#315f46 0 54%,#173d2d 56% 73%,#d99638 75% 78%,#241a14 80%); color:#fff2cf; box-shadow:0 0 0 3px #17110f,0 0 0 5px #c18b3c,0 0 0 10px rgba(193,139,60,.16); }
+.app-shell .skill-grid .skill-emblem::before { content:""; position:absolute; inset:-11px; border:1px solid #b88949; transform:rotate(45deg); opacity:.9; }
+.app-shell .skill-grid .skill-emblem::after { content:"◆"; position:absolute; top:-18px; left:50%; color:#e8c765; font-size:.85rem; transform:translateX(-50%); text-shadow:0 0 0 #17110f; }
+.app-shell .skill-grid .skill-emblem svg { position:relative; z-index:1; width:43px; height:43px; stroke-width:3.2; }
+.app-shell .skill-grid .skill-meta { display:block; margin:0 0 12px; }
+.app-shell .skill-grid .skill-meta span { display:block; margin:0 0 5px; font-size:.68rem; font-weight:700; letter-spacing:.15em; }
+.app-shell .skill-grid .skill-meta strong { display:block; color:#f3e3bb; font-size:1.65rem; line-height:1; white-space:nowrap; }
+.app-shell .skill-grid .meter { width:100%; height:14px; margin-top:0; }
+.app-shell .skill-grid .skill-card p { margin:10px 0 0; color:#f3e3bb; font-size:.8rem; line-height:1.1; }
+.app-shell .skill-grid .skill-card small { margin-top:auto; padding-top:14px; color:#c0ae83; font-size:.68rem; line-height:1.2; }
+.app-shell .skill-grid .skill-card small::after { content:"  ›"; color:#e8c765; font-size:1.1rem; vertical-align:-1px; }
+.app-shell .skill-grid .skill-card.running .skill-emblem { color:#fff2cf; border-color:#d99638; background:radial-gradient(circle,#0d6339 0 54%,#063822 56% 73%,#d99638 75% 78%,#241a14 80%); }
+.app-shell .skill-grid .skill-card.strength .skill-emblem { color:#fff2f0; border-color:#f28e9e; background:radial-gradient(circle,#8a2832 0 54%,#42141d 56% 73%,#f28e9e 75% 78%,#241a14 80%); }
+.app-shell .skill-grid .skill-card.cycling .skill-emblem { color:#f0fbff; border-color:#5ac3f1; background:radial-gradient(circle,#087ebd 0 54%,#063b66 56% 73%,#5ac3f1 75% 78%,#241a14 80%); }
+.app-shell .skill-grid .skill-card.swimming .skill-emblem { color:#edffff; border-color:#51d6c5; background:radial-gradient(circle,#069e9b 0 54%,#075e69 56% 73%,#51d6c5 75% 78%,#241a14 80%); }
+@media (max-width:390px) { .app-shell .skill-grid .skill-card { min-height:250px; padding-left:8px; padding-right:8px; }.app-shell .skill-grid .skill-emblem { width:70px; height:70px; margin-bottom:16px; }.app-shell .skill-grid .skill-emblem svg { width:36px; height:36px; }.app-shell .skill-grid .skill-meta strong { font-size:1.35rem; }.app-shell .skill-grid .skill-card p { font-size:.7rem; }.app-shell .skill-grid .skill-card small { font-size:.6rem; } }
+
+/* Keep the inner diamond contained and add the reference's ornate card frame. */
+.app-shell .skill-grid .skill-emblem { overflow:visible; }
+.app-shell .skill-grid .skill-emblem::before { display:none; }
+.app-shell .skill-grid .skill-emblem::after { display:none; }
+
+/* Activity history mirrors the implemented native dashboard panel. */
+.app-shell .activity-list-panel { padding:16px; }
+.app-shell .activity-list-panel .panel-heading { align-items:center; margin-bottom:2px; }
+.app-shell .activity-list-panel .panel-heading h3 { margin:3px 0 0; }
+.app-shell .activity-detail-row { display:flex; align-items:center; gap:10px; min-width:0; padding:15px 0; border-bottom:1px solid #4c3b2b; }
+.app-shell .activity-detail-row .activity-mark { flex:0 0 38px; width:38px; height:42px; border-radius:3px; color:#f3e3bb; background:#493522; }
+.app-shell .activity-detail-row .activity-mark svg { width:25px; height:25px; fill:none; stroke:currentColor; stroke-width:3; stroke-linecap:round; stroke-linejoin:round; }
+.app-shell .activity-detail-row .activity-copy { flex:1; min-width:0; }
+.app-shell .activity-detail-row .activity-copy b { display:block; color:#f3e3bb; font-size:.9rem; line-height:1.2; overflow-wrap:anywhere; }
+.app-shell .activity-detail-row .activity-copy p { margin:4px 0 0; color:#c0ae83; font-size:.7rem; }
+.app-shell .activity-detail-row .activity-copy small { display:block; margin-top:3px; color:#ad997d; font-size:.62rem; }
+.app-shell .activity-detail-row > strong { flex:0 0 auto; max-width:64px; color:#e8c765; font-size:.72rem; text-align:right; }
+.app-shell .activity-detail-row > .muted-status { color:#c0ae83; }
+.app-shell .activity-detail-row .running-mark { color:#f0b64c; }.app-shell .activity-detail-row .cycling-mark { color:#78c6e0; }.app-shell .activity-detail-row .neutral-mark { color:#c0ae83; }
+
+/* Activities hub actions and manual/workout entry flows. */
+.app-shell .activity-actions { display:grid; grid-template-columns:1.15fr 1fr 1fr; gap:8px; margin-bottom:8px; }
+.app-shell .activity-action { display:flex; align-items:center; gap:8px; min-width:0; min-height:64px; padding:10px; border:2px solid #876035; border-radius:5px; color:#f3e3bb; background:#30231b; text-align:left; }
+.app-shell .activity-action.primary-action { background:linear-gradient(145deg,#9a622b,#5f3d24); border-color:#d58a36; }
+.app-shell .activity-action svg { flex:0 0 22px; width:22px; height:22px; fill:none; stroke:#e8c765; stroke-width:3; stroke-linecap:round; stroke-linejoin:round; }
+.app-shell .activity-action span { min-width:0; }.app-shell .activity-action b,.app-shell .activity-action small { display:block; }.app-shell .activity-action b { font-size:.72rem; }.app-shell .activity-action small { margin-top:3px; color:#c0ae83; font-size:.56rem; line-height:1.2; }
+.app-shell .sync-status { min-height:16px; margin:0 0 6px; color:#b8d47e; font:500 .62rem DM Mono,monospace; text-align:right; }
+.app-shell .form-panel,.app-shell .workout-panel { padding:16px; }.app-shell .form-panel label { display:block; margin-bottom:14px; color:#c0ae83; font:500 .65rem DM Mono,monospace; text-transform:uppercase; letter-spacing:.06em; }.app-shell .form-panel input,.app-shell .form-panel select,.app-shell .set-row input { width:100%; margin-top:6px; padding:11px 10px; border:1px solid #876035; border-radius:3px; color:#f3e3bb; background:#1b1411; font:inherit; }.app-shell .form-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }.app-shell .form-note { margin:12px 4px 0; color:#c0ae83; font-size:.72rem; line-height:1.4; }.app-shell .template-row { display:flex; gap:6px; overflow-x:auto; margin-bottom:12px; }.app-shell .template { flex:0 0 auto; padding:9px 11px; border:1px solid #876035; border-radius:20px; color:#c0ae83; background:#30231b; font-size:.7rem; }.app-shell .template.active { color:#24170d; background:#e8c765; }.app-shell .workout-status { color:#b8d47e; font:500 .58rem DM Mono,monospace; }.app-shell .exercise-block { padding:12px 0; border-top:1px solid #634b33; border-bottom:1px solid #634b33; }.app-shell .exercise-heading { display:flex; justify-content:space-between; align-items:start; gap:8px; }.app-shell .exercise-heading b,.app-shell .exercise-heading small { display:block; }.app-shell .exercise-heading b { color:#f3e3bb; }.app-shell .exercise-heading small { margin-top:3px; color:#c0ae83; font-size:.7rem; }.app-shell .set-row { display:grid; grid-template-columns:28px 1fr 1fr 24px; gap:6px; align-items:center; margin-top:7px; color:#c0ae83; font-size:.7rem; }.app-shell .set-row input { margin:0; padding:8px 7px; font-size:.75rem; }.app-shell .set-heading { margin-top:14px; color:#876035; font:500 .58rem DM Mono,monospace; }.app-shell .set-heading span:nth-child(2),.app-shell .set-heading span:nth-child(3) { text-align:center; }.app-shell .set-check { color:#e8c765; text-align:center; font-size:1rem; }.app-shell .add-set { margin-top:10px; }
+@media (max-width:390px) { .app-shell .activity-actions { grid-template-columns:1fr; }.app-shell .activity-action { min-height:48px; }.app-shell .activity-action svg { width:20px; height:20px; } }
+.app-shell .skill-grid .skill-card { position:relative; overflow:hidden; }
+.app-shell .skill-grid .skill-card > *:not(.class-frame) { position:relative; z-index:1; }
+.app-shell .skill-grid .skill-card > .class-frame { position:absolute; inset:0; z-index:0; width:100%; height:100%; color:#b8792d; pointer-events:none; }

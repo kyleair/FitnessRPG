@@ -6,8 +6,8 @@ const classData = {
   running: {
     title: 'Running Class', level: 'Level 24', xp: '720 / 1,000 lifetime XP', best: 'Fastest 5K', bestLevel: 'Level 50', rarest: 'Long Haul', rarestDetail: 'Earned by 8% of runners',
     skills: [
-      { category: 'SPEED', title: 'Fastest 5K', icon: 'icon-speed', level: 'Level 50', metric: '27:14 best -> 26:30 for Level 51', progress: 72, progressText: '72% toward Level 51' },
-      { category: 'CONSISTENCY', title: 'Monthly Distance', icon: 'icon-consistency', level: 'Level 18', metric: '61 / 65 mi', progress: 25, progressText: '1 mi into Level 18' },
+      { category: 'SPEED', title: 'Fastest 5K', icon: 'icon-speed', level: 'Level 50', currentValue: '27:14', nextValue: '26:30', progress: 72 },
+      { category: 'CONSISTENCY', title: 'Monthly Distance', icon: 'icon-consistency', level: 'Level 18', currentValue: '61 mi', nextValue: '65 mi', progress: 25 },
       { category: 'ENDURANCE', title: 'Fastest Marathon', icon: 'icon-endurance', locked: 'Complete a marathon to unlock' },
       { category: 'MILESTONE', title: 'Trail Mastery', icon: 'icon-quest', locked: 'Unlock after 10 trail runs' }
     ],
@@ -21,8 +21,8 @@ const classData = {
   strength: {
     title: 'Strength Class', level: 'Level 12', xp: '180 / 400 lifetime XP', best: 'Bench Press', bestLevel: 'Level 42', rarest: 'Iron Will', rarestDetail: 'Earned by 11% of lifters',
     skills: [
-      { category: 'POWER', title: 'Bench Press', icon: 'icon-strength', level: 'Level 42', metric: '185 / 200 lb', progress: 82, progressText: '15 lb from Level 43' },
-      { category: 'VOLUME', title: 'Weekly Volume', icon: 'icon-consistency', level: 'Level 28', metric: '18,400 / 20,000 lb', progress: 80, progressText: '1,600 lb to Level 29' },
+      { category: 'POWER', title: 'Bench Press', icon: 'icon-strength', level: 'Level 42', currentValue: '185 lb', nextValue: '200 lb', progress: 82 },
+      { category: 'VOLUME', title: 'Weekly Volume', icon: 'icon-consistency', level: 'Level 28', currentValue: '18,400 lb', nextValue: '20,000 lb', progress: 80 },
       { category: 'POWER', title: 'Deadlift', icon: 'icon-strength', locked: 'Complete 5 strength sessions to unlock' },
       { category: 'MILESTONE', title: 'One Plate Club', icon: 'icon-quest', locked: 'Bench press 135 lb to unlock' }
     ],
@@ -36,8 +36,8 @@ const classData = {
   cycling: {
     title: 'Cycling Class', level: 'Level 11', xp: '300 / 1,000 lifetime XP', best: 'Monthly Distance', bestLevel: 'Level 31', rarest: 'Century Rider', rarestDetail: 'Earned by 6% of cyclists',
     skills: [
-      { category: 'DISTANCE', title: 'Monthly Distance', icon: 'icon-cycle', level: 'Level 31', metric: '410 / 450 km', progress: 64, progressText: '40 km to Level 32' },
-      { category: 'SPEED', title: 'Fastest 20K', icon: 'icon-speed', level: 'Level 24', metric: '34:12 -> 33:30 target', progress: 58, progressText: '58% toward Level 25' },
+      { category: 'DISTANCE', title: 'Monthly Distance', icon: 'icon-cycle', level: 'Level 31', currentValue: '410 km', nextValue: '450 km', progress: 64 },
+      { category: 'SPEED', title: 'Fastest 20K', icon: 'icon-speed', level: 'Level 24', currentValue: '34:12', nextValue: '33:30', progress: 58 },
       { category: 'ENDURANCE', title: 'Century Ride', icon: 'icon-endurance', locked: 'Complete a 100 km ride to unlock' },
       { category: 'CLIMBING', title: 'Mountain Gain', icon: 'icon-quest', locked: 'Climb 1,000 m in one ride to unlock' }
     ],
@@ -51,8 +51,8 @@ const classData = {
   swimming: {
     title: 'Swimming Class', level: 'Level 2', xp: '6 / 30 lifetime XP', best: 'Fastest 1K', bestLevel: 'Level 14', rarest: 'Deep End', rarestDetail: 'Earned by 14% of swimmers',
     skills: [
-      { category: 'SPEED', title: 'Fastest 1K', icon: 'icon-swimming', level: 'Level 14', metric: '21:40 -> 21:00 target', progress: 48, progressText: '48% toward Level 15' },
-      { category: 'CONSISTENCY', title: 'Monthly Laps', icon: 'icon-consistency', level: 'Level 7', metric: '62 / 75 laps', progress: 52, progressText: '13 laps to Level 8' },
+      { category: 'SPEED', title: 'Fastest 1K', icon: 'icon-swimming', level: 'Level 14', currentValue: '21:40', nextValue: '21:00', progress: 48 },
+      { category: 'CONSISTENCY', title: 'Monthly Laps', icon: 'icon-consistency', level: 'Level 7', currentValue: '62 laps', nextValue: '75 laps', progress: 52 },
       { category: 'ENDURANCE', title: 'Open Water Swim', icon: 'icon-endurance', locked: 'Complete a 2 km open-water swim' },
       { category: 'TECHNIQUE', title: 'Stroke Mastery', icon: 'icon-quest', locked: 'Log all four strokes to unlock' }
     ],
@@ -66,8 +66,8 @@ const classData = {
 };
 
 function skillCard(skill) {
-  if (skill.locked) return `<article class="subskill-card locked-skill"><div class="subskill-icon"><svg><use href="#${skill.icon}"></use></svg></div><div class="subskill-copy"><p class="eyebrow">${skill.category}</p><h3>${skill.title}</h3><p>${skill.locked}</p></div><div class="subskill-stat"><strong>Locked</strong></div></article>`;
-  return `<article class="subskill-card"><div class="subskill-icon"><svg><use href="#${skill.icon}"></use></svg></div><div class="subskill-copy"><p class="eyebrow">${skill.category}</p><h3>${skill.title}</h3></div><div class="subskill-stat"><strong>${skill.level}</strong></div><div class="skill-progress"><div class="metric-row"><span>${skill.metric}</span><b>${skill.progressText}</b></div><div class="meter"><span style="width:${skill.progress}%"></span></div></div><div class="subskill-actions"><button class="text-button" data-view="leaderboard">Ranks</button><button class="text-button" data-view="history">History</button></div></article>`;
+  if (skill.locked) return `<article class="subskill-card locked-skill"><div class="subskill-header"><div class="subskill-icon"><svg><use href="#${skill.icon}"></use></svg></div><div class="subskill-copy"><p class="eyebrow">${skill.category}</p><h3>${skill.title}</h3></div><div class="subskill-stat"><strong>Locked</strong></div></div><div class="skill-divider"></div><p class="locked-copy">${skill.locked}</p></article>`;
+  return `<article class="subskill-card"><div class="subskill-header"><div class="subskill-icon"><svg><use href="#${skill.icon}"></use></svg></div><div class="subskill-copy"><p class="eyebrow">${skill.category}</p><h3>${skill.title}</h3></div></div><div class="skill-divider"></div><div class="subskill-level"><span>${skill.level}</span></div><div class="skill-progress"><div class="meter-row"><span class="meter-step" aria-hidden="true">−</span><div class="meter"><span style="width:${skill.progress}%"></span></div><span class="meter-step" aria-hidden="true">+</span></div><div class="metric-row"><span>${skill.currentValue}</span><b>${skill.nextValue}</b></div></div><div class="subskill-actions"><button class="text-button" data-view="leaderboard"><svg><use href="#icon-ranks"></use></svg>Ranks</button><button class="text-button" data-view="history"><svg><use href="#icon-history"></use></svg>History</button></div></article>`;
 }
 
 function achievementCard(achievement) {
@@ -106,6 +106,19 @@ themeButtons.forEach((button) => {
 });
 
 document.addEventListener('click', (event) => {
+  const actionButton = event.target.closest('[data-action]');
+  if (actionButton?.dataset.action === 'sync') {
+    const status = document.getElementById('sync-status');
+    if (status) status.textContent = 'Sync complete · 3 activities checked';
+  }
+  if (actionButton?.dataset.action === 'save-manual') {
+    const status = document.getElementById('sync-status');
+    if (status) status.textContent = 'Manual activity ready to review';
+  }
+  if (actionButton?.dataset.action === 'complete-workout') {
+    const status = document.getElementById('sync-status');
+    if (status) status.textContent = 'Workout saved · Strength volume recorded';
+  }
   const viewButton = event.target.closest('[data-view]');
   if (viewButton && !viewButton.matches('[data-theme-choice]')) showView(viewButton.dataset.view, viewButton.dataset.classKey);
 });
