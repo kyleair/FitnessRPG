@@ -87,7 +87,9 @@ Do not use `127.0.0.1` as the phone's API address. The phone must use the comput
 - Class pages show recorded skills above locked skills in two-column grids. Demo skills and unsupported strength metrics remain empty; recorded skills show their activity, date, and source.
 - Pull-to-refresh on a class page updates the shared dashboard data; a direct class URL also loads the matching class.
 - Progress meters do not overflow their cards.
-- **See activities** expands and collapses the recent activity list.
+- **See more activities** opens a dedicated page with the current native styling. Verify the three action cards, three recent rows, and back navigation (including Android system back).
+- **Show all activities** expands the history. With more than 50 imported records, scroll or tap **Load older activities** to reach records beyond the first page; **Show recent activities** collapses it. Confirm the imported count, source, XP, loading, empty, and retry states.
+- Open `/activities` directly in web preview, then verify it loads the dashboard/session and that **Back to dashboard** works. Start workout and Log activity should explain their coming-soon status; Sync Strava should report the current daily-check/queue state.
 - Pull-to-refresh shows a loading state and does not create duplicate requests.
 - A backend failure shows an error or stale-data notice; it does not silently replace real data with demo data.
 - An empty Strava account shows an empty state rather than fabricated activity.

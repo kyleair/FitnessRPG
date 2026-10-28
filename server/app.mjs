@@ -129,8 +129,20 @@ export function createApp({ db, env, fetchImpl = fetch, clock = Date.now }) {
       }
       if (['/api/dashboard', '/api/activities'].includes(path) && request.method === 'GET') {
         if (!account) return json(409, { error: 'Connect Strava to view your activities.' });
-        const summary = await exclusive(account, () => dashboard(account).get());
-        return json(200, path === '/api/dashboard' ? summary : summary.recentActivities);
+        try {
+          const result = await exclusive(account, async () => {
+            const service = dashboard(account);
+            const summary = await service.get();
+            return path === '/api/dashboard' ? summary : service.activities({
+              cursor: url.searchParams.get('cursor') ?? undefined,
+              limit: url.searchParams.has('limit') ? Number(url.searchParams.get('limit')) : 50,
+            });
+          });
+          return json(200, result);
+        } catch (error) {
+          if (error.status === 400) return json(400, { error: error.message });
+          throw error;
+        }
       }
       return json(404, { error: 'Not found.' });
     } catch {

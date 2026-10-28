@@ -1,5 +1,9 @@
 import { Activity, demoActivities } from './activities';
 export type ClassKey = 'running' | 'strength' | 'cycling';
+export type ActivityRecord = Activity & { classKey: ClassKey | null; xp: number };
+export interface ActivityPage {
+  items: ActivityRecord[]; total: number; nextCursor: string | null; historyComplete: boolean; source: string;
+}
 export interface Skill {
   key: string; name: string; distanceMeters: number | null;
   best: { timeMs: number; activityId: number; activityName: string; achievedAt: string; source: string; method: string } | null;
@@ -12,7 +16,7 @@ export interface Dashboard {
   syncInProgress?: boolean; syncRetryAt?: string | null;
   skillsUnavailable?: number; skillsPending?: number; skillsStale?: boolean; source: string; syncedAt: string | null; stale: boolean; historyComplete: boolean; importedCount: number;
   month: string; monthlyDistanceKm: number; classes: FitnessClass[];
-  recentActivities: (Activity & { classKey: ClassKey | null; xp: number })[];
+  recentActivities: ActivityRecord[];
 }
 const emptySkills = (classKey: ClassKey, names: string[]): Skill[] => names.map(name => ({ key: `${classKey}_${name}`, name, distanceMeters: null, best: null }));
 export const demoDashboard: Dashboard = {

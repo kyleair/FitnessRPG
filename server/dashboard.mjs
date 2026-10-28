@@ -26,6 +26,17 @@ export function progression(xp) {
   }
   return { level, currentXp, nextLevelXp, progress: currentXp / nextLevelXp };
 }
+export function activityPage(activities, { cursor, limit = 50 } = {}) {
+  const unique = [...new Map(activities.map(activity => [activity.id, activity])).values()]
+    .sort((a, b) => b.startDate.localeCompare(a.startDate) || b.id - a.id);
+  const index = cursor === undefined ? -1 : unique.findIndex(activity => String(activity.id) === cursor);
+  if (!Number.isInteger(limit) || limit < 1 || limit > 100 || (cursor !== undefined && index === -1)) {
+    throw Object.assign(new Error('Invalid activity page. Refresh activity history and try again.'), { status: 400 });
+  }
+  const page = unique.slice(index + 1, index + 1 + limit);
+  return { items: page.map(activity => ({ ...activity, classKey: classFor(activity.sportType), xp: activityXp(activity) })),
+    total: unique.length, nextCursor: index + 1 + page.length < unique.length ? String(page.at(-1).id) : null };
+}
 export function buildDashboard(activities, { now = new Date(), historyComplete = false, syncedAt = null, stale = false, skillCache = {}, skillsStale = false } = {}) {
   const unique = [...new Map(activities.map(activity => [activity.id, activity])).values()]
     .sort((a, b) => b.startDate.localeCompare(a.startDate));
@@ -160,6 +171,7 @@ export function createDashboardService({ client, clock = Date.now, initial = {},
     },
     // Also useful for deterministic queue verification without real timers.
     run,
+    activities(options) { return { ...activityPage(state.activities, options), historyComplete: state.historyComplete, source: 'strava' }; },
     async stop() { stopped = true; cancelTimer?.(); await pending?.catch(() => {}); },
   };
 }
