@@ -94,7 +94,7 @@ export default function HomeScreen() {
         {loading && !data && <View style={styles.loading}><ActivityIndicator color={colors.gold} /><Text style={styles.body}>Gathering your adventure…</Text></View>}
         {data && <>
           <View style={styles.heroFrame}><LinearGradient colors={['#3b291d', '#1e1917']} style={styles.hero}>
-            <View style={styles.heroTop}><View style={styles.heroCopy}><Label>CHARACTER TITLE</Label><Text style={styles.heroTitle}>Wrecking Ball</Text><Text style={styles.heroDescription}>A nimble runner with the power to move mountains.</Text><Text style={styles.preview}>TITLE & AVATAR PREVIEW</Text></View>
+            <View style={styles.heroTop}><View style={styles.heroCopy}><Text style={styles.heroTitle}>Wrecking Ball</Text><Text style={styles.heroDescription}>A nimble runner with the power to move mountains.</Text></View>
               <Pressable accessibilityRole="button" accessibilityLabel="Preview avatar and cosmetics" onPress={() => setDetail({ title: 'Your adventurer', body: 'This is a placeholder avatar from the Classic RPG design. Equipment, cosmetic drops, and class discovery are not connected yet. Your actual Strava data powers the class cards below.' })} style={styles.avatar}><Adventurer /><Text style={styles.star}>✦</Text></Pressable></View>
             <View style={styles.pinnedRow}>
               <View style={styles.pinned}><Text style={styles.pinnedLabel}>Fastest 5K</Text><Text style={styles.pinnedValue}>{best5k ? formatTime(best5k.timeMs) : '—'}</Text><Text style={styles.pinnedNote}>Best tracked time</Text></View>
