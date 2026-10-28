@@ -1,6 +1,7 @@
 const themeButtons = document.querySelectorAll('[data-theme-choice]');
 const views = document.querySelectorAll('.view');
 let currentClass = 'running';
+const exerciseOptions = ['Back squat', 'Deadlift', 'Overhead press', 'Barbell row', 'Pull-up', 'Romanian deadlift', 'Walking lunge'];
 
 const classData = {
   running: {
@@ -61,6 +62,55 @@ function achievementCard(achievement) {
   return `<article class="achievement-card${locked}"><div class="achievement-mark">${achievement.icon}</div><div><p class="eyebrow">${achievement.category}</p><h3>${achievement.title}</h3><p>${achievement.detail}</p></div><strong>${achievement.status}</strong></article>`;
 }
 
+function renderExerciseOptions(query = '') {
+  const container = document.getElementById('exercise-options');
+  if (!container) return;
+  const matches = exerciseOptions.filter((exercise) => exercise.toLowerCase().includes(query.trim().toLowerCase()));
+  container.innerHTML = matches.length ? matches.map((exercise) => `<button class="exercise-option" data-action="choose-exercise" data-exercise="${exercise}"><span class="exercise-option-icon">+</span><span><b>${exercise}</b><small>Strength exercise · Add to today’s session</small></span><span class="exercise-option-arrow">›</span></button>`).join('') : '<p class="exercise-empty">No exercises found. Try another search.</p>';
+}
+
+function setExercisePicker(open) {
+  const picker = document.getElementById('exercise-picker');
+  if (!picker) return;
+  picker.classList.toggle('is-hidden', !open);
+  picker.setAttribute('aria-hidden', String(!open));
+  if (open) {
+    const search = document.getElementById('exercise-search');
+    renderExerciseOptions();
+    search.value = '';
+    window.setTimeout(() => search.focus(), 0);
+  }
+}
+
+function ensureExercisePicker() {
+  if (document.getElementById('exercise-picker')) return;
+  const picker = document.createElement('div');
+  picker.className = 'modal-backdrop is-hidden';
+  picker.id = 'exercise-picker';
+  picker.setAttribute('aria-hidden', 'true');
+  picker.innerHTML = '<section class="exercise-picker" role="dialog" aria-modal="true" aria-labelledby="exercise-picker-title"><div class="exercise-picker-heading"><div><p class="eyebrow">WORKOUT BUILDER</p><h2 id="exercise-picker-title">Add an exercise</h2></div><button class="modal-close" data-action="close-exercise-picker" aria-label="Close exercise picker">×</button></div><input class="exercise-search" id="exercise-search" type="search" placeholder="Search exercises" aria-label="Search exercises" /><div class="exercise-options" id="exercise-options"></div></section>';
+  document.body.appendChild(picker);
+  document.getElementById('exercise-search').addEventListener('input', (event) => renderExerciseOptions(event.target.value));
+}
+
+function addExercise(name) {
+  const workoutPanel = document.querySelector('.workout-panel');
+  if (!workoutPanel) return;
+  let container = document.getElementById('workout-exercises');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'workout-exercises';
+    const firstBlock = workoutPanel.querySelector('.exercise-block');
+    const addButton = workoutPanel.querySelector('.secondary.full');
+    addButton.parentNode.insertBefore(container, addButton);
+    container.appendChild(firstBlock);
+  }
+  const block = document.createElement('div');
+  block.className = 'exercise-block';
+  block.innerHTML = `<div class="exercise-heading"><div><b>${name}</b><small>Strength · 3 sets</small></div><button class="text-button" data-action="remove-exercise">Remove</button></div><div class="set-row set-heading"><span>SET</span><span>WEIGHT</span><span>REPS</span><span></span></div><div class="set-row"><b>1</b><input placeholder="lb" aria-label="${name} set 1 weight" /><input placeholder="reps" aria-label="${name} set 1 reps" /><span class="set-check">○</span></div><div class="set-row"><b>2</b><input placeholder="lb" aria-label="${name} set 2 weight" /><input placeholder="reps" aria-label="${name} set 2 reps" /><span class="set-check">○</span></div><button class="text-button add-set">+ Add set</button>`;
+  container.appendChild(block);
+}
+
 function renderClass(classKey = currentClass) {
   currentClass = classKey;
   const data = classData[classKey];
@@ -93,6 +143,11 @@ themeButtons.forEach((button) => {
 
 document.addEventListener('click', (event) => {
   const actionButton = event.target.closest('[data-action]');
+  if (event.target.closest('.workout-panel .secondary.full')) {
+    ensureExercisePicker();
+    setExercisePicker(true);
+    return;
+  }
   if (actionButton?.dataset.action === 'sync') {
     const status = document.getElementById('sync-status');
     if (status) status.textContent = 'Sync complete · 3 activities checked';
@@ -105,6 +160,14 @@ document.addEventListener('click', (event) => {
     const status = document.getElementById('sync-status');
     if (status) status.textContent = 'Workout saved · Strength volume recorded';
   }
+  if (actionButton?.dataset.action === 'open-exercise-picker') setExercisePicker(true);
+  if (actionButton?.dataset.action === 'close-exercise-picker') setExercisePicker(false);
+  if (actionButton?.dataset.action === 'choose-exercise') {
+    addExercise(actionButton.dataset.exercise);
+    setExercisePicker(false);
+  }
+  if (actionButton?.dataset.action === 'remove-exercise') actionButton.closest('.exercise-block')?.remove();
+  if (event.target.id === 'exercise-picker') setExercisePicker(false);
   const viewButton = event.target.closest('[data-view]');
   if (viewButton && !viewButton.matches('[data-theme-choice]')) showView(viewButton.dataset.view, viewButton.dataset.classKey);
 });
@@ -127,4 +190,5 @@ document.querySelectorAll('[data-mode]').forEach((button) => {
   });
 });
 
+ensureExercisePicker();
 renderClass();
