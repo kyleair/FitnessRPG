@@ -1,4 +1,4 @@
-export function createStravaClient({ clientId, clientSecret, initialTokens, saveTokens, fetchImpl = fetch }) {
+export function createStravaClient({ clientId, clientSecret, initialTokens, saveTokens, fetchImpl = fetch, budget }) {
   let tokens = initialTokens;
   let pendingRefresh;
   async function accessToken() {
@@ -23,7 +23,7 @@ export function createStravaClient({ clientId, clientSecret, initialTokens, save
   return {
     async details(id) {
       const token = await accessToken();
-      const response = await fetchImpl(`https://www.strava.com/api/v3/activities/${id}`, {
+      const response = await request(`https://www.strava.com/api/v3/activities/${id}`, {
         headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(15000),
       });
       if (response.status === 404) return null;
@@ -32,18 +32,19 @@ export function createStravaClient({ clientId, clientSecret, initialTokens, save
     },
     async streams(id) {
       const token = await accessToken();
-      const response = await fetchImpl(`https://www.strava.com/api/v3/activities/${id}/streams?keys=time,distance&key_by_type=true`, {
+      const response = await request(`https://www.strava.com/api/v3/activities/${id}/streams?keys=time,distance&key_by_type=true`, {
         headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(15000),
       });
       if (response.status === 404) return null;
       if (!response.ok) throw new Error(`Strava streams request failed (${response.status}).`);
       return response.json();
     },
-    async activities({ perPage = 30, before } = {}) {
+    async activities({ perPage = 200, before, after } = {}) {
       const token = await accessToken();
       const query = new URLSearchParams({ per_page: String(perPage) });
       if (before) query.set('before', String(before));
-      const response = await fetchImpl(`https://www.strava.com/api/v3/athlete/activities?${query}`, {
+      if (after !== undefined) query.set('after', String(after));
+      const response = await request(`https://www.strava.com/api/v3/athlete/activities?${query}`, {
         headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(15000),
       });
       if (!response.ok) throw new Error(`Strava activities request failed (${response.status}).`);
@@ -55,4 +56,7 @@ export function createStravaClient({ clientId, clientSecret, initialTokens, save
           distance: amount(item.distance), movingTime: amount(item.moving_time), elevationGain: amount(item.total_elevation_gain), startDate: item.start_date }));
     },
   };
+  function request(url, options) {
+    return budget ? budget.request(() => fetchImpl(url, options)) : fetchImpl(url, options);
+  }
 }

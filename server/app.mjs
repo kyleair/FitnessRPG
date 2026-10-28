@@ -3,6 +3,7 @@ import { createOAuthSession } from './oauth.mjs';
 import { createStravaClient } from './strava.mjs';
 import { createDashboardService } from './dashboard.mjs';
 import { hash, secret } from './database.mjs';
+import { createApiBudget } from './budget.mjs';
 
 const safeTokens = tokens => {
   if (!tokens.access_token || !tokens.refresh_token || !Number.isFinite(tokens.expires_at)) throw new Error('Invalid Strava token response.');
@@ -15,6 +16,8 @@ export function createApp({ db, env, fetchImpl = fetch, clock = Date.now }) {
   const publicOrigin = env.PUBLIC_BACKEND_URL ? new URL(env.PUBLIC_BACKEND_URL).origin : null;
   const configured = !!(origin && env.STRAVA_CLIENT_ID && env.STRAVA_CLIENT_SECRET);
   const namespace = hash(`${env.STRAVA_CLIENT_ID}:${env.STRAVA_CLIENT_SECRET}`) + ':';
+  const budgetId = hash(String(env.STRAVA_CLIENT_ID));
+  const budget = createApiBudget({ clock, initial: db.budget(budgetId), persist: value => db.saveBudget(budgetId, value) });
   const origins = new Set(['http://localhost:8081', 'http://127.0.0.1:8081', env.DEV_WEB_ORIGIN, publicOrigin, origin].filter(Boolean));
   const services = new Map(), locks = new Map(), rates = new Map();
   async function exclusive(account, fn) {
@@ -27,11 +30,11 @@ export function createApp({ db, env, fetchImpl = fetch, clock = Date.now }) {
     if (!services.has(account)) services.set(account, createDashboardService({
       clock, initial: db.snapshot(account), persist: value => db.saveSnapshot(account, value),
       client: createStravaClient({ clientId: env.STRAVA_CLIENT_ID, clientSecret: env.STRAVA_CLIENT_SECRET,
-        initialTokens: db.tokens(account), saveTokens: value => db.saveTokens(account, safeTokens(value)), fetchImpl }),
+        initialTokens: db.tokens(account), saveTokens: value => db.saveTokens(account, safeTokens(value)), fetchImpl, budget }),
     }));
     return services.get(account);
   }
-  return async (request, response) => {
+  const handler = async (request, response) => {
     response.setHeader('Cache-Control', 'no-store');
     response.setHeader('Referrer-Policy', 'no-referrer');
     response.setHeader('X-Content-Type-Options', 'nosniff');
@@ -79,7 +82,7 @@ export function createApp({ db, env, fetchImpl = fetch, clock = Date.now }) {
           saveTokens: async value => {
             if (!Number.isSafeInteger(value.athlete?.id) || value.athlete.id <= 0) throw new Error('Strava did not return an athlete.');
             const account = namespace + value.athlete.id;
-            await exclusive(account, () => { db.connect(attempt.session, account, safeTokens(value)); services.delete(account); });
+            await exclusive(account, async () => { await services.get(account)?.stop(); db.connect(attempt.session, account, safeTokens(value)); services.delete(account); });
           } });
         try { await oauth.complete(url); }
         catch { return page(400, 'Could not connect', '<p>Authorization was declined, activity permission was missing, or Strava could not complete the connection. Return to Expo Go and try again.</p>'); }
@@ -134,4 +137,7 @@ export function createApp({ db, env, fetchImpl = fetch, clock = Date.now }) {
       return json(502, { error: 'Unable to complete the request. Check backend configuration or try again.' });
     }
   };
+  handler.close = () => Promise.all([...services.values()].map(service => service.stop()));
+  handler.idle = () => Promise.all([...services.values()].map(service => service.run()));
+  return handler;
 }

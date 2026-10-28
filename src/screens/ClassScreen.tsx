@@ -75,7 +75,8 @@ export default function ClassScreen() {
             {data?.source === 'demo' && <Text style={styles.eyebrow}>SAMPLE DATA</Text>}
             <Text style={styles.source}>{fitnessClass.formula}. Class XP grows independently of personal bests.</Text>
             {classKey !== 'strength' && <Text style={styles.source}>{classKey === 'running' ? 'Times are supplied by Strava best efforts, using elapsed time. No result is calculated when Strava omits an effort.' : 'Times use elapsed distance/time samples, including stops, and may differ from Strava best efforts.'} Locked means no result is recorded yet; an activity may still be waiting for processing.</Text>}
-            {!!data?.skillsPending && classKey !== 'strength' && <Text style={styles.source}>{data.skillsPending} activities awaiting processing. Pull to sync after a minute to continue.</Text>}
+            {!!data?.skillsPending && classKey !== 'strength' && <Text style={styles.source}>{data.skillsPending} activities awaiting processing across all classes. Processing continues automatically while the server runs.</Text>}
+            {!!data?.syncRetryAt && <Text style={styles.source}>Sync paused. Automatic retry at {new Date(data.syncRetryAt).toLocaleTimeString()}.</Text>}
             {!!data?.skillsUnavailable && classKey !== 'strength' && <Text style={styles.source}>{data.skillsUnavailable} activities have unavailable or invalid skill data.</Text>}
             {(data?.skillsStale || data?.stale) && <Text style={styles.body}>Some data could not be refreshed. Saved results are shown.</Text>}
             <Text style={styles.source}>{data?.historyComplete ? 'All accessible history imported.' : 'Totals and bests cover imported history so far.'}</Text>

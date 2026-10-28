@@ -75,7 +75,7 @@ On the phone:
 3. Enter the code shown on the phone and complete Strava authorization in that same computer browser.
 4. Return to the phone and tap **Check connection**.
 5. Confirm that the dashboard identifies Strava as the source, shows imported counts, and displays a sync time.
-6. Pull to refresh or tap **Sync Strava**. Within the one-minute cache window, the result should remain stable; later refreshes should continue history import when more pages exist.
+6. Leave the server running and observe imported counts and pending skill counts progress automatically. Pull to refresh or tap **Sync Strava** to read the latest saved state. Once complete, repeat visits on the same UTC day should not trigger more Strava calls. Restart both server and app to verify saved results remain available and pending work resumes. Budget pauses should show a retry time and resume automatically.
 
 Do not use `127.0.0.1` as the phone's API address. The phone must use the computer's LAN IPv4 address, such as `http://192.168.1.100:3001`.
 

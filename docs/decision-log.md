@@ -193,3 +193,18 @@ Record decisions here as the project evolves. Keep entries short and link to the
 - Running now requests activity details and uses positive elapsed times from `best_efforts` for our five target distances. Accept up to one meter of provider distance rounding, including 21,097 m for the half marathon. Ignore unrelated distances and invalid times. No running stream fallback.
 - Cycling retains distance/time stream calculations. Result attribution distinguishes `strava_best_efforts` from `distance_time_stream_v1`.
 - Running cache version increments to 2; existing calculated running results are hidden and reprocessed through the bounded sync queue. Cycling stays at version 1 so its cached results survive. Missing running best efforts remain empty and are eligible for the existing daily recheck. Class XP and the three-activity sync budget are unchanged.
+
+## 2026-10-28 - Increase cycling XP per kilometer
+
+- Change the experimental Cycling rate from 5 km per XP to 3 km per XP, including fractional XP. Running, Strength, eligible activity types, and level thresholds stay unchanged.
+- Apply the rate to imported activity totals, recent activities, and demo progress. Saved activity distances are recalculated with the new rate after restarting the backend; no migration or reconnect is needed.
+
+## 2026-10-28 - Persist a budget-aware import queue and retain processed workouts
+
+- Replace the manual one-minute/three-activity batches with consecutive 200-summary pages and an automatic backend skill queue. The first page blocks initial load; subsequent pages and skills run off-screen while the server runs. The app polls saved progress only while active and work remains.
+- Serialize API reads through an application-wide gate using both read and overall 15-minute/daily response headers. Reserve requests durably before sending; persist usage across restarts. Missing headers fall back to 25 reads per 15 minutes and 1,000 per UTC day. Pause on exhausted budgets/429 and resume at reset; transient skill failures retry after 15 minutes without blocking other pending activities.
+- Save every summary page and computed skill result atomically. Existing account snapshots/cursors/results are preserved, and SQLite creates an additional budget table automatically. Pending work resumes on the first visit after a server restart. Stopping/reconnecting drains in-flight work before closing/replacing its service.
+- After initial history import, a visit initiates at most one successful incremental activity check per UTC day. Persist the scan cursor across budget pauses/restarts and fetch details/streams only for new or unprocessed workouts. No daily checks start from queue timers alone.
+- Treat imported summaries and successfully processed skills (including missing/empty skill data) as permanent. Remove the 24-hour refetch cycle. Explicit calculation-version changes may still require one-time reprocessing. Failed requests remain pending.
+- Incremental checks use activity start time with a one-second overlap at the newest saved activity, deduplicating IDs. Edits/deletions and backdated uploads older than that boundary require future explicit reconciliation. A workout completed after today's check waits until the next day's visit. These are intentional tradeoffs for reducing calls.
+- This supersedes the earlier three-request budget, daily skill rechecking, and latest-page edit/deletion reconciliation. XP and best-effort definitions are otherwise unchanged.
