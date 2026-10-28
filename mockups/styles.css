@@ -255,6 +255,9 @@ body[data-theme="classic"] .history-summary > div,body[data-theme="classic"] .hi
 .app-shell .activity-detail-row > strong { flex:0 0 auto; max-width:64px; color:#e8c765; font-size:.72rem; text-align:right; }
 .app-shell .activity-detail-row > .muted-status { color:#c0ae83; }
 .app-shell .activity-detail-row .running-mark { color:#f0b64c; }.app-shell .activity-detail-row .cycling-mark { color:#78c6e0; }.app-shell .activity-detail-row .neutral-mark { color:#c0ae83; }
+.app-shell .activity-entry { display:flex; align-items:center; justify-content:space-between; width:100%; margin-top:12px; padding:11px 0 0; border-top:1px solid #4c3b2b; color:#e8c765; background:transparent; text-align:left; font:500 .72rem DM Mono,monospace; }
+.app-shell .activity-entry:hover { color:#f3e3bb; }
+.app-shell .activity-entry-arrow { font:bold 1.55rem Georgia,serif; line-height:.8; }
 
 /* Activities hub actions and manual/workout entry flows. */
 .app-shell .activity-actions { display:grid; grid-template-columns:1.15fr 1fr 1fr; gap:8px; margin-bottom:8px; }
