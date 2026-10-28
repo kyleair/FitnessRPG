@@ -15,7 +15,7 @@
       </header>
 
       <svg class="icon-defs" aria-hidden="true">
-        <symbol id="icon-runner" viewBox="0 0 64 64"><circle cx="39" cy="10" r="6"/><path d="M31 20l11 8-7 10 12 8M35 37L22 51M42 28l13 2M28 24l-12 8"/></symbol>
+        <symbol id="icon-runner" viewBox="0 0 64 64"><circle cx="39" cy="11" r="5" fill="currentColor" stroke="none"/><path d="M32 21l6 8-6 9M37 28l13 1M34 25l-12 8M22 33l-7-5M32 38L20 50M32 38l14 9" fill="none" stroke-width="4"/></symbol>
         <symbol id="icon-strength" viewBox="0 0 64 64"><path d="M13 25v14M20 19v26M27 26h10M44 19v26M51 25v14M20 32h24"/></symbol>
         <symbol id="icon-cycle" viewBox="0 0 64 64"><circle cx="18" cy="46" r="10"/><circle cx="48" cy="46" r="10"/><path d="M18 46l12-24 8 24M30 22h12M30 22l-8 0M30 22l18 24M25 32h17"/></symbol>
         <symbol id="icon-speed" viewBox="0 0 64 64"><path d="M14 45a24 24 0 1 1 36 0M32 34l12-12M20 45h24M22 20l3 5M42 20l-3 5"/></symbol>
@@ -23,6 +23,13 @@
         <symbol id="icon-consistency" viewBox="0 0 64 64"><path d="M32 12v40M12 32h40M18 18l28 28M46 18L18 46"/></symbol>
         <symbol id="icon-swimming" viewBox="0 0 64 64"><path d="M14 24c5-6 10 6 15 0s10 6 15 0 8 2 8 2"/><circle cx="21" cy="15" r="5"/><path d="M12 39c5-5 10 5 15 0s10 5 15 0 8 2 10 2M13 50c5-5 10 5 15 0s10 5 15 0 8 2 10 2"/></symbol>
         <symbol id="icon-quest" viewBox="0 0 64 64"><path d="M20 16h24l5 9-17 27-17-27 5-9ZM15 25h34M32 16v36"/></symbol>
+        <symbol id="icon-ranks" viewBox="0 0 64 64"><path d="M13 52V34h10v18M27 52V20h10v32M41 52V10h10v42"/></symbol>
+        <symbol id="icon-history" viewBox="0 0 64 64"><circle cx="32" cy="32" r="22"/><path d="M32 19v14l9 6M15 20l-2-9 9 2"/></symbol>
+        <symbol id="icon-sync" viewBox="0 0 64 64"><path d="M17 23a20 20 0 0 1 33 5M50 16v12H38M47 41a20 20 0 0 1-33-5M14 48V36h12"/></symbol>
+        <symbol id="class-frame" viewBox="0 0 100 140" preserveAspectRatio="none">
+          <rect x="3" y="3" width="94" height="134" rx="3" fill="none" stroke="currentColor" stroke-width=".8"/>
+          <rect x="6" y="6" width="88" height="128" rx="2" fill="none" stroke="currentColor" stroke-width=".35" opacity=".9"/>
+        </symbol>
       </svg>
       <main>
         <section class="view active" id="home-view">
@@ -34,16 +41,15 @@
 
           <div class="section-heading"><div><p class="eyebrow">YOUR SKILLS</p><h3>Choose a class to inspect.</h3></div></div>
           <div class="skill-grid">
-            <button class="skill-card running" data-view="class" data-class-key="running"><div class="skill-icon skill-emblem"><svg><use href="#icon-runner"></use></svg></div><div class="skill-meta"><span>RUNNING</span><strong>Level 24</strong></div><div class="meter"><span style="width:72%"></span></div><p>720 / 1,000 lifetime XP</p><small>Explore 4 running skills</small></button>
-            <button class="skill-card strength" data-view="class" data-class-key="strength"><div class="skill-icon skill-emblem"><svg><use href="#icon-strength"></use></svg></div><div class="skill-meta"><span>STRENGTH</span><strong>Level 12</strong></div><div class="meter"><span style="width:48%"></span></div><p>180 / 400 lifetime XP</p><small>Explore 4 strength skills</small></button>
-            <button class="skill-card cycling" data-view="class" data-class-key="cycling"><div class="skill-icon skill-emblem"><svg><use href="#icon-cycle"></use></svg></div><div class="skill-meta"><span>CYCLING</span><strong>Level 11</strong></div><div class="meter"><span style="width:30%"></span></div><p>300 / 1,000 lifetime XP</p><small>Explore 4 cycling skills</small></button>
-            <button class="skill-card swimming" data-view="class" data-class-key="swimming"><div class="skill-icon skill-emblem"><svg><use href="#icon-swimming"></use></svg></div><div class="skill-meta"><span>SWIMMING</span><strong>Level 2</strong></div><div class="meter"><span style="width:22%"></span></div><p>6 / 30 lifetime XP</p><small>Explore 4 swimming skills</small></button>
+            <button class="skill-card running" data-view="class" data-class-key="running"><svg class="class-frame" aria-hidden="true"><use href="#class-frame"></use></svg><div class="skill-icon skill-emblem"><svg><use href="#icon-runner"></use></svg></div><div class="skill-meta"><span>RUNNING</span><strong>Level 24</strong></div><div class="meter"><span style="width:72%"></span></div><p>720 / 1,000 lifetime XP</p><small>Explore 5 running skills</small></button>
+            <button class="skill-card strength" data-view="class" data-class-key="strength"><svg class="class-frame" aria-hidden="true"><use href="#class-frame"></use></svg><div class="skill-icon skill-emblem"><svg><use href="#icon-strength"></use></svg></div><div class="skill-meta"><span>STRENGTH</span><strong>Level 12</strong></div><div class="meter"><span style="width:48%"></span></div><p>180 / 400 lifetime XP</p><small>Explore 3 strength skills</small></button>
+            <button class="skill-card cycling" data-view="class" data-class-key="cycling"><svg class="class-frame" aria-hidden="true"><use href="#class-frame"></use></svg><div class="skill-icon skill-emblem"><svg><use href="#icon-cycle"></use></svg></div><div class="skill-meta"><span>CYCLING</span><strong>Level 11</strong></div><div class="meter"><span style="width:30%"></span></div><p>300 / 1,000 lifetime XP</p><small>Explore 5 cycling skills</small></button>
           </div>
 
           <div class="section-heading dashboard-heading"><div><p class="eyebrow">QUESTS AND ACTIVITIES</p><h3>Keep your adventure moving.</h3></div></div>
           <div class="dashboard-grid">
             <button class="panel quest-panel quest-entry" data-view="quests" aria-label="Open quests"><div class="quest-entry-icon"><svg><use href="#icon-quest"></use></svg></div><div><p class="eyebrow">ADVENTURE BOARD</p><h3>Quests</h3><p class="muted">Daily, weekly, and monthly challenges.</p></div><span class="quest-entry-arrow">&gt;</span></button>
-            <article class="panel recent-panel"><div class="panel-heading"><div><p class="eyebrow">RECENT ACTIVITIES</p></div></div><div class="activity-row"><div class="activity-mark">/</div><div><b>Evening 5K</b><p>5.02 km - 32 min - Today</p></div><strong>+5 XP</strong></div><button class="secondary full" data-view="activity">See activities</button></article>
+            <article class="panel recent-panel"><div class="panel-heading"><div><p class="eyebrow">RECENT ACTIVITIES</p></div><span class="source-pill">DEMO</span></div><div class="activity-row"><div class="activity-mark running-mark"><svg><use href="#icon-runner"></use></svg></div><div><b>Morning river run</b><p>6.2 km · 34 min · Oct 24, 2026 · Run</p></div><strong>+6.2 XP</strong></div><button class="activity-entry" data-view="activity"><span>See activities</span><span class="activity-entry-arrow">›</span></button></article>
           </div>
         </section>
 
@@ -68,10 +74,31 @@
 
         <section class="view" id="activity-view">
           <button class="back-button" data-view="home">Back to dashboard</button>
-          <div class="page-title"><p class="eyebrow">ACTIVITY REWARD</p><h2>Your run just became progress.</h2><p class="muted">A transparent reward moment makes the numbers feel earned.</p></div>
-          <article class="reward-card"><div class="reward-icon">/</div><div class="reward-main"><span class="source-pill">IMPORTED FROM STRAVA</span><h3>Evening 5K</h3><p>5.02 km - 32 min - Today</p></div><div class="reward-xp"><small>RUNNING XP</small><strong>+5</strong></div></article>
-          <div class="level-up"><div><p class="eyebrow">RUNNING</p><h3>Level 24 progress</h3><p>720 -> 725 lifetime XP</p></div><div class="level-number">24</div><div class="meter"><span style="width:76%"></span></div><small>275 XP to level 25</small></div>
-          <div class="reward-grid"><article class="panel"><p class="eyebrow">CURRENT PERFORMANCE</p><h3>Fastest 5K: level 50</h3><p class="muted">Your best 5K in the last six months puts you at level 50. Your all-time peak was level 56.</p><button class="text-button" data-view="class">Open running skills</button></article><article class="loot-card"><span class="loot-shine">*</span><p class="eyebrow">LUCKY FIND</p><h3>You found sunglasses!</h3><p>New cosmetic added to your collection.</p><button class="primary" data-view="profile">Equip item</button></article></div>
+          <div class="page-title"><p class="eyebrow">RECENT ACTIVITIES</p><h2>Keep your adventure moving.</h2><p class="muted">Imported activity records show their source, contribution, and any limits on the current XP rules.</p></div>
+          <div class="activity-actions"><button class="activity-action primary-action" data-view="workout"><svg><use href="#icon-strength"></use></svg><span><b>Start workout</b><small>Track exercises, sets, and reps.</small></span></button><button class="activity-action" data-view="manual"><svg><use href="#icon-cycle"></use></svg><span><b>Log activity</b><small>Enter something you already finished.</small></span></button><button class="activity-action" data-action="sync"><svg><use href="#icon-sync"></use></svg><span><b>Sync Strava</b><small>Check for newly imported activities.</small></span></button></div>
+          <p class="sync-status" id="sync-status" aria-live="polite"></p>
+          <article class="panel activity-list-panel"><div class="panel-heading"><div><p class="eyebrow">ACTIVITY HISTORY</p><h3>Recent activities</h3></div><span class="source-pill">DEMO</span></div>
+            <div class="activity-detail-row"><div class="activity-mark running-mark"><svg><use href="#icon-runner"></use></svg></div><div class="activity-copy"><b>Morning river run</b><p>6.2 km · 34 min</p><small>Oct 24, 2026 · Run</small></div><strong>+6.2 XP</strong></div>
+            <div class="activity-detail-row"><div class="activity-mark cycling-mark"><svg><use href="#icon-cycle"></use></svg></div><div class="activity-copy"><b>Evening spin</b><p>24.5 km · 62 min</p><small>Oct 23, 2026 · Ride</small></div><strong>+4.9 XP</strong></div>
+            <div class="activity-detail-row"><div class="activity-mark neutral-mark"><svg><use href="#icon-quest"></use></svg></div><div class="activity-copy"><b>Lunch break reset</b><p>3.1 km · 36 min</p><small>Oct 22, 2026 · Walk</small></div><strong class="muted-status">No XP rule</strong></div>
+            <button class="secondary full" data-view="home">Back to dashboard</button>
+          </article>
+          <p class="privacy-note">Demo data only. Real activities retain their provider source and are scoped to the connected athlete.</p>
+        </section>
+
+        <section class="view" id="manual-view">
+          <button class="back-button" data-view="activity">Back to activities</button>
+          <div class="page-title"><p class="eyebrow">MANUAL ENTRY</p><h2>Log an activity</h2><p class="muted">Record something you already completed. It stays clearly labeled as a manual entry.</p></div>
+          <article class="panel form-panel"><label>Activity type<select><option>Ride</option><option>Run</option><option>Walk</option><option>Swim</option><option>Other</option></select></label><label>Activity name<input value="15 km bike ride" /></label><div class="form-row"><label>Distance<input value="15" inputmode="decimal" /></label><label>Unit<select><option>km</option><option>mi</option></select></label></div><div class="form-row"><label>Duration<input value="52" inputmode="numeric" /></label><label>Unit<select><option>minutes</option><option>hours</option></select></label></div><label>Date<input type="date" value="2026-10-27" /></label><button class="primary full" data-action="save-manual" data-view="activity">Review activity</button></article>
+          <p class="form-note">Manual entries can contribute to class XP when the activity has an explainable rule. They do not create Strava performance records.</p>
+        </section>
+
+        <section class="view" id="workout-view">
+          <button class="back-button" data-view="activity">Back to activities</button>
+          <div class="page-title"><p class="eyebrow">WORKOUT IN PROGRESS</p><h2>Start a workout</h2><p class="muted">Choose exercises, record each set, and save the session when you are done.</p></div>
+          <div class="template-row"><button class="template active">Blank workout</button><button class="template">Upper body</button><button class="template">Lower body</button></div>
+          <article class="panel workout-panel"><div class="panel-heading"><div><p class="eyebrow">EXERCISES</p><h3>Today’s session</h3></div><span class="workout-status">IN PROGRESS</span></div><div class="exercise-block"><div class="exercise-heading"><div><b>Bench press</b><small>Strength · 3 sets</small></div><button class="text-button">Remove</button></div><div class="set-row set-heading"><span>SET</span><span>WEIGHT</span><span>REPS</span><span></span></div><div class="set-row"><b>1</b><input value="135" aria-label="Bench press set 1 weight" /><input value="8" aria-label="Bench press set 1 reps" /><span class="set-check">✓</span></div><div class="set-row"><b>2</b><input value="135" aria-label="Bench press set 2 weight" /><input value="8" aria-label="Bench press set 2 reps" /><span class="set-check">✓</span></div><div class="set-row"><b>3</b><input placeholder="lb" aria-label="Bench press set 3 weight" /><input placeholder="reps" aria-label="Bench press set 3 reps" /><span class="set-check">○</span></div><button class="text-button add-set">+ Add set</button></div><button class="secondary full">+ Add exercise</button><button class="primary full" data-action="complete-workout" data-view="activity">Complete workout</button></article>
+          <p class="form-note">Finishing creates a workout record and calculates Strength progress from recorded volume.</p>
         </section>
 
         <section class="view" id="leaderboard-view">
