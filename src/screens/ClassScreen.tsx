@@ -66,9 +66,7 @@ export default function ClassScreen() {
     return () => clearTimeout(initial);
   }, [classKey, data, refresh]); // Load direct links as well as dashboard navigation.
   const fitnessClass = data?.classes.find(item => item.key === classKey);
-  const unlocked = fitnessClass?.skills.filter(skill => skill.best) || [];
   const theme = classKey ? classThemes[classKey] : classThemes.running;
-  const bestSkill = unlocked.reduce<Skill | null>((best, skill) => !best || skill.best!.timeMs < best.best!.timeMs ? skill : best, null);
   return <LinearGradient colors={['#3b2a22', '#211b18', '#191513']} style={styles.screen}>
     <StatusBar style="light" />
     <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
@@ -77,7 +75,7 @@ export default function ClassScreen() {
         {fitnessClass && classKey ? <View style={[styles.classBanner, { borderColor: theme.border, backgroundColor: theme.banner }]}>
           <BannerEmblem classKey={classKey} color={theme.accent} />
           <View style={styles.bannerCopy}><Text style={styles.eyebrow}>CLASS</Text><Text style={styles.bannerTitle}>{fitnessClass.name}</Text></View>
-          {classKey === 'running' && <View style={styles.bestSkill}><Text style={styles.bestSkillLabel}>BEST RECORDED{`\n`}SKILL</Text><Text style={[styles.bestSkillName, { color: theme.accent }]}>{bestSkill?.name || 'No result'}</Text>{bestSkill && <Text style={styles.bestSkillValue}>{formatTime(bestSkill.best!.timeMs)}</Text>}</View>}
+          {classKey === 'running' && <View style={styles.bestSkill}><Text style={styles.bestSkillLabel}>LIFETIME RUNNING{`\n`}SKILL</Text><Text style={[styles.bestSkillName, { color: theme.accent }]}>Level {fitnessClass.level}</Text></View>}
         </View> : <Text style={styles.title}>{classKey ? 'Class skills' : 'Class not found'}</Text>}
         {!!error && <View style={styles.notice}><Text style={styles.body} accessibilityRole="alert">{error}{data ? ' Showing saved data.' : ''}</Text><Pressable accessibilityRole="button" style={styles.back} onPress={refresh}><Text style={styles.backText}>Try again</Text></Pressable></View>}
         {!fitnessClass && loading && <ActivityIndicator color="#e8c765" />}
