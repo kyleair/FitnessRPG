@@ -12,11 +12,14 @@ export function openDatabase(path, clock = Date.now) {
     CREATE TABLE IF NOT EXISTS sessions (id TEXT PRIMARY KEY, account TEXT, expires INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS accounts (id TEXT PRIMARY KEY, tokens TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS snapshots (account TEXT PRIMARY KEY, data TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS api_budgets (id TEXT PRIMARY KEY, data TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS attempts (id TEXT PRIMARY KEY, session TEXT NOT NULL, browser TEXT,
       state TEXT UNIQUE, expires INTEGER NOT NULL);
   `);
   return {
     close: () => db.close(),
+    budget(id) { const row = db.prepare('SELECT data FROM api_budgets WHERE id = ?').get(id); return row ? JSON.parse(row.data) : undefined; },
+    saveBudget(id, data) { db.prepare('INSERT INTO api_budgets VALUES (?, ?) ON CONFLICT(id) DO UPDATE SET data = excluded.data').run(id, JSON.stringify(data)); },
     createSession() {
       db.prepare('DELETE FROM sessions WHERE expires <= ?').run(clock());
       const token = secret();

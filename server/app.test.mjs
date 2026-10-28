@@ -33,9 +33,9 @@ test('browser connection isolates athletes and persists sessions, rotating token
     return Response.json([{ id: id * 10, name: `Athlete ${id} run`, sport_type: 'Run', distance: id * 1000,
       moving_time: 600, start_date: '2026-10-24T12:00:00Z' }]);
   };
-  const restart = () => { db.close(); db = openDatabase(path, () => now); app = createApp({ db, env, fetchImpl, clock: () => now }); };
+  const restart = async () => { await app.close(); db.close(); db = openDatabase(path, () => now); app = createApp({ db, env, fetchImpl, clock: () => now }); };
   app = createApp({ db, env, fetchImpl, clock: () => now });
-  t.after(async () => { server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); db.close(); await rm(directory, { recursive: true, force: true }); });
+  t.after(async () => { await app.close(); server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); db.close(); await rm(directory, { recursive: true, force: true }); });
   const request = (path, token, method = 'GET', extra = {}) => fetch(origin + path, { method, redirect: 'manual', headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...extra } });
   const newSession = async () => (await (await request('/api/session', null, 'POST')).json()).token;
   async function begin(token, formOrigin = origin) {
@@ -76,7 +76,7 @@ test('browser connection isolates athletes and persists sessions, rotating token
   const flow = await begin(a, 'null');
   const friendFlow = await begin(b, null);
   assert.equal((await callback({ ...flow, cookie: 'fitness_oauth=wrong' }, 1)).status, 400);
-  restart(); // A pending browser authorization also survives a restart.
+  await restart(); // A pending browser authorization also survives a restart.
   assert.equal((await callback(flow, 1)).status, 200);
   assert.equal((await callback(flow, 1)).status, 400);
   assert.equal((await callback(friendFlow, 2)).status, 200);
@@ -85,17 +85,20 @@ test('browser connection isolates athletes and persists sessions, rotating token
   assert.equal(two.recentActivities[0].id, 20);
   assert.equal(refreshCalls, 2);
   assert.equal(activityCalls, 2);
+  await app.idle();
   const account = db.session(a).account;
   const rotated = db.tokens(account).refresh_token;
   assert.match(rotated, /^refresh-1-[12]$/);
-  restart();
+  await restart();
   assert.equal(db.tokens(account).refresh_token, rotated);
   assert.equal((await (await request('/api/session', a)).json()).connected, true);
   const restoredDashboard = await (await request('/api/dashboard', a)).json();
   assert.equal(restoredDashboard.recentActivities[0].id, 10);
   assert.equal(restoredDashboard.classes[0].skills[0].best.activityId, 10);
   assert.equal(activityCalls, 2, 'restart reuses persisted cooldown and snapshot');
-  now += 61000; offline = true;
+  now += 86400000; offline = true;
+  await request('/api/dashboard', a);
+  await app.idle();
   const cached = await (await request('/api/dashboard', a)).json();
   assert.equal(cached.stale, true); assert.equal(cached.importedCount, 1);
   assert.equal((await request('/api/session', a, 'GET', { Origin: 'https://evil.example' })).status, 403);
@@ -112,7 +115,7 @@ test('browser connection isolates athletes and persists sessions, rotating token
   assert.equal((await callback(expired, 3)).status, 400);
   const pendingLogout = await begin(c); await request('/api/logout', c, 'POST');
   assert.equal((await callback(pendingLogout, 3)).status, 400);
-  env.STRAVA_CLIENT_SECRET = 'different'; restart();
+  env.STRAVA_CLIENT_SECRET = 'different'; await restart();
   assert.equal((await (await request('/api/session', b)).json()).connected, false);
   now += 91 * 86400000;
   assert.equal((await request('/api/session', b)).status, 401);

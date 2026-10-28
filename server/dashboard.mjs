@@ -12,7 +12,7 @@ export function activityXp(activity) {
   const fitnessClass = classFor(activity.sportType);
   const km = Math.max(0, activity.distance || 0) / 1000;
   if (fitnessClass === 'running') return km;
-  if (fitnessClass === 'cycling') return km / 5;
+  if (fitnessClass === 'cycling') return km / 3;
   // Strava summaries contain no sets, reps, or weights. Never substitute duration for lifting volume.
   if (fitnessClass === 'strength') return 0;
   return 0;
@@ -37,7 +37,7 @@ export function buildDashboard(activities, { now = new Date(), historyComplete =
       distanceKm: items.reduce((total, activity) => total + activity.distance, 0) / 1000,
       minutes: items.reduce((total, activity) => total + activity.movingTime, 0) / 60,
       xpUnavailable: key === 'strength',
-      formula: { running: '1 km = 1 XP', cycling: '5 km = 1 XP', strength: 'Based on total pounds lifted; lifting volume is not available from Strava summaries yet' }[key] };
+      formula: { running: '1 km = 1 XP', cycling: '3 km = 1 XP', strength: 'Based on total pounds lifted; lifting volume is not available from Strava summaries yet' }[key] };
   });
   return {
     source: 'strava', syncedAt, stale, skillsStale,
@@ -49,79 +49,117 @@ export function buildDashboard(activities, { now = new Date(), historyComplete =
   };
 }
 
-// One import per minute, shared by concurrent requests. History progresses one page
-// per refresh; at most two activity-list calls and three skill-detail/stream calls.
-export function createDashboardService({ client, clock = () => Date.now(), initial = {}, persist = async () => {} }) {
-  let records = new Map((initial.activities || []).map(activity => [activity.id, activity]));
-  let { before, historyComplete = false, syncedAt = null } = initial;
-  let skillCache = initial.skillCache || {}, skillsStale = false;
-  let pending;
-  let lastAttempt = syncedAt, lastError = null;
-  async function sync() {
-    const staged = new Map(records);
-    let nextBefore = before, nextComplete = historyComplete;
-    const latest = await client.activities({ perPage: 100 });
-    // Reconcile edits/deletions within the latest page's time window.
-    if (latest.length) {
-      const oldest = latest[latest.length - 1].startDate;
-      for (const [id, activity] of staged) if (activity.startDate >= oldest) staged.delete(id);
-    } else staged.clear();
-    for (const activity of latest) staged.set(activity.id, activity);
-    if (!before) {
-      nextComplete = latest.length < 100;
-      nextBefore = latest.length ? Math.floor(Date.parse(latest[latest.length - 1].startDate) / 1000) : undefined;
-    } else if (!historyComplete) {
-      const older = await client.activities({ perPage: 100, before });
-      for (const activity of older) staged.set(activity.id, activity);
-      nextComplete = older.length < 100;
-      if (older.length) nextBefore = Math.floor(Date.parse(older[older.length - 1].startDate) / 1000);
+// Each page/result is committed independently. Queue timers never initiate a new
+// daily check: only a dashboard visit does that. Pending work can finish off-screen.
+export function createDashboardService({ client, clock = Date.now, initial = {}, persist = async () => {}, schedule = (fn, ms) => { const timer = setTimeout(fn, ms); timer.unref?.(); return () => clearTimeout(timer); } }) {
+  let state = { activities: [], skillCache: {}, historyComplete: false, ...initial };
+  let pending, cancelTimer, stopped = false, lastError = null, retryUntil = state.retryAt || 0;
+  const day = value => new Date(value).toISOString().slice(0, 10);
+  async function commit(next) {
+    await persist(next);
+    state = next;
+  }
+  function needsSkill(a) {
+    const key = classFor(a.sportType), entry = state.skillCache[a.id];
+    return skillDefinitions[key]?.[0][2] && a.distance >= skillDefinitions[key][0][2]
+      && (key === 'running' ? client.details : client.streams)
+      && (!entry || entry.fingerprint !== fingerprint(a) || entry.version !== calculationVersion(key));
+  }
+  function nextWork() {
+    if (state.scan || !state.historyComplete) return clock();
+    const work = state.activities.filter(needsSkill);
+    return work.length ? Math.min(...work.map(a => state.skillCache[a.id]?.retryAt || 0)) : null;
+  }
+  async function step() {
+    if (state.scan || !state.historyComplete) {
+      const scan = state.scan;
+      const before = scan ? scan.before : state.before;
+      const items = await client.activities({ perPage: 200, before, ...(scan ? { after: scan.after } : {}) });
+      if (stopped) return;
+      const records = new Map(state.activities.map(a => [a.id, a]));
+      // Previously imported workouts are immutable; only add new IDs.
+      for (const a of items) if (!records.has(a.id)) records.set(a.id, a);
+      const cursor = items.length ? Math.floor(Math.min(...items.map(a => Date.parse(a.startDate))) / 1000) : before;
+      if (items.length >= 200 && before && cursor >= before) throw new Error('Strava history cursor did not advance.');
+      const complete = items.length < 200;
+      await commit({ ...state, activities: [...records.values()], syncedAt: clock(), retryAt: null,
+        ...(scan ? { scan: complete ? null : { ...scan, before: cursor }, activityCheckAt: complete ? scan.startedAt : state.activityCheckAt }
+          : { before: cursor, historyComplete: complete, activityCheckAt: complete ? clock() : state.activityCheckAt }) });
+      return;
     }
-    if (!latest.length) nextComplete = true;
-    // Keep enrichment bounded and cache per activity across process restarts.
-    const nextCache = Object.fromEntries(Object.entries(skillCache).filter(([id]) => staged.has(Number(id))));
-    let attempts = 0;
-    skillsStale = false;
-    for (const activity of [...staged.values()].sort((a, b) => (nextCache[a.id]?.attemptedAt || 0) - (nextCache[b.id]?.attemptedAt || 0))) {
-      const classKey = classFor(activity.sportType);
-      const definitions = skillDefinitions[classKey];
-      if (!definitions?.[0][2] || activity.distance < definitions[0][2] || !(classKey === 'running' ? client.details : client.streams)) continue;
-      const cached = nextCache[activity.id];
-      const matching = cached?.fingerprint === fingerprint(activity) && cached?.version === calculationVersion(classKey);
-      if (matching && clock() - cached.checkedAt < 86400000) continue;
-      if (cached?.retryAt > clock()) { skillsStale = true; continue; }
-      if (attempts++ >= 3) break;
+    const activity = state.activities.filter(needsSkill)
+      .filter(a => !(state.skillCache[a.id]?.retryAt > clock()))
+      .sort((a, b) => (state.skillCache[a.id]?.attemptedAt || 0) - (state.skillCache[b.id]?.attemptedAt || 0))[0];
+    if (!activity) return;
+    const key = classFor(activity.sportType);
+    try {
+      const times = key === 'running' ? runningBestTimes(await client.details(activity.id)) : bestTimes(await client.streams(activity.id), skillDefinitions[key]);
+      if (stopped) return;
+      await commit({ ...state, retryAt: null, skillCache: { ...state.skillCache,
+        [activity.id]: { fingerprint: fingerprint(activity), version: calculationVersion(key), checkedAt: clock(), attemptedAt: clock(), times, unavailable: times === null } } });
+    } catch (error) {
+      if (stopped) return;
+      if (error.rateLimited) throw error;
+      await commit({ ...state, skillCache: { ...state.skillCache,
+        [activity.id]: { ...state.skillCache[activity.id], attemptedAt: clock(), retryAt: clock() + 15 * 60000 } } });
+      lastError = error;
+    }
+  }
+  function arm() {
+    cancelTimer?.();
+    cancelTimer = null;
+    if (stopped) return;
+    const work = nextWork();
+    if (work !== null) cancelTimer = schedule(() => { cancelTimer = null; void run(); }, Math.max(0, work - clock(), retryUntil - clock()));
+  }
+  async function run() {
+    if (pending) return pending;
+    pending = (async () => {
       try {
-        const times = classKey === 'running'
-          ? runningBestTimes(await client.details(activity.id))
-          : bestTimes(await client.streams(activity.id), definitions);
-        nextCache[activity.id] = { fingerprint: fingerprint(activity), version: calculationVersion(classKey), checkedAt: clock(), attemptedAt: clock(), times, unavailable: times === null };
-      } catch {
-        skillsStale = true;
-        nextCache[activity.id] = { ...cached, attemptedAt: clock(), retryAt: clock() + 60000 };
+        while (!stopped && nextWork() !== null && nextWork() <= clock() && !(retryUntil > clock())) {
+          await step();
+          lastError = null;
+        }
+      } catch (error) {
+        lastError = error;
+        retryUntil = error.retryAt || clock() + 60000;
+        if (!stopped) {
+          try { await commit({ ...state, retryAt: retryUntil }); }
+          catch { /* Keep the last committed snapshot on storage failure. */ }
+        }
       }
-    }
-    const nextSyncedAt = clock();
-    await persist({ skillCache: nextCache, activities: [...staged.values()], before: nextBefore, historyComplete: nextComplete, syncedAt: nextSyncedAt });
-    records = staged;
-    skillCache = nextCache;
-    before = nextBefore;
-    historyComplete = nextComplete;
-    syncedAt = nextSyncedAt;
+    })().finally(() => { pending = null; arm(); });
+    return pending;
   }
   return {
     async get() {
-      if (pending || lastAttempt === null || clock() - lastAttempt >= 60000) {
+      // A new visit may initiate one daily scan, but a running worker cannot.
+      if (!pending && !state.scan && state.historyComplete && day(state.activityCheckAt || state.syncedAt || 0) !== day(clock())) {
+        const newest = Math.max(0, ...state.activities.map(a => Date.parse(a.startDate) / 1000));
+        await commit({ ...state, scan: { after: Math.max(0, Math.floor(newest) - 1), startedAt: clock() } });
+      }
+      if (!state.syncedAt) {
+        // Only the first page blocks first load; subsequent work runs off-screen.
+        if (retryUntil > clock()) throw lastError || new Error('Initial sync paused. Try again after the retry window.');
         if (!pending) {
-          lastAttempt = clock();
-          pending = sync().then(() => { lastError = null; }).catch(error => {
+          pending = step().catch(async error => {
             lastError = error;
-          }).finally(() => { pending = undefined; });
+            retryUntil = error.retryAt || clock() + 60000;
+            try { await commit({ ...state, retryAt: retryUntil }); } catch { /* Retain the last committed snapshot. */ }
+            throw error;
+          }).finally(() => { pending = null; arm(); });
         }
         await pending;
       }
-      if (lastError && !syncedAt) throw lastError;
-      return buildDashboard([...records.values()], { now: new Date(clock()), historyComplete,
-        syncedAt: syncedAt ? new Date(syncedAt).toISOString() : null, stale: !!lastError, skillCache, skillsStale });
+      arm();
+      const result = buildDashboard(state.activities, { historyComplete: state.historyComplete, now: new Date(clock()),
+        syncedAt: state.syncedAt ? new Date(state.syncedAt).toISOString() : null, stale: !!lastError,
+        skillCache: state.skillCache, skillsStale: state.activities.some(a => needsSkill(a) && state.skillCache[a.id]?.retryAt) });
+      const work = nextWork(), retryAt = Math.max(work || 0, retryUntil);
+      return { ...result, syncInProgress: work !== null, syncRetryAt: work !== null && retryAt > clock() ? new Date(retryAt).toISOString() : null };
     },
+    // Also useful for deterministic queue verification without real timers.
+    run,
+    async stop() { stopped = true; cancelTimer?.(); await pending?.catch(() => {}); },
   };
 }

@@ -49,3 +49,15 @@ test('fetches activity details for provider best efforts', async () => {
     fetchImpl: async (url, options) => { assert.equal(url, 'https://www.strava.com/api/v3/activities/42'); assert.equal(options.headers.Authorization, 'Bearer test'); return Response.json({ best_efforts: [{ distance: 5000, elapsed_time: 1519 }] }); } });
   assert.equal((await client.details(42)).best_efforts[0].elapsed_time, 1519);
 });
+
+test('passes incremental pagination and every activity request through the budget', async () => {
+  let reservations = 0;
+  const urls = [];
+  const client = createStravaClient({ initialTokens: { access_token: 'test', expires_at: Date.now() / 1000 + 3600 },
+    saveTokens: async () => {}, budget: { request: async fn => { reservations++; return fn(); } },
+    fetchImpl: async url => { urls.push(url); return Response.json(url.includes('/athlete/activities') ? [] : {}); } });
+  await client.activities({ after: 123, before: 456 });
+  await client.details(1); await client.streams(1);
+  assert.equal(reservations, 3);
+  assert.match(urls[0], /per_page=200&before=456&after=123/);
+});
