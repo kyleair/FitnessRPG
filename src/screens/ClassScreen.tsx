@@ -75,7 +75,7 @@ export default function ClassScreen() {
         {fitnessClass && classKey ? <View style={[styles.classBanner, { borderColor: theme.border, backgroundColor: theme.banner }]}>
           <BannerEmblem classKey={classKey} color={theme.accent} />
           <View style={styles.bannerCopy}><Text style={styles.eyebrow}>CLASS</Text><Text style={styles.bannerTitle}>{fitnessClass.name}</Text></View>
-          {classKey === 'running' && <View style={styles.bestSkill}><Text style={styles.bestSkillLabel}>LIFETIME RUNNING{`\n`}SKILL</Text><Text style={[styles.bestSkillName, { color: theme.accent }]}>Level {fitnessClass.level}</Text></View>}
+          <View style={[styles.bestSkill, { borderLeftColor: theme.border }]}><Text style={styles.bestSkillLabel}>LIFETIME {fitnessClass.name.toUpperCase()}{`\n`}SKILL</Text><Text style={[styles.bestSkillName, { color: theme.accent }]}>Level {fitnessClass.level}</Text></View>
         </View> : <Text style={styles.title}>{classKey ? 'Class skills' : 'Class not found'}</Text>}
         {!!error && <View style={styles.notice}><Text style={styles.body} accessibilityRole="alert">{error}{data ? ' Showing saved data.' : ''}</Text><Pressable accessibilityRole="button" style={styles.back} onPress={refresh}><Text style={styles.backText}>Try again</Text></Pressable></View>}
         {!fitnessClass && loading && <ActivityIndicator color="#e8c765" />}
