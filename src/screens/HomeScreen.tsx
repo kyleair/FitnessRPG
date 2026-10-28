@@ -2,11 +2,14 @@ import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, AppState, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { Adventurer, Emblem, IconName } from './src/components/Emblem';
-import { Dashboard, demoDashboard, FitnessClass } from './src/dashboard';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Adventurer, Emblem, IconName } from '../components/Emblem';
+import { Dashboard, FitnessClass } from '../dashboard';
+import { router } from 'expo-router';
+import { useDashboard } from '../DashboardContext';
+import { formatTime } from '../format';
 
-import { api, apiUrl, SessionExpiredError, signOut } from './src/api';
+import { api, apiUrl, SessionExpiredError, signOut } from '../api';
 const colors = { ink: '#f3e3bb', muted: '#c0ae83', gold: '#e8c765', border: '#876035', dark: '#211b18' };
 const classColors = { running: '#d99638', strength: '#d56d55', cycling: '#63a9c6' };
 const classBackgrounds = { running: '#244b36', strength: '#612d29', cycling: '#214c60' };
@@ -16,9 +19,8 @@ function Meter({ value, color = '#d58a36' }: { value: number; color?: string }) 
   return <View style={styles.meter} accessible accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: 100, now: Math.round(value * 100) }}><View style={[styles.fill, { backgroundColor: color, width: `${Math.max(0, Math.min(1, value)) * 100}%` }]} /></View>;
 }
 function Label({ children }: { children: React.ReactNode }) { return <Text style={styles.label}>{children}</Text>; }
-export default function App() { return <SafeAreaProvider><Home /></SafeAreaProvider>; }
-function Home() {
-  const [data, setData] = useState<Dashboard | null>(apiUrl ? null : demoDashboard);
+export default function HomeScreen() {
+  const { data, setData } = useDashboard();
   const [loading, setLoading] = useState(!!apiUrl);
   const [error, setError] = useState('');
   const [connected, setConnected] = useState(false);
@@ -42,7 +44,7 @@ function Home() {
       setError(err instanceof Error ? err.message : 'Unable to connect.');
     }
     finally { refreshing.current = false; setLoading(false); }
-  }, []);
+  }, [setData]);
   useEffect(() => {
     const initial = setTimeout(() => { void refresh(); }, 0);
     const subscription = AppState.addEventListener('change', state => { if (state === 'active') void refresh(); });
@@ -67,8 +69,9 @@ function Home() {
     finally { refreshing.current = false; setConnecting(false); }
   }
   function inspectClass(fitnessClass: FitnessClass) {
-    setDetail({ title: `${fitnessClass.name} Class`, body: `${fitnessClass.activityCount} imported activities\n${number(fitnessClass.distanceKm)} km · ${number(fitnessClass.minutes)} minutes\n\nLevel ${fitnessClass.level} · ${number(fitnessClass.xp)} total XP\n${number(fitnessClass.currentXp)} / ${fitnessClass.nextLevelXp} XP toward the next level.\n\nExperimental rule: ${fitnessClass.formula}. These are game points, not a comparison of athletic ability.\n\n${data?.historyComplete ? 'All accessible history has been imported.' : 'Totals cover imported history so far. More history is loaded on later syncs.'}\n\nClass XP grows from activity volume independently of personal bests. Skills and achievements are coming later.` });
+    router.push({ pathname: '/classes/[classKey]', params: { classKey: fitnessClass.key } });
   }
+  const best5k = data?.classes.find(item => item.key === 'running')?.skills.find(skill => skill.key === 'running_5k')?.best;
   return <LinearGradient colors={['#3b2a22', '#211b18', '#191513']} style={styles.screen}>
     <StatusBar style="light" />
     <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
@@ -93,17 +96,17 @@ function Home() {
             <View style={styles.heroTop}><View style={styles.heroCopy}><Label>CHARACTER TITLE</Label><Text style={styles.heroTitle}>Wrecking Ball</Text><Text style={styles.heroDescription}>A nimble runner with the power to move mountains.</Text><Text style={styles.preview}>TITLE & AVATAR PREVIEW</Text></View>
               <Pressable accessibilityRole="button" accessibilityLabel="Preview avatar and cosmetics" onPress={() => setDetail({ title: 'Your adventurer', body: 'This is a placeholder avatar from the Classic RPG design. Equipment, cosmetic drops, and class discovery are not connected yet. Your actual Strava data powers the class cards below.' })} style={styles.avatar}><Adventurer /><Text style={styles.star}>✦</Text></Pressable></View>
             <View style={styles.pinnedRow}>
-              <View style={styles.pinned}><Text style={styles.pinnedLabel}>Fastest 5K</Text><Text style={styles.pinnedValue}>—</Text><Text style={styles.pinnedNote}>Not calculated</Text></View>
+              <View style={styles.pinned}><Text style={styles.pinnedLabel}>Fastest 5K</Text><Text style={styles.pinnedValue}>{best5k ? formatTime(best5k.timeMs) : '—'}</Text><Text style={styles.pinnedNote}>Best tracked time</Text></View>
               <View style={styles.pinned}><Text style={styles.pinnedLabel}>Bench Press</Text><Text style={styles.pinnedValue}>—</Text><Text style={styles.pinnedNote}>Not available</Text></View>
               <View style={styles.pinned}><Text style={styles.pinnedLabel}>Monthly Distance</Text><Text style={styles.pinnedValue}>{number(data.monthlyDistanceKm)} <Text style={{ fontSize: 11 }}>km</Text></Text><Text style={styles.pinnedNote}>Imported · UTC</Text></View>
             </View>
           </LinearGradient></View>
-          <View style={styles.section}><Label>YOUR SKILLS</Label><Text style={styles.sectionTitle}>Choose a class to inspect.</Text></View>
+          <View style={styles.section}><Label>YOUR CLASSES</Label><Text style={styles.sectionTitle}>Choose a class to inspect.</Text></View>
           <View style={styles.grid}>{data.classes.map(fitnessClass => <Pressable key={fitnessClass.key} accessibilityRole="button" accessibilityLabel={`${fitnessClass.name}, level ${fitnessClass.level}. View progress`} onPress={() => inspectClass(fitnessClass)} style={({ pressed }) => [styles.classCard, pressed && styles.pressed]}>
             <View style={[styles.emblemOuter, { borderColor: classColors[fitnessClass.key] }]}><View style={[styles.emblemInner, { backgroundColor: classBackgrounds[fitnessClass.key] }]}><Emblem name={fitnessClass.key} color={classColors[fitnessClass.key]} size={31} /></View></View>
             <Text style={[styles.classLabel, { color: classColors[fitnessClass.key] }]}>{fitnessClass.name.toUpperCase()}</Text><Text style={styles.level}>Level {fitnessClass.level}</Text>
             <Meter value={fitnessClass.progress} color={classColors[fitnessClass.key]} />
-            <Text style={styles.xp}>{number(fitnessClass.currentXp)} / {fitnessClass.nextLevelXp} XP toward next level</Text><Text style={styles.small}>{fitnessClass.activityCount} activities · {number(fitnessClass.xp)} XP</Text>{fitnessClass.xpUnavailable && <Text style={styles.small}>Lifting volume unavailable. Strength XP needs weight and reps.</Text>}<Text style={styles.cardLink}>Inspect progress  ›</Text>
+            <Text style={styles.xp}>{number(fitnessClass.currentXp)} / {fitnessClass.nextLevelXp} XP toward next level</Text><Text style={styles.small}>{fitnessClass.activityCount} activities · {number(fitnessClass.xp)} XP</Text>{fitnessClass.xpUnavailable && <Text style={styles.small}>Lifting volume unavailable. Strength XP needs weight and reps.</Text>}<Text style={styles.cardLink}>View skills & progress  ›</Text>
           </Pressable>)}</View>
           <View style={styles.scope}><Text style={styles.scopeText}>{data.source === 'demo' ? 'SAMPLE DATA' : `${data.importedCount} ACTIVITIES IMPORTED`}{!data.historyComplete && data.source !== 'demo' ? ' · HISTORY IN PROGRESS' : ''}</Text><Text style={styles.small}>Experimental XP rules. History depends on your granted Strava permissions. {data.historyComplete ? 'All accessible history imported.' : 'Totals cover imported activities, not your full lifetime.'}</Text>{data.stale && <Text style={styles.error}>Strava is unavailable. Showing cached data.</Text>}</View>
           <View style={styles.section}><Label>QUESTS AND ACTIVITIES</Label><Text style={styles.sectionTitle}>Keep your adventure moving.</Text></View>
@@ -116,7 +119,8 @@ function Home() {
           <Text style={styles.footer}>{data.source === 'demo' ? 'Demo mode · connect your backend to begin.' : `Last synced ${data.syncedAt ? new Date(data.syncedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'just now'} · Pull down to refresh.`}</Text>
         </>}
       </ScrollView>
-      <Modal visible={!!detail} transparent animationType="fade" onRequestClose={() => setDetail(null)}><View style={styles.overlay}><View style={styles.sheet} accessibilityViewIsModal><ScrollView><Label>FITNESS RPG</Label><Text style={styles.sectionTitle}>{detail?.title}</Text><Text style={[styles.body, { marginVertical: 20 }]}>{detail?.body}</Text></ScrollView><Pressable accessibilityRole="button" onPress={() => setDetail(null)} style={styles.close}><Text style={styles.buttonText}>Back to dashboard</Text></Pressable></View></View></Modal>
+      <Modal visible={!!detail} transparent animationType="fade" onRequestClose={() => setDetail(null)}><View style={styles.overlay}><View style={styles.sheet} accessibilityViewIsModal><ScrollView><Label>FITNESS RPG</Label><Text style={styles.sectionTitle}>{detail?.title}</Text><Text style={[styles.body, { marginVertical: 20 }]}>{detail?.body}</Text>
+        </ScrollView><Pressable accessibilityRole="button" onPress={() => setDetail(null)} style={styles.close}><Text style={styles.buttonText}>Back to dashboard</Text></Pressable></View></View></Modal>
     </SafeAreaView>
   </LinearGradient>;
 }

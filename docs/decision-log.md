@@ -170,3 +170,26 @@ Record decisions here as the project evolves. Keep entries short and link to the
 - Running, Cycling, and Strength are fitness classes; specific performance metrics within them are skills. Playful character labels are titles.
 - Rename the dashboard API collection to `classes` and recent-activity associations to `classKey`, with matching frontend types, backend helpers, tests, mockup identifiers, and documentation. No legacy aliases remain.
 - Saved activity snapshots do not contain these derived fields, so no database migration is required. Restart the backend and reload the app together for the new API contract.
+
+## 2026-10-26 - Add all-time distance skills without tiers
+
+- Running skills: 1K, 5K, 10K, half marathon (21,097.5 m), marathon (42,195 m). Cycling skills: 5K, 20K, 50K, 75K, 100K. Deadlift, Squat, and Bench press show empty 1RM values until manual strength metrics are implemented.
+- Best means the fastest continuous target-distance effort inside an eligible activity, across processed accessible imported history. Use elapsed time, including stops within the effort; never scale whole-activity average pace. This supersedes the proposed rolling six-month performance window for this release. No ranks, skill levels, or tiers.
+- Compute best times from Strava distance/time streams with piecewise-linear interpolation between samples. Results are sample-based estimates and can differ from Strava's own best-effort calculation. Non-monotonic or invalid streams are unavailable; missing data never becomes a fabricated time.
+- Save per-activity results, source fingerprint, calculation version, fetch time, and retry metadata inside each account's existing atomic SQLite snapshot. Retain every processed activity's results so corrections/deletions can reveal a runner-up. Equal times keep the earliest activity date. No database schema migration or reconnect is needed.
+- Each eligible sync fetches at most three streams, in addition to the existing bounded activity imports. Requests coalesce; processing resumes across restarts. Transient stream failures preserve cached results and XP and retry later, with fair ordering so failures do not block older activities. Successful/missing streams are eligible for rechecking after 24 hours; changed summary fingerprints invalidate results immediately.
+- Show pending activity count, unavailable-stream count, failed-refresh state, and imported-history scope in class details. Processing continues on eligible refreshes, not on a standalone background scheduler. Older edits/deletions outside the latest import page still require a fresh history reconciliation.
+- Class details use the existing dashboard modal; adding navigation routes is outside this slice. XP remains independent of all skill calculations. Demo skills are empty and explicitly sample data.
+
+## 2026-10-26 - Match class pages to the Classic RPG design
+
+- Class cards navigate with Expo Router to dedicated class routes instead of opening the dashboard modal. Router owns the app entry and a stack in `src/app/`; non-route UI stays in `src/screens/`.
+- Reuse the mockup's framed summaries, emblems, two-column skill tiles, and separate unlocked/locked sections. Recorded results appear above locked tiles; locked means no recorded result, including unprocessed or unavailable activity data. Empty strength skills remain locked until strength entry exists.
+- Show cumulative class level and recorded skill count in the top summaries. A cross-distance best-skill ranking, achievement mode, tiers, and skill-level progress bars remain deferred rather than showing invented values or inactive controls.
+- Share the loaded dashboard across routes, support direct class URLs and platform back navigation, and allow pull-to-refresh on class pages. Keep source activity/date on recorded tiles and import/processing explanations below the grids.
+
+## 2026-10-26 - Prefer Strava running best efforts
+
+- Running now requests activity details and uses positive elapsed times from `best_efforts` for our five target distances. Accept up to one meter of provider distance rounding, including 21,097 m for the half marathon. Ignore unrelated distances and invalid times. No running stream fallback.
+- Cycling retains distance/time stream calculations. Result attribution distinguishes `strava_best_efforts` from `distance_time_stream_v1`.
+- Running cache version increments to 2; existing calculated running results are hidden and reprocessed through the bounded sync queue. Cycling stays at version 1 so its cached results survive. Missing running best efforts remain empty and are eligible for the existing daily recheck. Class XP and the three-activity sync budget are unchanged.

@@ -21,6 +21,24 @@ export function createStravaClient({ clientId, clientSecret, initialTokens, save
     return pendingRefresh;
   }
   return {
+    async details(id) {
+      const token = await accessToken();
+      const response = await fetchImpl(`https://www.strava.com/api/v3/activities/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(15000),
+      });
+      if (response.status === 404) return null;
+      if (!response.ok) throw new Error(`Strava activity details request failed (${response.status}).`);
+      return response.json();
+    },
+    async streams(id) {
+      const token = await accessToken();
+      const response = await fetchImpl(`https://www.strava.com/api/v3/activities/${id}/streams?keys=time,distance&key_by_type=true`, {
+        headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(15000),
+      });
+      if (response.status === 404) return null;
+      if (!response.ok) throw new Error(`Strava streams request failed (${response.status}).`);
+      return response.json();
+    },
     async activities({ perPage = 30, before } = {}) {
       const token = await accessToken();
       const query = new URLSearchParams({ per_page: String(perPage) });

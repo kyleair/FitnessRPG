@@ -21,7 +21,7 @@ Prerequisite: Node.js 22.13+ (Node 24 LTS recommended). Dependencies are already
 
 4. Sign into the same Expo account in Expo Go. On iPhone, scan the terminal's QR code with the Camera app and open it in Expo Go. On Android, use Expo Go's QR scanner.
 5. You should see the Classic RPG dashboard with sample activities. No `.env`, Strava account, backend, Mac, or Apple developer membership is needed for this demo.
-6. Edit `App.tsx` and save to see Fast Refresh on your phone. Keep the terminal running; Ctrl+C stops it.
+6. Edit `src/screens/HomeScreen.tsx` and save to see Fast Refresh on your phone. Keep the terminal running; Ctrl+C stops it.
 
 This project uses SDK 58 to match Expo Go 58 on your phone. After an SDK upgrade, stop the old Metro terminal with Ctrl+C and run `npx expo start --clear` before scanning the new QR code. See https://docs.expo.dev/workflow/upgrading-expo-sdk-walkthrough/ for future upgrades.
 
@@ -31,6 +31,7 @@ This project uses SDK 58 to match Expo Go 58 on your phone. After an SDK upgrade
 - Guest/public Wi-Fi may block devices from talking to one another. Try a home network or hotspot.
 - If the QR connection fails, stop Expo and try `npx expo start --tunnel`. Accept the tunnel dependency installation if prompted. This tunnels Metro only; it does not expose the optional backend.
 - For a stale bundle, run `npx expo start --clear`.
+- If Metro reports `Unable to resolve module ./index`, pull the latest branch and restart Expo with `npx expo start --clear`, then scan the new QR code. The root `index.ts` delegates to Expo Router and is also the configured package entry; no alternate launch command is needed.
 - `npm run ios` launches a simulator and requires macOS. Use `npm start` for your physical iPhone on Windows.
 
 ## Connect Strava in Expo Go
@@ -105,7 +106,7 @@ Strava authorization reference: https://developers.strava.com/docs/authenticatio
 
 ## Layout and next steps
 
-- `App.tsx`: dashboard, loading/error states, refresh, and demo/backend selection.
+- `src/screens/HomeScreen.tsx`: dashboard, loading/error states, refresh, and demo/backend selection.
 - `src/activities.ts`: normalized activity shape and sample data.
 - `server/index.mjs`: backend entry point.
 - `server/app.mjs`: authenticated API and browser connection routes.
@@ -135,7 +136,7 @@ The Expo home screen now follows the Classic RPG prototype and requests `/api/da
 
 The server imports 100 recent activities on the first eligible request and then up to 100 older activities on subsequent eligible requests. Syncs are shared and limited to once per minute, with at most two activity-list calls each time. Pull-to-refresh within the minute uses cached results; wait a minute before refreshing to continue older history. History, tokens, import cursor, and the successful-sync cooldown persist in SQLite across backend restarts. Failed refreshes keep the last good snapshot with an explicit stale notice. Unavailable initial data shows an error rather than switching to demo data.
 
-Experimental rules and limitations are recorded in `docs/decision-log.md`. These levels are game progress over imported history, not a fitness assessment. Exact fastest-5K efforts need activity-detail/effort data; bench weight is not present in the current Strava summaries. Older activity changes outside the latest page require a fresh history import.
+Experimental rules and limitations are recorded in `docs/decision-log.md`. These levels are game progress over imported history, not a fitness assessment. Distance skills now use separately fetched distance/time streams; bench weight is not present in the current Strava summaries. Older activity changes outside the latest page require a fresh history import.
 
 After pulling these changes, run `npm ci`, restart `npm run server`, and restart Metro with `npx expo start --clear`. All new native dependencies are compatible with Expo Go SDK 58. `npm run web` also supports browser preview on localhost:8081. For a different browser origin, set `DEV_WEB_ORIGIN` in `server/.env` and restart the backend.
 
@@ -146,3 +147,17 @@ New authorizations request only `activity:read` by default, which allows activit
 ### Three-class XP foundation
 
 The app and demo show Running, Strength, and Cycling, each with its own level, total XP, and within-level progress. Running earns 1 XP/km and Cycling earns 1 XP/5 km (experimental). Class XP is independent of future personal-best skills. Strength is based on lifting volume rather than workout duration; until sets/reps/weights are supported, it shows Level 0 with a volume-unavailable explanation and earns no XP from Strava summaries. Existing saved imports are preserved; restart the backend to apply the new rules. Totals are derived from saved activities, so no database migration is necessary.
+
+### Class skills
+
+Tap **View skills & progress** on a class card to open a dedicated page with running/cycling best times or empty strength 1RM skills. Running times come from Strava best efforts. Cycling times are calculated estimates from elapsed distance/time samples, including stops within each effort. Neither is an official race result. Each value shows its activity, date, and source. There are no tiers.
+
+Restart the backend and reload the app after pulling. No reconnect or database migration is needed. On each eligible sync (at least one minute apart), up to three activities have their running details or cycling streams processed; older imports and skill processing continue gradually. Class details show pending/unavailable data and refresh failures. Missing best efforts or streams remain empty. Results persist across restarts, and class XP is unchanged by skill processing.
+
+### Class pages and navigation
+
+Expo Router now owns navigation in `src/app/`. Class pages live at `/classes/running`, `/classes/cycling`, and `/classes/strength`; shared screen components stay in `src/screens/`. Each page follows the Classic RPG mockup: cumulative level and recorded-skill summaries, a two-column unlocked skill grid, then a two-column locked skill grid. A skill unlocks when it has a recorded result; pending or unavailable import data does not imply the user has never completed the distance.
+
+After pulling, run `npm ci` and restart Metro with `npx expo start --clear` because the entry point and navigation dependencies changed. Strength metrics and skill tiers remain deferred.
+
+Running skills now use elapsed times supplied in Strava activity-detail `best_efforts`, without a stream fallback. Cycling skills still use calculated distance/time stream efforts. Restart the backend and sync to replace previous calculated running records; processing remains bounded to three activities per eligible sync. Missing provider efforts remain locked/empty. No reconnect or database migration is required.

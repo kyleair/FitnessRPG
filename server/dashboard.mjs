@@ -1,3 +1,4 @@
+import { skillDefinitions, calculationVersion, fingerprint, bestTimes, runningBestTimes, classSkills } from './skills.mjs';
 const classTypes = {
   running: ['Run', 'TrailRun', 'VirtualRun'],
   strength: ['WeightTraining'],
@@ -25,21 +26,23 @@ export function progression(xp) {
   }
   return { level, currentXp, nextLevelXp, progress: currentXp / nextLevelXp };
 }
-export function buildDashboard(activities, { now = new Date(), historyComplete = false, syncedAt = null, stale = false } = {}) {
+export function buildDashboard(activities, { now = new Date(), historyComplete = false, syncedAt = null, stale = false, skillCache = {}, skillsStale = false } = {}) {
   const unique = [...new Map(activities.map(activity => [activity.id, activity])).values()]
     .sort((a, b) => b.startDate.localeCompare(a.startDate));
   const month = now.toISOString().slice(0, 7);
   const classes = Object.keys(classTypes).map(key => {
     const items = unique.filter(activity => classFor(activity.sportType) === key);
     const xp = items.reduce((total, activity) => total + activityXp(activity), 0);
-    return { key, name: labels[key], xp, ...progression(xp), activityCount: items.length,
+    return { key, name: labels[key], skills: classSkills(key, items, skillCache), xp, ...progression(xp), activityCount: items.length,
       distanceKm: items.reduce((total, activity) => total + activity.distance, 0) / 1000,
       minutes: items.reduce((total, activity) => total + activity.movingTime, 0) / 60,
       xpUnavailable: key === 'strength',
       formula: { running: '1 km = 1 XP', cycling: '5 km = 1 XP', strength: 'Based on total pounds lifted; lifting volume is not available from Strava summaries yet' }[key] };
   });
   return {
-    source: 'strava', syncedAt, stale, historyComplete, importedCount: unique.length,
+    source: 'strava', syncedAt, stale, skillsStale,
+    skillsUnavailable: unique.filter(a => skillCache[a.id]?.unavailable && skillCache[a.id]?.fingerprint === fingerprint(a)).length,
+    skillsPending: unique.filter(a => skillDefinitions[classFor(a.sportType)]?.[0][2] && a.distance >= skillDefinitions[classFor(a.sportType)][0][2] && (!skillCache[a.id] || skillCache[a.id].fingerprint !== fingerprint(a) || skillCache[a.id].version !== calculationVersion(classFor(a.sportType)))).length, historyComplete, importedCount: unique.length,
     month, monthlyDistanceKm: unique.filter(activity => activity.startDate.slice(0, 7) === month)
       .reduce((total, activity) => total + activity.distance, 0) / 1000,
     classes, recentActivities: unique.slice(0, 30).map(activity => ({ ...activity, classKey: classFor(activity.sportType), xp: activityXp(activity) })),
@@ -47,10 +50,11 @@ export function buildDashboard(activities, { now = new Date(), historyComplete =
 }
 
 // One import per minute, shared by concurrent requests. History progresses one page
-// per refresh; at most two activity-list calls, no per-activity detail calls.
+// per refresh; at most two activity-list calls and three skill-detail/stream calls.
 export function createDashboardService({ client, clock = () => Date.now(), initial = {}, persist = async () => {} }) {
   let records = new Map((initial.activities || []).map(activity => [activity.id, activity]));
   let { before, historyComplete = false, syncedAt = null } = initial;
+  let skillCache = initial.skillCache || {}, skillsStale = false;
   let pending;
   let lastAttempt = syncedAt, lastError = null;
   async function sync() {
@@ -73,9 +77,33 @@ export function createDashboardService({ client, clock = () => Date.now(), initi
       if (older.length) nextBefore = Math.floor(Date.parse(older[older.length - 1].startDate) / 1000);
     }
     if (!latest.length) nextComplete = true;
+    // Keep enrichment bounded and cache per activity across process restarts.
+    const nextCache = Object.fromEntries(Object.entries(skillCache).filter(([id]) => staged.has(Number(id))));
+    let attempts = 0;
+    skillsStale = false;
+    for (const activity of [...staged.values()].sort((a, b) => (nextCache[a.id]?.attemptedAt || 0) - (nextCache[b.id]?.attemptedAt || 0))) {
+      const classKey = classFor(activity.sportType);
+      const definitions = skillDefinitions[classKey];
+      if (!definitions?.[0][2] || activity.distance < definitions[0][2] || !(classKey === 'running' ? client.details : client.streams)) continue;
+      const cached = nextCache[activity.id];
+      const matching = cached?.fingerprint === fingerprint(activity) && cached?.version === calculationVersion(classKey);
+      if (matching && clock() - cached.checkedAt < 86400000) continue;
+      if (cached?.retryAt > clock()) { skillsStale = true; continue; }
+      if (attempts++ >= 3) break;
+      try {
+        const times = classKey === 'running'
+          ? runningBestTimes(await client.details(activity.id))
+          : bestTimes(await client.streams(activity.id), definitions);
+        nextCache[activity.id] = { fingerprint: fingerprint(activity), version: calculationVersion(classKey), checkedAt: clock(), attemptedAt: clock(), times, unavailable: times === null };
+      } catch {
+        skillsStale = true;
+        nextCache[activity.id] = { ...cached, attemptedAt: clock(), retryAt: clock() + 60000 };
+      }
+    }
     const nextSyncedAt = clock();
-    await persist({ activities: [...staged.values()], before: nextBefore, historyComplete: nextComplete, syncedAt: nextSyncedAt });
+    await persist({ skillCache: nextCache, activities: [...staged.values()], before: nextBefore, historyComplete: nextComplete, syncedAt: nextSyncedAt });
     records = staged;
+    skillCache = nextCache;
     before = nextBefore;
     historyComplete = nextComplete;
     syncedAt = nextSyncedAt;
@@ -93,7 +121,7 @@ export function createDashboardService({ client, clock = () => Date.now(), initi
       }
       if (lastError && !syncedAt) throw lastError;
       return buildDashboard([...records.values()], { now: new Date(clock()), historyComplete,
-        syncedAt: syncedAt ? new Date(syncedAt).toISOString() : null, stale: !!lastError });
+        syncedAt: syncedAt ? new Date(syncedAt).toISOString() : null, stale: !!lastError, skillCache, skillsStale });
     },
   };
 }
