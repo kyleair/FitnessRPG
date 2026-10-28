@@ -11,8 +11,9 @@ import { formatTime } from '../format';
 
 import { api, apiUrl, SessionExpiredError, signOut } from '../api';
 const colors = { ink: '#f3e3bb', muted: '#c0ae83', gold: '#e8c765', border: '#876035', dark: '#211b18' };
-const classColors = { running: '#d99638', strength: '#d56d55', cycling: '#63a9c6' };
-const classBackgrounds = { running: '#244b36', strength: '#612d29', cycling: '#214c60' };
+const classColors = { running: '#78a878', strength: '#c85b55', cycling: '#a482d2' };
+const classBackgrounds = { running: '#244b36', strength: '#5a2d2b', cycling: '#3d3157' };
+const classCardBackgrounds = { running: '#2a3027', strength: '#302423', cycling: '#2a2732' };
 const serif = Platform.select({ ios: 'Georgia', android: 'serif', default: 'Georgia' });
 const number = (value: number) => value.toLocaleString(undefined, { maximumFractionDigits: 1 });
 function Meter({ value, color = '#d58a36' }: { value: number; color?: string }) {
@@ -76,7 +77,7 @@ export default function HomeScreen() {
     <StatusBar style="light" />
     <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
       <ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={loading} onRefresh={refresh} tintColor={colors.gold} />}>
-        <View style={styles.topbar}><Text style={styles.wordmark}>FITNESS <Text style={{ color: colors.gold }}>RPG</Text></Text><Pressable accessibilityRole="button" accessibilityLabel="Refresh Strava activities" disabled={loading} onPress={refresh} style={styles.refresh}><Text style={styles.refreshText}>{loading ? 'Syncing…' : '↻  Sync Strava'}</Text></Pressable></View>
+        <View style={styles.topbar}><Text style={styles.wordmark}>FITNESS <Text style={{ color: colors.gold }}>RPG</Text></Text><Pressable accessibilityRole="button" accessibilityLabel="Refresh Strava activities" disabled={loading} onPress={refresh} style={styles.refresh}><Text style={styles.refreshText}>{loading ? 'Syncingâ€¦' : 'â†»  Sync Strava'}</Text></Pressable></View>
         {!!error && <View style={styles.notice}><Text style={styles.error} accessibilityRole="alert">{error}{data ? ' Showing the last loaded data.' : ''}</Text><Pressable accessibilityRole="button" onPress={refresh}><Text style={styles.link}>Try again</Text></Pressable></View>}
         {!!apiUrl && !connected && !loading && <View style={styles.notice}>
           <Label>YOUR ADVENTURE STARTS HERE</Label><Text style={styles.sectionTitle}>Connect your Strava</Text>
@@ -87,36 +88,35 @@ export default function HomeScreen() {
             <Text style={styles.small}>Expires after 10 minutes. Sign into your own Strava account, then tap Check connection. Generate a new code if you cancel or it expires.</Text>
             <Pressable accessibilityRole="button" disabled={connecting} onPress={refresh}><Text style={styles.link}>Check connection</Text></Pressable>
           </>}
-          <Pressable accessibilityRole="button" disabled={connecting} onPress={connect} style={styles.close}><Text style={styles.buttonText}>{connecting ? 'Creating code…' : connection ? 'Generate new code' : 'Connect Strava'}</Text></Pressable>
+          <Pressable accessibilityRole="button" disabled={connecting} onPress={connect} style={styles.close}><Text style={styles.buttonText}>{connecting ? 'Creating codeâ€¦' : connection ? 'Generate new code' : 'Connect Strava'}</Text></Pressable>
         </View>}
         {!!apiUrl && connected && <View style={styles.connection}><Text style={styles.small}>Strava connected</Text><Pressable accessibilityRole="button" disabled={loading || connecting} onPress={logout}><Text style={styles.link}>Sign out</Text></Pressable></View>}
-        {loading && !data && <View style={styles.loading}><ActivityIndicator color={colors.gold} /><Text style={styles.body}>Gathering your adventure…</Text></View>}
+        {loading && !data && <View style={styles.loading}><ActivityIndicator color={colors.gold} /><Text style={styles.body}>Gathering your adventureâ€¦</Text></View>}
         {data && <>
           <View style={styles.heroFrame}><LinearGradient colors={['#3b291d', '#1e1917']} style={styles.hero}>
             <View style={styles.heroTop}><View style={styles.heroCopy}><Label>CHARACTER TITLE</Label><Text style={styles.heroTitle}>Wrecking Ball</Text><Text style={styles.heroDescription}>A nimble runner with the power to move mountains.</Text><Text style={styles.preview}>TITLE & AVATAR PREVIEW</Text></View>
-              <Pressable accessibilityRole="button" accessibilityLabel="Preview avatar and cosmetics" onPress={() => setDetail({ title: 'Your adventurer', body: 'This is a placeholder avatar from the Classic RPG design. Equipment, cosmetic drops, and class discovery are not connected yet. Your actual Strava data powers the class cards below.' })} style={styles.avatar}><Adventurer /><Text style={styles.star}>✦</Text></Pressable></View>
+              <Pressable accessibilityRole="button" accessibilityLabel="Preview avatar and cosmetics" onPress={() => setDetail({ title: 'Your adventurer', body: 'This is a placeholder avatar from the Classic RPG design. Equipment, cosmetic drops, and class discovery are not connected yet. Your actual Strava data powers the class cards below.' })} style={styles.avatar}><Adventurer /><Text style={styles.star}>âœ¦</Text></Pressable></View>
             <View style={styles.pinnedRow}>
-              <View style={styles.pinned}><Text style={styles.pinnedLabel}>Fastest 5K</Text><Text style={styles.pinnedValue}>{best5k ? formatTime(best5k.timeMs) : '—'}</Text><Text style={styles.pinnedNote}>Best tracked time</Text></View>
-              <View style={styles.pinned}><Text style={styles.pinnedLabel}>Bench Press</Text><Text style={styles.pinnedValue}>—</Text><Text style={styles.pinnedNote}>Not available</Text></View>
-              <View style={styles.pinned}><Text style={styles.pinnedLabel}>Monthly Distance</Text><Text style={styles.pinnedValue}>{number(data.monthlyDistanceKm)} <Text style={{ fontSize: 11 }}>km</Text></Text><Text style={styles.pinnedNote}>Imported · UTC</Text></View>
+              <View style={styles.pinned}><Text style={styles.pinnedLabel}>Fastest 5K</Text><Text style={styles.pinnedValue}>{best5k ? formatTime(best5k.timeMs) : 'â€”'}</Text><Text style={styles.pinnedNote}>Best tracked time</Text></View>
+              <View style={styles.pinned}><Text style={styles.pinnedLabel}>Bench Press</Text><Text style={styles.pinnedValue}>â€”</Text><Text style={styles.pinnedNote}>Not available</Text></View>
+              <View style={styles.pinned}><Text style={styles.pinnedLabel}>Monthly Distance</Text><Text style={styles.pinnedValue}>{number(data.monthlyDistanceKm)} <Text style={{ fontSize: 11 }}>km</Text></Text><Text style={styles.pinnedNote}>Imported Â· UTC</Text></View>
             </View>
           </LinearGradient></View>
-          <View style={styles.section}><Label>YOUR CLASSES</Label><Text style={styles.sectionTitle}>Choose a class to inspect.</Text></View>
+          <View style={styles.section}><Text style={[styles.sectionTitle, styles.homeSectionTitle]}>Your Classes</Text></View>
           <View style={styles.grid}>{data.classes.map(fitnessClass => <Pressable key={fitnessClass.key} accessibilityRole="button" accessibilityLabel={`${fitnessClass.name}, level ${fitnessClass.level}. View progress`} onPress={() => inspectClass(fitnessClass)} style={({ pressed }) => [styles.classCard, pressed && styles.pressed]}>
-            <View style={[styles.emblemOuter, { borderColor: classColors[fitnessClass.key] }]}><View style={[styles.emblemInner, { backgroundColor: classBackgrounds[fitnessClass.key] }]}><Emblem name={fitnessClass.key} color={classColors[fitnessClass.key]} size={31} /></View></View>
+            <View style={[styles.emblemOuter, { borderColor: classColors[fitnessClass.key], backgroundColor: classCardBackgrounds[fitnessClass.key] }]}><View style={[styles.emblemInner, { backgroundColor: classBackgrounds[fitnessClass.key] }]}><Emblem name={fitnessClass.key} color={classColors[fitnessClass.key]} size={31} /></View></View>
             <Text style={[styles.classLabel, { color: classColors[fitnessClass.key] }]}>{fitnessClass.name.toUpperCase()}</Text><Text style={styles.level}>Level {fitnessClass.level}</Text>
             <Meter value={fitnessClass.progress} color={classColors[fitnessClass.key]} />
-            <Text style={styles.xp}>{number(fitnessClass.currentXp)} / {fitnessClass.nextLevelXp} XP toward next level</Text><Text style={styles.small}>{fitnessClass.activityCount} activities · {number(fitnessClass.xp)} XP</Text>{fitnessClass.xpUnavailable && <Text style={styles.small}>Lifting volume unavailable. Strength XP needs weight and reps.</Text>}<Text style={styles.cardLink}>View skills & progress  ›</Text>
+            <Text style={[styles.xp, styles.classXp]}>{number(fitnessClass.currentXp)} / {fitnessClass.nextLevelXp} XP</Text>{fitnessClass.xpUnavailable && <Text style={styles.small}>Lifting volume unavailable. Strength XP needs weight and reps.</Text>}<Text style={styles.cardLink}>View skills & progress  â€º</Text>
           </Pressable>)}</View>
-          <View style={styles.scope}><Text style={styles.scopeText}>{data.source === 'demo' ? 'SAMPLE DATA' : `${data.importedCount} ACTIVITIES IMPORTED`}{!data.historyComplete && data.source !== 'demo' ? ' · HISTORY IN PROGRESS' : ''}</Text><Text style={styles.small}>Experimental XP rules. History depends on your granted Strava permissions. {data.historyComplete ? 'All accessible history imported.' : 'Totals cover imported activities, not your full lifetime.'}</Text>{data.syncInProgress && <Text style={styles.small}>{data.skillsPending || 0} activities awaiting skill processing � {data.syncRetryAt ? `Sync paused until ${new Date(data.syncRetryAt).toLocaleTimeString()}.` : 'Sync continues automatically while the server runs.'}</Text>}{data.stale && <Text style={styles.error}>Some data could not be synced. Showing saved data.</Text>}</View>
-          <View style={styles.section}><Label>QUESTS AND ACTIVITIES</Label><Text style={styles.sectionTitle}>Keep your adventure moving.</Text></View>
-          <Pressable accessibilityRole="button" onPress={() => setDetail({ title: 'Adventure board', body: 'Daily, weekly, and monthly quests are coming soon.\n\nPreview: complete three activities in a week, or explore a new fitness class. Quest targets, rewards, and completion tracking are not active yet.' })} style={({ pressed }) => [styles.questFrame, pressed && styles.pressed]}><LinearGradient colors={['#49331f', '#30231b']} style={styles.quest}><View style={styles.questEmblem}><Emblem name="quest" color="#e8c765" /></View><View style={styles.questCopy}><Label>ADVENTURE BOARD</Label><Text style={styles.questTitle}>Quests</Text><Text style={styles.body}>Daily, weekly, and monthly challenges.</Text><Text style={styles.preview}>COMING SOON</Text></View><Text style={styles.arrow}>›</Text></LinearGradient></Pressable>
+          <View style={styles.section}><Text style={[styles.sectionTitle, styles.homeSectionTitle]}>Quests and Activities</Text></View>
+          <Pressable accessibilityRole="button" onPress={() => setDetail({ title: 'Adventure board', body: 'Daily, weekly, and monthly quests are coming soon.\n\nPreview: complete three activities in a week, or explore a new fitness class. Quest targets, rewards, and completion tracking are not active yet.' })} style={({ pressed }) => [styles.questFrame, pressed && styles.pressed]}><LinearGradient colors={['#49331f', '#30231b']} style={styles.quest}><View style={styles.questEmblem}><Emblem name="quest" color="#e8c765" /></View><View style={styles.questCopy}><Label>ADVENTURE BOARD</Label><Text style={styles.questTitle}>Quests</Text><Text style={styles.body}>Daily, weekly, and monthly challenges.</Text><Text style={styles.preview}>COMING SOON</Text></View><Text style={styles.arrow}>â€º</Text></LinearGradient></Pressable>
           <View style={styles.recent}><View style={styles.recentHeading}><Label>RECENT ACTIVITIES</Label><Text style={styles.strava}>{data.source === 'demo' ? 'DEMO' : 'STRAVA'}</Text></View>
             {!data.recentActivities.length && <Text style={[styles.body, { marginVertical: 20 }]}>Your next adventure starts here. No activities imported yet.</Text>}
-            {(expanded ? data.recentActivities : data.recentActivities.slice(0, 1)).map(activity => <View key={activity.id} style={styles.activity}><View style={styles.activityMark}><Emblem name={(activity.classKey || 'quest') as IconName} size={25} /></View><View style={styles.activityCopy}><Text style={styles.activityName}>{activity.name}</Text><Text style={styles.activityMeta}>{number(activity.distance / 1000)} km · {Math.round(activity.movingTime / 60)} min</Text><Text style={styles.activityDate}>{new Date(activity.startDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })} · {activity.sportType}</Text></View><Text style={styles.activityXp}>{activity.classKey === 'strength' ? 'Volume needed' : activity.classKey ? `+${number(activity.xp)} XP` : 'No XP rule'}</Text></View>)}
+            {(expanded ? data.recentActivities : data.recentActivities.slice(0, 1)).map(activity => <View key={activity.id} style={styles.activity}><View style={styles.activityMark}><Emblem name={(activity.classKey || 'quest') as IconName} size={25} /></View><View style={styles.activityCopy}><Text style={styles.activityName}>{activity.name}</Text><Text style={styles.activityMeta}>{number(activity.distance / 1000)} km Â· {Math.round(activity.movingTime / 60)} min</Text><Text style={styles.activityDate}>{new Date(activity.startDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })} Â· {activity.sportType}</Text></View><Text style={styles.activityXp}>{activity.classKey === 'strength' ? 'Volume needed' : activity.classKey ? `+${number(activity.xp)} XP` : 'No XP rule'}</Text></View>)}
             {!!data.recentActivities.length && <Pressable accessibilityRole="button" accessibilityState={{ expanded }} onPress={() => setExpanded(value => !value)}><LinearGradient colors={['#e6be68', '#b68b49']} style={styles.activitiesButton}><Text style={styles.buttonText}>{expanded ? 'Show latest activity' : 'See activities'}</Text></LinearGradient></Pressable>}
           </View>
-          <Text style={styles.footer}>{data.source === 'demo' ? 'Demo mode · connect your backend to begin.' : `Last synced ${data.syncedAt ? new Date(data.syncedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'just now'} · Pull down to refresh.`}</Text>
+          <Text style={styles.footer}>{data.source === 'demo' ? 'Demo mode Â· connect your backend to begin.' : `Last synced ${data.syncedAt ? new Date(data.syncedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'just now'} Â· Pull down to refresh.`}</Text>
         </>}
       </ScrollView>
       <Modal visible={!!detail} transparent animationType="fade" onRequestClose={() => setDetail(null)}><View style={styles.overlay}><View style={styles.sheet} accessibilityViewIsModal><ScrollView><Label>FITNESS RPG</Label><Text style={styles.sectionTitle}>{detail?.title}</Text><Text style={[styles.body, { marginVertical: 20 }]}>{detail?.body}</Text>
@@ -149,6 +149,7 @@ const styles = StyleSheet.create({
   pinnedNote: { color: '#b3a18b', fontSize: 8, marginTop: 5 },
   section: { marginTop: 28, marginBottom: 14, gap: 5 },
   sectionTitle: { color: colors.ink, fontFamily: serif, fontSize: 19, fontWeight: '700', lineHeight: 26 },
+  homeSectionTitle: { fontSize: 21 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   classCard: { width: '48%', flexGrow: 1, flexBasis: '46%', padding: 13, backgroundColor: '#302720', borderWidth: 1, borderColor: colors.border, borderRadius: 4 },
   pressed: { opacity: 0.72 },
@@ -159,6 +160,7 @@ const styles = StyleSheet.create({
   meter: { height: 10, borderWidth: 1, borderColor: '#79552e', backgroundColor: '#1a1412', padding: 1 },
   fill: { height: '100%' },
   xp: { color: colors.muted, fontFamily: serif, fontSize: 11, lineHeight: 17, marginTop: 9 },
+  classXp: { textAlign: 'center' },
   small: { color: '#b7a58a', fontFamily: serif, fontSize: 10, lineHeight: 16 },
   cardLink: { color: colors.gold, fontFamily: serif, fontSize: 11, marginTop: 12 },
   scope: { marginTop: 14, paddingLeft: 10, borderLeftWidth: 2, borderColor: '#634b33', gap: 4 },

@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fitness RPG · Mobile screen preview</title>
+  <style>
+    :root {
+      --shell: #191513;
+      --surface: #302720;
+      --surface-2: #28221c;
+      --surface-3: #211b18;
+      --ink: #f3e3bb;
+      --muted: #c0ae83;
+      --body: #d9c89e;
+      --gold: #e8c765;
+      --border: #876035;
+      --running: #78a878;
+      --cycling: #a482d2;
+      --strength: #c85b55;
+      --green: #315f46;
+      --serif: Georgia, "Times New Roman", serif;
+      --sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html { background: #0e0c0b; }
+    body { margin: 0; min-width: 320px; color: var(--ink); background: radial-gradient(circle at top, #3a2c24 0, #0e0c0b 680px); font-family: var(--sans); }
+    button { font: inherit; }
+    .workspace { width: min(100%, 1180px); margin: 0 auto; padding: 28px 20px 60px; }
+    .workspace-header { display: flex; justify-content: space-between; gap: 24px; align-items: end; max-width: 900px; margin: 0 auto 26px; }
+    .workspace-kicker { color: var(--gold); font: 11px/1.2 var(--serif); letter-spacing: .18em; }
+    .workspace h1 { margin: 8px 0 0; font: 700 clamp(24px, 4vw, 38px)/1.05 var(--serif); }
+    .workspace-intro { max-width: 410px; margin: 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
+    .flow { display: flex; align-items: center; gap: 10px; width: min(100%, 900px); margin: 0 auto 26px; overflow-x: auto; padding: 2px 1px 10px; }
+    .flow-step { flex: 0 0 auto; padding: 10px 14px; border: 1px solid #61482f; border-radius: 4px; color: var(--muted); background: #211b18; cursor: pointer; text-align: left; }
+    .flow-step strong { display: block; color: var(--ink); font: 16px/1.1 var(--serif); }
+    .flow-step small { display: block; margin-top: 4px; color: var(--muted); font-size: 10px; }
+    .flow-step.active { border-color: var(--gold); box-shadow: 0 0 0 1px #8d6939 inset; }
+    .flow-arrow { flex: 0 0 auto; color: var(--gold); font-size: 24px; }
+    .preview-wrap { display: flex; justify-content: center; align-items: start; gap: 32px; }
+    .phone-label { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 8px; color: var(--muted); font: 10px/1 var(--serif); letter-spacing: .14em; }
+    .phone-label span:last-child { color: #8f7b5d; letter-spacing: .05em; }
+    .phone { width: 430px; max-width: 100%; min-height: 780px; overflow: hidden; border: 7px solid #090807; border-radius: 34px; background: linear-gradient(#3b2a22, #211b18 360px, #191513); box-shadow: 0 22px 70px #000b, 0 0 0 1px #5b4735; }
+    .phone-screen { width: 100%; min-height: 780px; padding: 18px 16px 48px; }
+    .screen { display: none; }
+    .screen.active { display: block; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 14px; margin-bottom: 18px; border-bottom: 1px solid var(--border); }
+    .wordmark { color: var(--muted); font: 13px var(--serif); letter-spacing: .17em; }
+    .wordmark b { color: var(--gold); font-weight: 400; }
+    .sync, .back { min-height: 40px; padding: 8px 11px; border: 1px solid var(--border); border-radius: 3px; color: var(--gold); background: transparent; font: 12px var(--serif); cursor: pointer; }
+    .hero-frame { padding: 3px; border: 1px solid #a7773e; border-radius: 5px; }
+    .hero { padding: 16px; border: 1px solid #a7773e; background: linear-gradient(#3b291d, #1e1917); }
+    .hero-top { display: flex; align-items: center; gap: 12px; }
+    .hero-copy { min-width: 0; flex: 1; }
+    .eyebrow { margin: 0 0 6px; color: var(--gold); font: 10px/1.3 var(--serif); letter-spacing: .16em; }
+    .hero h2 { margin: 6px 0; color: var(--ink); font: 700 29px/1.05 var(--serif); }
+    .hero p { margin: 0; color: #c3b89f; font: 13px/1.45 var(--serif); }
+    .preview-note { margin-top: 9px !important; color: #b9a16b !important; font: 8px/1.4 var(--sans) !important; letter-spacing: .1em; }
+    .avatar { position: relative; display: grid; place-items: center; flex: 0 0 92px; width: 92px; height: 112px; overflow: hidden; border: 2px solid #b88949; border-radius: 4px; background: #34261e; }
+    .avatar::before { content: ""; width: 49px; height: 49px; border: 3px solid #51342a; border-radius: 50%; background: #e9a878; box-shadow: 0 26px 0 8px #eee3c8, 0 26px 0 11px #704b32, 0 47px 0 7px #3e7651; }
+    .avatar::after { content: ""; position: absolute; top: 18px; width: 56px; height: 24px; border-radius: 50% 50% 30% 30%; background: #3a2926; }
+    .star { position: absolute; top: 3px; right: 5px; color: var(--gold); font-size: 15px; }
+    .pinned-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 20px; }
+    .pinned { min-width: 0; padding: 8px; border: 1px solid #7b5a37; border-radius: 3px; background: #261d18; }
+    .pinned-label { min-height: 28px; color: #bfb3a0; font: 10px/1.4 var(--serif); }
+    .pinned-value { margin-top: 5px; color: var(--gold); font: 18px var(--serif); white-space: nowrap; }
+    .pinned-note { margin-top: 5px; color: #b3a18b; font-size: 8px; line-height: 1.3; }
+    .section { margin: 28px 0 14px; }
+    .section h3 { margin: 0; color: var(--ink); font: 700 19px/1.3 var(--serif); }
+    .home-classes-title { color: var(--ink); font: 700 21px/1.3 var(--serif); }
+    .body { color: var(--body); font: 13px/1.6 var(--serif); }
+    .class-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .class-card { min-width: 0; padding: 13px; border: 1px solid var(--border); border-radius: 4px; color: var(--ink); background: var(--surface); text-align: left; cursor: pointer; }
+    .class-card:hover, .skill-card:hover { border-color: var(--gold); }
+    .class-card.running { border-color: #596c50; background: linear-gradient(145deg, #302a24, #252820); box-shadow: inset 0 1px #8ea77733; }
+    .class-card.strength { border-color: #76504f; background: linear-gradient(145deg, #302724, #29211f); box-shadow: inset 0 1px #cf696933; }
+    .class-card.cycling { border-color: #665481; background: linear-gradient(145deg, #2b2931, #24212a); box-shadow: inset 0 1px #aa8bd433; }
+    .emblem { display: grid; place-items: center; width: 54px; height: 54px; margin-bottom: 12px; border: 2px solid currentColor; border-radius: 50%; background: #201914; }
+    .emblem svg { width: 31px; height: 31px; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+    .running { color: var(--running); } .cycling { color: var(--cycling); } .strength { color: var(--strength); }
+    .class-name { color: currentColor; font: 10px var(--serif); letter-spacing: .18em; }
+    .level { display: block; margin: 8px 0; color: var(--ink); font: 700 21px var(--serif); }
+    .meter { height: 9px; overflow: hidden; padding: 1px; border: 1px solid #79552e; background: #1a1412; }
+    .meter span { display: block; height: 100%; background: currentColor; }
+    .xp, .small { display: block; color: var(--muted); font: 10px/1.55 var(--serif); }
+    .class-card .xp { text-align: center; }
+    .card-link { display: block; margin-top: 12px; color: var(--gold); font: 11px var(--serif); }
+    .scope, .notice { margin-top: 14px; padding: 12px; border-left: 2px solid #634b33; background: #28221c; }
+    .scope strong { display: block; margin-bottom: 4px; color: #c5ad7b; font-size: 8px; letter-spacing: .1em; }
+    .quest, .activity-panel { margin-top: 14px; padding: 15px; border: 1px solid var(--border); background: var(--surface); }
+    .quest { display: flex; align-items: center; gap: 12px; }
+    .quest-icon { display: grid; place-items: center; flex: 0 0 46px; width: 46px; height: 46px; border: 1px solid #a47a3d; border-radius: 50%; color: var(--gold); background: #65472a; font-size: 22px; }
+    .quest-copy { min-width: 0; flex: 1; }.quest h3 { margin: 3px 0; font: 26px var(--serif); }.quest .arrow { color: var(--gold); font-size: 28px; }
+    .activity-head { display: flex; justify-content: space-between; gap: 10px; }.activity-head strong { color: #b8d47e; font: 8px var(--sans); letter-spacing: .1em; }
+    .activity { display: flex; align-items: center; gap: 10px; padding: 18px 0; border-bottom: 1px solid #4c3b2b; }.activity-mark { display: grid; place-items: center; flex: 0 0 34px; height: 40px; background: #493522; }.activity-copy { min-width: 0; flex: 1; }.activity-name { color: var(--ink); font: 700 15px/1.4 var(--serif); }.activity-meta, .activity-date { color: var(--muted); font: 10px/1.5 var(--serif); }.activity-xp { color: var(--gold); font: 12px var(--serif); }
+    .footer { margin-top: 24px; color: #a18d72; text-align: center; font: 11px/1.7 var(--serif); }
+    .class-header { display: flex; gap: 12px; align-items: start; }.class-header > div { min-width: 0; flex: 1; }.class-header h2 { margin: 12px 0 22px; color: var(--ink); font: 30px var(--serif); }.back { align-self: start; border: 0; padding-left: 0; }
+    .summary-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }.summary { min-width: 0; padding: 14px; border: 1px solid var(--border); border-radius: 4px; background: var(--surface); }.summary-value { color: var(--gold); font: 25px var(--serif); }.summary .small { margin-top: 6px; }.summary .meter { margin-top: 8px; color: var(--running); }
+    .subclass { margin-top: 25px; }.subclass-heading { display: flex; justify-content: space-between; align-items: end; gap: 8px; margin-bottom: 12px; }.subclass-heading h3 { margin: 0; color: var(--ink); font: 21px var(--serif); }.subclass-heading p { margin: 0; color: var(--muted); font: 10px var(--serif); text-align: right; }
+    .skill-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }.skill-card { min-width: 0; padding: 12px; border: 3px solid var(--border); border-radius: 4px; color: var(--ink); background: var(--surface); text-align: left; cursor: pointer; }.skill-card.locked { border-color: #6c604e; background: #26231f; }.skill-emblem { display: grid; place-items: center; width: 38px; height: 38px; margin-bottom: 9px; border: 1px solid currentColor; border-radius: 50%; color: var(--gold); background: #211b18; }.skill-emblem svg { width: 25px; height: 25px; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }.skill-label { color: var(--muted); font: 9px var(--serif); letter-spacing: .08em; }.skill-card h4 { margin: 5px 0 10px; color: var(--ink); font: 15px/1.35 var(--serif); overflow-wrap: anywhere; }.skill-value { color: var(--gold); font: 25px var(--serif); }.skill-card.locked .skill-value { color: var(--muted); font-size: 18px; }.skill-detail { margin-top: 6px; color: var(--muted); font: 10px/1.5 var(--serif); }
+    .rank-title { margin: 15px 0 4px; color: var(--ink); font: 29px var(--serif); }.rank-subtitle { margin: 0 0 20px; color: var(--body); font: 13px/1.5 var(--serif); }.rank-card { overflow: hidden; border: 1px solid var(--border); background: var(--surface); }.rank-row { display: grid; grid-template-columns: 38px minmax(0, 1fr) 66px; align-items: center; gap: 10px; padding: 14px; border-bottom: 1px solid #4c3b2b; }.rank-row:last-child { border-bottom: 0; }.rank-row.head { color: var(--muted); font: 9px var(--sans); letter-spacing: .08em; }.rank-row.you { background: #49331f; }.rank-number { color: var(--muted); font: 700 16px var(--serif); }.player { min-width: 0; }.player strong { display: block; color: var(--ink); font: 700 13px var(--serif); }.player small { display: block; margin-top: 3px; color: var(--muted); font: 10px var(--serif); }.time { color: var(--gold); font: 18px var(--serif); text-align: right; }.rank-note { margin-top: 16px; color: var(--muted); font: 11px/1.6 var(--serif); }
+    .running-page { position: relative; padding: 0 2px 8px; background: linear-gradient(180deg, #20302612, transparent 58%); }
+    .running-banner { position: relative; display: grid; grid-template-columns: 58px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 14px; overflow: hidden; border: 1px solid #7d9a69; background: linear-gradient(135deg, #302919, #1d241c 58%, #18251c); }
+    .running-banner::after { content: ""; position: absolute; right: -26px; top: -32px; width: 130px; height: 130px; border: 1px solid #78a87838; border-radius: 50%; box-shadow: 0 0 0 16px #78a87812, 0 0 0 32px #78a87808; pointer-events: none; }
+    .running-crest { position: relative; z-index: 1; display: grid; place-items: center; width: 58px; height: 58px; border: 2px solid var(--running); color: #ffe2a0; background: #244b36; clip-path: polygon(50% 0, 92% 17%, 82% 80%, 50% 100%, 18% 80%, 8% 17%); }
+    .running-crest svg { width: 33px; height: 33px; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+    .running-banner h2 { position: relative; z-index: 1; margin: 1px 0 3px; color: var(--ink); font: 700 25px var(--serif); }.running-banner .eyebrow { margin: 0; }
+    .running-subclass { position: relative; margin-top: 18px; padding: 12px; border: 1px solid #596c50; background: linear-gradient(145deg, #302820, #25231d); box-shadow: inset 0 1px #8ea77744; }.running-subclass::before { content: ""; position: absolute; left: 13px; top: 0; width: 72px; height: 2px; background: var(--running); }.running-subclass.endurance { border-color: #696d49; }.running-subclass.endurance::before { background: #b6a04d; }.running-subclass.climbing { border-color: #4f7057; }.running-subclass.climbing::before { background: #71a879; }
+    .running-subclass-head { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; align-items: center; gap: 9px; }.subclass-glyph { display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid #a4773d; color: var(--gold); background: #211b18; font: 18px var(--serif); }.running-subclass.endurance .subclass-glyph { color: #dfca70; border-color: #9c8a42; }.running-subclass.climbing .subclass-glyph { color: #9bd29a; border-color: #5c8d63; }.running-subclass-head h3 { margin: 0; color: var(--ink); font: 20px var(--serif); }.running-subclass-head small { color: var(--muted); font: 9px var(--sans); letter-spacing: .08em; }.subclass-count { color: #a9946d; font: 9px var(--serif); text-align: right; }
+    .class-best { position: relative; z-index: 1; min-width: 66px; padding-left: 8px; border-left: 1px solid #6e875e; text-align: right; }.class-best small { display: block; color: #a9b897; font: 8px/1.25 var(--sans); letter-spacing: .08em; }.class-best strong { display: block; margin-top: 3px; color: var(--gold); font: 16px var(--serif); }.class-best span { display: block; margin-top: 2px; color: var(--ink); font: 9px var(--serif); }
+    .running-skill-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 11px; }.running-skill-grid .skill-card { padding: 10px; border-width: 1px; border-color: #4f694f; background: #211d19; box-shadow: inset 0 1px #91ad7a33; }.running-skill-grid .skill-card:hover { border-color: var(--gold); transform: translateY(-1px); }.running-skill-grid .skill-emblem { width: 30px; height: 30px; margin-bottom: 7px; }.running-skill-grid .skill-emblem svg { width: 19px; height: 19px; }.running-skill-grid .skill-card h4 { margin: 4px 0 7px; font-size: 14px; }.running-skill-grid .skill-value { font-size: 19px; }.running-skill-grid .skill-detail { font-size: 9px; }
+    .running-empty { padding: 13px; border: 1px dashed #5d6049; color: #a9b28b; background: #20251e; font: 11px/1.5 var(--serif); }
+    .class-page-strength .summary .meter { color: var(--strength); }.class-page-strength .subclass { border-color: #76504f; background: linear-gradient(145deg, #302820, #29221f); box-shadow: inset 0 1px #cf696933; }.class-page-strength .subclass::before { background: var(--strength); }.class-page-strength .skill-card { border-color: #76504f; }.class-page-strength .skill-emblem { color: #e0a0a0; }
+    .class-page-cycling .summary .meter { color: var(--cycling); }.class-page-cycling .subclass { border-color: #665481; background: linear-gradient(145deg, #2c2933, #24212b); box-shadow: inset 0 1px #aa8bd433; }.class-page-cycling .subclass::before { background: var(--cycling); }.class-page-cycling .skill-card { border-color: #665481; background: #211d25; }.class-page-cycling .skill-emblem { color: #c1a5ed; }
+    .class-page-strength .class-generic-subclass { border-color: #76504f; box-shadow: inset 0 1px #cf696933; }.class-page-strength .class-generic-subclass::before { background: var(--strength); }.class-page-strength .class-skill-grid .skill-card { border-color: #76504f; }.class-page-strength .class-skill-grid .skill-emblem { color: #e0a0a0; }
+    .class-page-cycling .class-generic-subclass { border-color: #665481; background: linear-gradient(145deg, #2c2933, #24212b); box-shadow: inset 0 1px #aa8bd433; }.class-page-cycling .class-generic-subclass::before { background: var(--cycling); }.class-page-cycling .class-skill-grid .skill-card { border-color: #665481; background: #211d25; }.class-page-cycling .class-skill-grid .skill-emblem { color: #c1a5ed; }
+    @media (max-width: 680px) { .workspace { padding: 18px 10px 35px; }.workspace-header { display: block; }.workspace-intro { margin-top: 12px; }.preview-wrap { display: block; }.phone-label { margin: 20px auto 8px; width: min(100%, 430px); }.phone { margin: 0 auto; border-width: 5px; border-radius: 26px; }.phone-screen { min-height: 720px; } }
+    @media (max-width: 380px) { .phone-screen { padding-left: 12px; padding-right: 12px; }.hero-top { align-items: start; }.avatar { flex-basis: 78px; width: 78px; }.pinned-row, .summary-row { gap: 5px; }.pinned { padding: 6px; }.pinned-label { font-size: 9px; }.pinned-value { font-size: 15px; }.skill-grid { gap: 8px; }.skill-card { padding: 9px; }.skill-card h4 { font-size: 14px; } }
+  </style>
+</head>
+<body>
+  <main class="workspace">
+    <header class="workspace-header">
+      <div><div class="workspace-kicker">FITNESS RPG · MOBILE REVIEW BOARD</div><h1>Screen flow preview</h1></div>
+      <p class="workspace-intro">A static, phone-width view of the current Expo screens. Click the flow steps, class cards, or skill cards to inspect the next state without rebuilding the app.</p>
+    </header>
+    <nav class="flow" aria-label="Screen flow">
+      <button class="flow-step active" data-screen="home"><strong>Home</strong><small>Dashboard</small></button><span class="flow-arrow">→</span>
+      <button class="flow-step" data-screen="class"><strong>Running class</strong><small>Subclasses</small></button><span class="flow-arrow">→</span>
+      <button class="flow-step" data-screen="ranks"><strong>5K ranks</strong><small>Skill leaderboard</small></button>
+    </nav>
+    <div class="preview-wrap">
+      <div>
+        <div class="phone-label"><span>430 × 932 MOBILE PREVIEW</span><span id="state-label">HOME</span></div>
+        <section class="phone" aria-label="Fitness RPG mobile preview">
+          <div class="phone-screen">
+            <section class="screen active" id="home-screen">
+              <div class="topbar"><div class="wordmark">FITNESS <b>RPG</b></div><button class="sync">↻ &nbsp;Sync Strava</button></div>
+              <div class="hero-frame"><div class="hero"><div class="hero-top"><div class="hero-copy"><div class="eyebrow">CHARACTER TITLE</div><h2>Wrecking Ball</h2><p>A nimble runner with the power to move mountains.</p><p class="preview-note">TITLE &amp; AVATAR PREVIEW</p></div><div class="avatar" aria-label="Character avatar"><span class="star">✧</span></div></div><div class="pinned-row"><div class="pinned"><div class="pinned-label">Fastest 5K</div><div class="pinned-value">—</div><div class="pinned-note">Best tracked time</div></div><div class="pinned"><div class="pinned-label">Bench Press</div><div class="pinned-value">—</div><div class="pinned-note">Not available</div></div><div class="pinned"><div class="pinned-label">Monthly Distance</div><div class="pinned-value">33.8 <small>km</small></div><div class="pinned-note">Imported · UTC</div></div></div></div></div>
+              <div class="section"><h3 class="home-classes-title">Your Classes</h3></div>
+              <div class="class-grid">
+                <button class="class-card running" data-screen="class" data-class="running"><span class="emblem" data-icon="running"></span><span class="class-name">RUNNING</span><span class="level">Level 1</span><div class="meter"><span style="width:18%"></span></div><span class="xp">1.2 / 7 XP</span><span class="card-link">View skills &amp; progress&nbsp; ›</span></button>
+                <button class="class-card strength" data-screen="class" data-class="strength"><span class="emblem" data-icon="strength"></span><span class="class-name">STRENGTH</span><span class="level">Level 0</span><div class="meter"><span style="width:0%"></span></div><span class="xp">0 / 5 XP</span><span class="small">Lifting volume unavailable.</span><span class="card-link">View skills &amp; progress&nbsp; ›</span></button>
+                <button class="class-card cycling" data-screen="class" data-class="cycling"><span class="emblem" data-icon="cycling"></span><span class="class-name">CYCLING</span><span class="level">Level 1</span><div class="meter"><span style="width:12%"></span></div><span class="xp">3.2 / 7 XP</span><span class="card-link">View skills &amp; progress&nbsp; ›</span></button>
+              </div>
+              <div class="section"><h3 class="home-classes-title">Quests and Activities</h3></div>
+              <div class="quest"><div class="quest-icon">◇</div><div class="quest-copy"><div class="eyebrow">ADVENTURE BOARD</div><h3>Quests</h3><div class="body">Daily, weekly, and monthly challenges.</div><div class="preview-note">COMING SOON</div></div><span class="arrow">›</span></div>
+              <div class="activity-panel"><div class="activity-head"><div class="eyebrow">RECENT ACTIVITIES</div><strong>DEMO</strong></div><div class="activity"><div class="activity-mark">↗</div><div class="activity-copy"><div class="activity-name">Morning run</div><div class="activity-meta">6.2 km · 34 min</div><div class="activity-date">Oct 26, 2026 · Run</div></div><div class="activity-xp">+6.2 XP</div></div></div>
+              <div class="footer">Demo mode · connect your backend to begin.</div>
+            </section>
+
+            <section class="screen" id="class-screen">
+              <div class="class-header"><div><button class="back" data-screen="home">‹ &nbsp;Back to dashboard</button><h2>Running Class</h2></div></div>
+              <div class="summary-row"><div class="summary"><div class="eyebrow">CUMULATIVE LEVEL</div><div class="summary-value">Level 1</div><span class="small">6.2 total XP</span><div class="meter running"><span style="width:18%"></span></div><span class="small">1.2 / 7 XP</span></div><div class="summary"><div class="eyebrow">RECORDED SKILLS</div><div class="summary-value">0 / 6</div><span class="small">Personal bests</span><span class="small">Independent of class XP</span></div></div>
+              <div class="subclass"><div class="subclass-heading"><div><h3>Speed</h3></div><p>3 skills</p></div><div class="skill-grid"><button class="skill-card locked" data-screen="ranks"><span class="skill-emblem running" data-icon="running"></span><span class="skill-label">DISTANCE</span><h4>Fastest 1K</h4><div class="skill-value">Locked</div><div class="skill-detail">Complete a 1K effort to unlock.</div></button><button class="skill-card locked" data-screen="ranks"><span class="skill-emblem running" data-icon="running"></span><span class="skill-label">DISTANCE</span><h4>Fastest 5K</h4><div class="skill-value">Locked</div><div class="skill-detail">Complete a 5K effort to unlock.</div></button><button class="skill-card locked" data-screen="ranks"><span class="skill-emblem running" data-icon="running"></span><span class="skill-label">DISTANCE</span><h4>Fastest 100M</h4><div class="skill-value">Locked</div><div class="skill-detail">Complete a 100M effort to unlock.</div></button></div></div>
+              <div class="subclass"><div class="subclass-heading"><div><h3>Endurance</h3></div><p>3 skills</p></div><div class="skill-grid"><button class="skill-card locked" data-screen="ranks"><span class="skill-emblem running" data-icon="running"></span><span class="skill-label">DISTANCE</span><h4>Fastest 10K</h4><div class="skill-value">Locked</div><div class="skill-detail">Complete a 10K effort to unlock.</div></button><button class="skill-card locked" data-screen="ranks"><span class="skill-emblem running" data-icon="running"></span><span class="skill-label">DISTANCE</span><h4>Fastest Half marathon</h4><div class="skill-value">Locked</div><div class="skill-detail">Complete a Half marathon effort to unlock.</div></button><button class="skill-card locked" data-screen="ranks"><span class="skill-emblem running" data-icon="running"></span><span class="skill-label">DISTANCE</span><h4>Fastest Marathon</h4><div class="skill-value">Locked</div><div class="skill-detail">Complete a Marathon effort to unlock.</div></button></div></div>
+              <div class="subclass"><div class="subclass-heading"><div><h3>Climbing</h3></div><p>Future skills</p></div><div class="notice"><span class="body">No climbing skills yet.</span></div></div>
+              <div class="notice"><span class="small">1 km = 1 XP. Class XP grows independently of personal bests. Locked means no result is recorded yet; an activity may still be waiting for processing.</span></div>
+            </section>
+
+            <section class="screen" id="ranks-screen">
+              <button class="back" data-screen="class">‹ &nbsp;Back to Running class</button><div class="eyebrow">RUNNING · SPEED</div><h2 class="rank-title">Fastest 5K</h2><p class="rank-subtitle">Compare recorded elapsed times with other adventurers.</p>
+              <div class="rank-card"><div class="rank-row head"><span>RANK</span><span>ADVENTURER</span><span>TIME</span></div><div class="rank-row"><span class="rank-number">1</span><span class="player"><strong>Maya</strong><small>Running · Level 18</small></span><span class="time">21:42</span></div><div class="rank-row"><span class="rank-number">2</span><span class="player"><strong>Jordan</strong><small>Running · Level 12</small></span><span class="time">23:08</span></div><div class="rank-row you"><span class="rank-number">—</span><span class="player"><strong>You</strong><small>No recorded result yet</small></span><span class="time">—</span></div><div class="rank-row"><span class="rank-number">4</span><span class="player"><strong>Sam</strong><small>Running · Level 9</small></span><span class="time">26:11</span></div></div>
+              <p class="rank-note">Ranks are a preview. A skill unlocks when a recorded result is available. Provider source and privacy scope will be shown here when leaderboards are implemented.</p>
+              <div class="notice"><div class="eyebrow">SOURCE</div><span class="small">Current personal-best values come from processed Strava activity data. This preview uses sample values.</span></div>
+            </section>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+  <script>
+    const icons = {
+      running: '<svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="39" cy="10" r="6"></circle><path d="M31 20l11 8-7 10 12 8M35 37L22 51M42 28l13 2M28 24l-12 8"></path></svg>',
+      strength: '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M13 25v14M20 19v26M27 26h10M44 19v26M51 25v14M20 32h24"></path></svg>',
+      cycling: '<svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="18" cy="46" r="10"></circle><circle cx="48" cy="46" r="10"></circle><path d="M18 46l12-24 8 24M30 22h12M30 22h-8M30 22l18 24M25 32h17"></path></svg>'
+    };
+    const screens = { home: document.querySelector('#home-screen'), class: document.querySelector('#class-screen'), ranks: document.querySelector('#ranks-screen') };
+    const classData = {
+      running: { name: 'Running', level: 'Level 1', xp: '6.2 total XP', current: '1.2 / 7 XP', progress: '18%', recorded: '0 / 6', accent: 'running', sections: [['Speed', ['1K', '5K', '100M']], ['Endurance', ['10K', 'Half marathon', 'Marathon']], ['Climbing', []]] },
+      cycling: { name: 'Cycling', level: 'Level 1', xp: '8.2 total XP', current: '3.2 / 7 XP', progress: '12%', recorded: '0 / 5', accent: 'cycling', sections: [['Speed', ['5K']], ['Endurance', ['20K', '50K']], ['Climbing', ['75K', '100K']]] },
+      strength: { name: 'Strength', level: 'Level 0', xp: '0 total XP', current: '0 / 5 XP', progress: '0%', recorded: '0 / 3', accent: 'strength', sections: [['Push', ['Bench press']], ['Pull', ['Deadlift']], ['Legs', ['Squat']], ['Volume', []]] }
+    };
+    function hydrateIcons() { document.querySelectorAll('[data-icon]').forEach((node) => { node.innerHTML = icons[node.dataset.icon] || ''; }); }
+    function skillMarkup(skill, classKey) {
+      const strength = classKey === 'strength';
+      const title = strength ? skill : `Fastest ${skill}`;
+      const detail = strength ? 'Record a one-rep max to unlock.' : `Complete a ${skill} effort to unlock.`;
+      return `<button class="skill-card locked" data-screen="ranks"><span class="skill-emblem ${classKey}" data-icon="${classKey}"></span><span class="skill-label">${strength ? 'POWER' : 'DISTANCE'}</span><h4>${title}</h4><div class="skill-value">Locked</div><div class="skill-detail">${detail}</div></button>`;
+    }
+    function renderClass(classKey) {
+      const current = classData[classKey];
+      if (classKey === 'running') {
+        const runningSections = [
+          { label: 'Speed', glyph: '↯', tone: '', skills: ['1K', '5K', '100M'] },
+          { label: 'Endurance', glyph: '≈', tone: 'endurance', skills: ['10K', 'Half marathon', 'Marathon'] },
+          { label: 'Climbing', glyph: '▲', tone: 'climbing', skills: [] }
+        ];
+        const runningMarkup = runningSections.map((section) => {
+          const cards = section.skills.length ? `<div class="running-skill-grid">${section.skills.map((skill) => skillMarkup(skill, 'running')).join('')}</div>` : '<div class="running-empty">No climbing skills yet. Elevation-based challenges will appear here.</div>';
+          return `<section class="running-subclass ${section.tone}"><div class="running-subclass-head"><span class="subclass-glyph">${section.glyph}</span><div><h3>${section.label}</h3></div><span class="subclass-count">${section.skills.length ? `${section.skills.length} SKILLS` : 'COMING SOON'}</span></div>${cards}</section>`;
+        }).join('');
+        screens.class.innerHTML = `<div class="class-header"><div><button class="back" data-screen="home">‹ &nbsp;Back to dashboard</button></div></div><div class="running-page"><div class="running-banner"><span class="running-crest" data-icon="running"></span><div><h2>Running</h2><div class="eyebrow">CLASS</div></div><div class="class-best"><small>HIGHEST LEVEL<br>SKILL</small><strong>5K</strong><span>Level 12</span></div></div>${runningMarkup}</div><div class="notice"><span class="small">1 km = 1 XP. Times are supplied by Strava best efforts, using elapsed time. Locked means no result is recorded yet.</span></div>`;
+        hydrateIcons();
+        return;
+      }
+      const glyphs = { strength: ['⬆', '↘', '◆', '▦'], cycling: ['↯', '≈', '▲'] };
+      const sections = current.sections.map(([label, skills], index) => `<section class="running-subclass class-generic-subclass ${classKey}"><div class="running-subclass-head"><span class="subclass-glyph">${glyphs[classKey][index]}</span><div><h3>${label}</h3></div><span class="subclass-count">${skills.length ? `${skills.length} SKILL${skills.length === 1 ? '' : 'S'}` : 'COMING SOON'}</span></div>${skills.length ? `<div class="running-skill-grid class-skill-grid">${skills.map((skill) => skillMarkup(skill, classKey)).join('')}</div>` : `<div class="running-empty">No ${label.toLowerCase()} skills yet.</div>`}</section>`).join('');
+      screens.class.innerHTML = `<div class="class-page class-page-${classKey}"><div class="class-header"><div><button class="back" data-screen="home">‹ &nbsp;Back to dashboard</button><h2>${current.name} Class</h2></div></div><div class="summary-row"><div class="summary"><div class="eyebrow">CUMULATIVE LEVEL</div><div class="summary-value">${current.level}</div><span class="small">${current.xp}</span><div class="meter ${current.accent}"><span style="width:${current.progress}"></span></div><span class="small">${current.current}</span></div><div class="summary"><div class="eyebrow">RECORDED SKILLS</div><div class="summary-value">${current.recorded}</div><span class="small">Personal bests</span><span class="small">Independent of class XP</span></div></div>${sections}<div class="notice"><span class="small">${classKey === 'strength' ? 'Based on total pounds lifted; lifting volume is not available from Strava summaries yet.' : '3 km = 1 XP. Times use elapsed distance/time samples, including stops.'} Class XP grows independently of personal bests.</span></div></div>`;
+      hydrateIcons();
+    }
+    hydrateIcons();
+    renderClass('running');
+    const labels = { home: 'HOME', ranks: '5K RANKS' };
+    function showScreen(name, classKey = 'running') {
+      if (name === 'class') { renderClass(classKey); }
+      Object.entries(screens).forEach(([key, screen]) => screen.classList.toggle('active', key === name));
+      document.querySelectorAll('.flow-step').forEach((button) => button.classList.toggle('active', button.dataset.screen === name));
+      document.querySelector('#state-label').textContent = name === 'class' ? `${classData[classKey].name.toUpperCase()} CLASS` : labels[name];
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    document.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-screen]');
+      if (button) { showScreen(button.dataset.screen, button.dataset.class || 'running'); }
+    });
+  </script>
+</body>
+</html>
