@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { router, useLocalSearchParams } from 'expo-router';
+import Svg, { Path } from 'react-native-svg';
 import { api, apiUrl, SessionExpiredError } from '../api';
 import { useDashboard } from '../DashboardContext';
 import { type Dashboard, type ClassKey, type Skill } from '../dashboard';
@@ -21,8 +22,11 @@ const subclassSections = {
   cycling: [['speed', 'Speed', '↯'], ['endurance', 'Endurance', '≈'], ['climbing', 'Climbing', '▲']],
   strength: [['push', 'Push', '↑'], ['pull', 'Pull', '↘'], ['legs', 'Legs', '◆'], ['volume', 'Volume', '▦']],
 } as const;
-const number = (value: number) => value.toLocaleString(undefined, { maximumFractionDigits: 1 });
 function back() { if (router.canGoBack()) router.back(); else router.replace('/'); }
+function BannerEmblem({ classKey, color }: { classKey: ClassKey; color: string }) {
+  if (classKey === 'running') return <Svg width={58} height={64} viewBox="0 0 64 70" fill="none" stroke={color} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round"><Path d="M32 3 55 12v19c0 15-9 27-23 36C18 58 9 46 9 31V12L32 3Z" fill="#244b36" /><Path d="M39 19a6 6 0 1 0 0-.1M31 29l11 8-7 10 12 8M35 46 22 60M42 37l13 2M28 33l-12 8" /></Svg>;
+  return <View style={[styles.bannerEmblem, { borderColor: color }]}><Emblem name={classKey} size={34} color={color} /></View>;
+}
 function SkillTile({ skill, classKey }: { skill: Skill; classKey: ClassKey }) {
   const locked = !skill.best;
   const theme = classThemes[classKey];
@@ -36,7 +40,7 @@ function SkillTile({ skill, classKey }: { skill: Skill; classKey: ClassKey }) {
     {skill.best ? <>
       <Text style={styles.caption}>BEST ELAPSED TIME</Text>
       <Text style={styles.source}>{skill.best.activityName}</Text>
-      <Text style={styles.source}>{new Date(skill.best.achievedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })} Â· Strava</Text>
+      <Text style={styles.source}>{new Date(skill.best.achievedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })} · Strava</Text>
     </> : <Text style={styles.source}>{classKey === 'strength' ? 'Record a one-rep max to unlock. Strength entry is coming later.' : `Complete a ${skill.name} effort to unlock once its activity data is processed.`}</Text>}
   </View>;
 }
@@ -69,9 +73,9 @@ export default function ClassScreen() {
     <StatusBar style="light" />
     <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
       <ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={loading} onRefresh={refresh} tintColor="#e8c765" />}>
-        <Pressable accessibilityRole="button" onPress={back} style={styles.back}><Text style={styles.backText}>â€¹  Back to dashboard</Text></Pressable>
+        <Pressable accessibilityRole="button" onPress={back} style={styles.back}><Text style={styles.backText}>‹  Back to dashboard</Text></Pressable>
         {fitnessClass && classKey ? <View style={[styles.classBanner, { borderColor: theme.border, backgroundColor: theme.banner }]}>
-          <View style={[styles.bannerEmblem, { borderColor: theme.accent }]}><Emblem name={classKey} size={34} color={theme.accent} /></View>
+          <BannerEmblem classKey={classKey} color={theme.accent} />
           <View style={styles.bannerCopy}><Text style={styles.eyebrow}>CLASS</Text><Text style={styles.bannerTitle}>{fitnessClass.name}</Text></View>
           {classKey === 'running' && <View style={styles.bestSkill}><Text style={styles.bestSkillLabel}>BEST RECORDED{`\n`}SKILL</Text><Text style={[styles.bestSkillName, { color: theme.accent }]}>{bestSkill?.name || 'No result'}</Text>{bestSkill && <Text style={styles.bestSkillValue}>{formatTime(bestSkill.best!.timeMs)}</Text>}</View>}
         </View> : <Text style={styles.title}>{classKey ? 'Class skills' : 'Class not found'}</Text>}
@@ -79,10 +83,6 @@ export default function ClassScreen() {
         {!fitnessClass && loading && <ActivityIndicator color="#e8c765" />}
         {!fitnessClass && !loading && <Text style={styles.body}>{classKey ? 'Return to the dashboard to connect Strava, or pull down to retry.' : 'Choose Running, Cycling, or Strength from the dashboard.'}</Text>}
         {fitnessClass && classKey && <>
-          <View style={styles.summaryRow}>
-            <View style={styles.summary}><Text style={styles.eyebrow}>CUMULATIVE LEVEL</Text><Text style={styles.summaryValue}>Level {fitnessClass.level}</Text><Text style={styles.source}>{number(fitnessClass.xp)} total XP</Text><View style={styles.meter}><View style={[styles.fill, { width: `${fitnessClass.progress * 100}%`, backgroundColor: accents[classKey] }]} /></View><Text style={styles.source}>{number(fitnessClass.currentXp)} / {fitnessClass.nextLevelXp} XP</Text></View>
-            <View style={styles.summary}><Text style={styles.eyebrow}>RECORDED SKILLS</Text><Text style={styles.summaryValue}>{unlocked.length} / {fitnessClass.skills.length}</Text><Text style={styles.source}>Personal bests</Text><Text style={styles.source}>Independent of class XP</Text></View>
-          </View>
           {subclassSections[classKey].map(([key, label, glyph]) => {
             const skills = fitnessClass.skills.filter(skill => skill.subclass === key);
             return <View key={key} style={[styles.subclass, { borderColor: theme.border, backgroundColor: theme.panel }]}>
