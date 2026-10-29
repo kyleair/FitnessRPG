@@ -192,3 +192,5 @@ document.querySelectorAll('[data-mode]').forEach((button) => {
 
 ensureExercisePicker();
 renderClass();
+const initialView = new URLSearchParams(window.location.search).get('view');
+if (initialView && document.getElementById(`${initialView}-view`)) showView(initialView);
