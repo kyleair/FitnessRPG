@@ -1,4 +1,5 @@
 import { skillDefinitions, calculationVersion, fingerprint, bestTimes, runningBestTimes, classSkills } from './skills.mjs';
+import rules from './activity-rules.mjs';
 const classTypes = {
   running: ['Run', 'TrailRun', 'VirtualRun'],
   strength: ['WeightTraining'],
@@ -11,10 +12,9 @@ export function classFor(type) {
 export function activityXp(activity) {
   const fitnessClass = classFor(activity.sportType);
   const km = Math.max(0, activity.distance || 0) / 1000;
-  if (fitnessClass === 'running') return km;
-  if (fitnessClass === 'cycling') return km / 3;
-  // Strava summaries contain no sets, reps, or weights. Never substitute duration for lifting volume.
-  if (fitnessClass === 'strength') return 0;
+  if (fitnessClass === 'running') return km * 1000 / rules.runningMetersPerXp;
+  if (fitnessClass === 'cycling') return km * 1000 / rules.cyclingMetersPerXp;
+  if (fitnessClass === 'strength') return activity.source === 'manual' && Number.isFinite(activity.volumeLb) ? Math.max(0, activity.volumeLb) / rules.strengthPoundsPerXp : 0;
   return 0;
 }
 export function progression(xp) {
@@ -26,6 +26,17 @@ export function progression(xp) {
   }
   return { level, currentXp, nextLevelXp, progress: currentXp / nextLevelXp };
 }
+export function activityPage(activities, { cursor, limit = 50 } = {}) {
+  const unique = [...new Map(activities.map(activity => [activity.id, activity])).values()]
+    .sort((a, b) => b.startDate.localeCompare(a.startDate) || b.id - a.id);
+  const index = cursor === undefined ? -1 : unique.findIndex(activity => String(activity.id) === cursor);
+  if (!Number.isInteger(limit) || limit < 1 || limit > 100 || (cursor !== undefined && index === -1)) {
+    throw Object.assign(new Error('Invalid activity page. Refresh activity history and try again.'), { status: 400 });
+  }
+  const page = unique.slice(index + 1, index + 1 + limit);
+  return { items: page.map(activity => ({ ...activity, source: activity.source || 'strava', classKey: classFor(activity.sportType), xp: activityXp(activity) })),
+    total: unique.length, nextCursor: index + 1 + page.length < unique.length ? String(page.at(-1).id) : null };
+}
 export function buildDashboard(activities, { now = new Date(), historyComplete = false, syncedAt = null, stale = false, skillCache = {}, skillsStale = false } = {}) {
   const unique = [...new Map(activities.map(activity => [activity.id, activity])).values()]
     .sort((a, b) => b.startDate.localeCompare(a.startDate));
@@ -36,22 +47,22 @@ export function buildDashboard(activities, { now = new Date(), historyComplete =
     return { key, name: labels[key], skills: classSkills(key, items, skillCache), xp, ...progression(xp), activityCount: items.length,
       distanceKm: items.reduce((total, activity) => total + activity.distance, 0) / 1000,
       minutes: items.reduce((total, activity) => total + activity.movingTime, 0) / 60,
-      xpUnavailable: key === 'strength',
-      formula: { running: '1 km = 1 XP', cycling: '3 km = 1 XP', strength: 'Based on total pounds lifted; lifting volume is not available from Strava summaries yet' }[key] };
+      xpUnavailable: key === 'strength' && !items.some(activity => Number.isFinite(activity.volumeLb)),
+      formula: { running: '1 km = 1 XP', cycling: '3 km = 1 XP', strength: `${rules.strengthPoundsPerXp} lb lifted = 1 XP; only completed sets count. Strava summaries without lifting volume earn no Strength XP` }[key] };
   });
   return {
-    source: 'strava', syncedAt, stale, skillsStale,
+    source: unique.some(a => a.source === 'manual') ? 'mixed' : 'strava', syncedAt, stale, skillsStale,
     skillsUnavailable: unique.filter(a => skillCache[a.id]?.unavailable && skillCache[a.id]?.fingerprint === fingerprint(a)).length,
-    skillsPending: unique.filter(a => skillDefinitions[classFor(a.sportType)]?.[0][2] && a.distance >= skillDefinitions[classFor(a.sportType)][0][2] && (!skillCache[a.id] || skillCache[a.id].fingerprint !== fingerprint(a) || skillCache[a.id].version !== calculationVersion(classFor(a.sportType)))).length, historyComplete, importedCount: unique.length,
+    skillsPending: unique.filter(a => a.source !== 'manual' && skillDefinitions[classFor(a.sportType)]?.[0][2] && a.distance >= skillDefinitions[classFor(a.sportType)][0][2] && (!skillCache[a.id] || skillCache[a.id].fingerprint !== fingerprint(a) || skillCache[a.id].version !== calculationVersion(classFor(a.sportType)))).length, historyComplete, importedCount: unique.filter(a => a.source !== 'manual').length, activityCount: unique.length, manualCount: unique.filter(a => a.source === 'manual').length,
     month, monthlyDistanceKm: unique.filter(activity => activity.startDate.slice(0, 7) === month)
       .reduce((total, activity) => total + activity.distance, 0) / 1000,
-    classes, recentActivities: unique.slice(0, 30).map(activity => ({ ...activity, classKey: classFor(activity.sportType), xp: activityXp(activity) })),
+    classes, recentActivities: unique.slice(0, 30).map(activity => ({ ...activity, source: activity.source || 'strava', classKey: classFor(activity.sportType), xp: activityXp(activity) })),
   };
 }
 
 // Each page/result is committed independently. Queue timers never initiate a new
 // daily check: only a dashboard visit does that. Pending work can finish off-screen.
-export function createDashboardService({ client, clock = Date.now, initial = {}, persist = async () => {}, schedule = (fn, ms) => { const timer = setTimeout(fn, ms); timer.unref?.(); return () => clearTimeout(timer); } }) {
+export function createDashboardService({ client, clock = Date.now, initial = {}, persist = async () => {}, manualActivities = () => [], schedule = (fn, ms) => { const timer = setTimeout(fn, ms); timer.unref?.(); return () => clearTimeout(timer); } }) {
   let state = { activities: [], skillCache: {}, historyComplete: false, ...initial };
   let pending, cancelTimer, stopped = false, lastError = null, retryUntil = state.retryAt || 0;
   const day = value => new Date(value).toISOString().slice(0, 10);
@@ -61,7 +72,7 @@ export function createDashboardService({ client, clock = Date.now, initial = {},
   }
   function needsSkill(a) {
     const key = classFor(a.sportType), entry = state.skillCache[a.id];
-    return skillDefinitions[key]?.[0][2] && a.distance >= skillDefinitions[key][0][2]
+    return a.source !== 'manual' && skillDefinitions[key]?.[0][2] && a.distance >= skillDefinitions[key][0][2]
       && (key === 'running' ? client.details : client.streams)
       && (!entry || entry.fingerprint !== fingerprint(a) || entry.version !== calculationVersion(key));
   }
@@ -132,13 +143,13 @@ export function createDashboardService({ client, clock = Date.now, initial = {},
     return pending;
   }
   return {
-    async get() {
+    async get({ sync = true } = {}) {
       // A new visit may initiate one daily scan, but a running worker cannot.
-      if (!pending && !state.scan && state.historyComplete && day(state.activityCheckAt || state.syncedAt || 0) !== day(clock())) {
+      if (sync && !pending && !state.scan && state.historyComplete && day(state.activityCheckAt || state.syncedAt || 0) !== day(clock())) {
         const newest = Math.max(0, ...state.activities.map(a => Date.parse(a.startDate) / 1000));
         await commit({ ...state, scan: { after: Math.max(0, Math.floor(newest) - 1), startedAt: clock() } });
       }
-      if (!state.syncedAt) {
+      if (sync && !state.syncedAt && !(retryUntil > clock() && manualActivities().length)) {
         // Only the first page blocks first load; subsequent work runs off-screen.
         if (retryUntil > clock()) throw lastError || new Error('Initial sync paused. Try again after the retry window.');
         if (!pending) {
@@ -149,10 +160,10 @@ export function createDashboardService({ client, clock = Date.now, initial = {},
             throw error;
           }).finally(() => { pending = null; arm(); });
         }
-        await pending;
+        try { await pending; } catch (error) { if (!manualActivities().length) throw error; }
       }
-      arm();
-      const result = buildDashboard(state.activities, { historyComplete: state.historyComplete, now: new Date(clock()),
+      if (sync) arm();
+      const result = buildDashboard([...state.activities, ...manualActivities()], { historyComplete: state.historyComplete, now: new Date(clock()),
         syncedAt: state.syncedAt ? new Date(state.syncedAt).toISOString() : null, stale: !!lastError,
         skillCache: state.skillCache, skillsStale: state.activities.some(a => needsSkill(a) && state.skillCache[a.id]?.retryAt) });
       const work = nextWork(), retryAt = Math.max(work || 0, retryUntil);
@@ -160,6 +171,7 @@ export function createDashboardService({ client, clock = Date.now, initial = {},
     },
     // Also useful for deterministic queue verification without real timers.
     run,
+    activities(options) { const manual = manualActivities(); return { ...activityPage([...state.activities, ...manual], options), historyComplete: state.historyComplete, source: manual.length ? 'mixed' : 'strava' }; },
     async stop() { stopped = true; cancelTimer?.(); await pending?.catch(() => {}); },
   };
 }

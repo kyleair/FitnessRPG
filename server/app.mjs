@@ -4,6 +4,7 @@ import { createStravaClient } from './strava.mjs';
 import { createDashboardService } from './dashboard.mjs';
 import { hash, secret } from './database.mjs';
 import { createApiBudget } from './budget.mjs';
+import { validateManual } from './manual.mjs';
 
 const safeTokens = tokens => {
   if (!tokens.access_token || !tokens.refresh_token || !Number.isFinite(tokens.expires_at)) throw new Error('Invalid Strava token response.');
@@ -29,6 +30,7 @@ export function createApp({ db, env, fetchImpl = fetch, clock = Date.now }) {
   function dashboard(account) {
     if (!services.has(account)) services.set(account, createDashboardService({
       clock, initial: db.snapshot(account), persist: value => db.saveSnapshot(account, value),
+      manualActivities: () => db.manualActivities(account),
       client: createStravaClient({ clientId: env.STRAVA_CLIENT_ID, clientSecret: env.STRAVA_CLIENT_SECRET,
         initialTokens: db.tokens(account), saveTokens: value => db.saveTokens(account, safeTokens(value)), fetchImpl, budget }),
     }));
@@ -57,7 +59,7 @@ export function createApp({ db, env, fetchImpl = fetch, clock = Date.now }) {
       response.setHeader('Access-Control-Allow-Origin', request.headers.origin);
       response.setHeader('Vary', 'Origin');
       response.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
-      response.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+      response.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     }
     if (request.method === 'OPTIONS') { response.writeHead(204); return response.end(); }
     const browser = (request.headers.cookie || '').split('; ').find(value => value.startsWith('fitness_oauth='))?.slice(14) || '';
@@ -120,17 +122,68 @@ export function createApp({ db, env, fetchImpl = fetch, clock = Date.now }) {
       const session = token && db.session(token);
       if (!session) return json(401, { error: 'Session expired. Connect again.' });
       const account = session.account?.startsWith(namespace) ? session.account : null;
-      if (path === '/api/session' && request.method === 'GET') return json(200, { connected: !!account, configured });
+      if (path === '/api/session' && request.method === 'GET') return json(200, { connected: !!account, configured, accountKey: account ? hash(account) : null });
       if (path === '/api/logout' && request.method === 'POST') { db.logout(session.id); return json(200, { ok: true }); }
       if (path === '/api/strava/connect' && request.method === 'POST') {
         if (!configured) return json(503, { error: 'Set STRAVA_CLIENT_ID and STRAVA_CLIENT_SECRET in server/.env.' });
         const ticket = db.ticket(session.id);
         return json(200, { code: ticket.toUpperCase().match(/.{4}/g).join('-'), computerUrl: `${origin}/connect` });
       }
+      const activityMatch = path.match(/^\/api\/activities\/(-?\d+)$/);
+      if (activityMatch && ['GET', 'PUT', 'DELETE'].includes(request.method)) {
+        if (!account) return json(409, { error: 'Connect Strava from the dashboard to manage your activities.' });
+        const id = Number(activityMatch[1]);
+        if (!Number.isSafeInteger(id) || id >= 0) return json(403, { error: 'Strava activities are read-only. Only manual entries can be changed.' });
+        if (request.method === 'GET') {
+          try { return json(200, { activity: db.manualActivity(account, id) }); }
+          catch (error) { if (error.status === 404) return json(404, { error: error.message }); throw error; }
+        }
+      }
+      if ((path === '/api/activities' && request.method === 'POST') || (activityMatch && ['PUT', 'DELETE'].includes(request.method))) {
+        if (!account) return json(409, { error: 'Connect Strava from the dashboard before saving activities to your account.' });
+        if (request.headers['content-type']?.split(';')[0] !== 'application/json') return json(415, { error: 'Send the activity as JSON.' });
+        const chunks = [];
+        let bytes = 0;
+        for await (const chunk of request) {
+          bytes += chunk.length;
+          if (bytes > 131072) return json(413, { error: 'Activity is too large. Use fewer exercises or sets.' });
+          chunks.push(chunk);
+        }
+        let input;
+        try { input = JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch { return json(400, { error: 'Invalid activity JSON.' }); }
+        try {
+          const updating = request.method === 'PUT', deleting = request.method === 'DELETE';
+          if ((updating || deleting) && (!Number.isSafeInteger(input?.expectedRevision) || input.expectedRevision < 1)) return json(400, { error: 'A valid activity revision is required. Refresh and try again.' });
+          const activity = deleting ? null : validateManual(input, clock());
+          const result = await exclusive(account, async () => {
+            const id = activityMatch ? Number(activityMatch[1]) : null;
+            if (deleting) db.deleteManual(account, id, input.expectedRevision);
+            const saved = deleting ? null : updating ? db.updateManual(account, id, activity, input.expectedRevision) : db.saveManual(account, activity);
+            // Saving a local entry must not depend on a successful Strava request.
+            return { activity: saved, dashboard: await dashboard(account).get({ sync: false }) };
+          });
+          return json(request.method === 'POST' ? 201 : 200, result);
+        } catch (error) {
+          if ([400, 404, 409, 410].includes(error.status)) return json(error.status, { error: error.message });
+          throw error;
+        }
+      }
       if (['/api/dashboard', '/api/activities'].includes(path) && request.method === 'GET') {
         if (!account) return json(409, { error: 'Connect Strava to view your activities.' });
-        const summary = await exclusive(account, () => dashboard(account).get());
-        return json(200, path === '/api/dashboard' ? summary : summary.recentActivities);
+        try {
+          const result = await exclusive(account, async () => {
+            const service = dashboard(account);
+            const summary = await service.get();
+            return path === '/api/dashboard' ? summary : service.activities({
+              cursor: url.searchParams.get('cursor') ?? undefined,
+              limit: url.searchParams.has('limit') ? Number(url.searchParams.get('limit')) : 50,
+            });
+          });
+          return json(200, result);
+        } catch (error) {
+          if (error.status === 400) return json(400, { error: error.message });
+          throw error;
+        }
       }
       return json(404, { error: 'Not found.' });
     } catch {

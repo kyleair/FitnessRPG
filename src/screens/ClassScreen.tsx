@@ -12,7 +12,7 @@ import { formatTime } from '../format';
 
 const accents = { running: '#d99638', cycling: '#63a9c6', strength: '#d56d55' };
 const number = (value: number) => value.toLocaleString(undefined, { maximumFractionDigits: 1 });
-function back() { if (router.canGoBack()) router.back(); else router.replace('/'); }
+function back() { router.dismissTo('/'); }
 function SkillTile({ skill, classKey }: { skill: Skill; classKey: ClassKey }) {
   const locked = !skill.best;
   const title = classKey === 'strength' ? skill.name : `Fastest ${skill.name}`;
@@ -26,7 +26,7 @@ function SkillTile({ skill, classKey }: { skill: Skill; classKey: ClassKey }) {
       <Text style={styles.caption}>BEST ELAPSED TIME</Text>
       <Text style={styles.source}>{skill.best.activityName}</Text>
       <Text style={styles.source}>{new Date(skill.best.achievedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })} · Strava</Text>
-    </> : <Text style={styles.source}>{classKey === 'strength' ? 'Record a one-rep max to unlock. Strength entry is coming later.' : `Complete a ${skill.name} effort to unlock once its activity data is processed.`}</Text>}
+    </> : <Text style={styles.source}>{classKey === 'strength' ? 'Strength skill records are not available yet. Completed workout sets earn class XP.' : `Complete a ${skill.name} effort to unlock once its activity data is processed.`}</Text>}
   </View>;
 }
 
@@ -74,6 +74,7 @@ export default function ClassScreen() {
           <View style={styles.notice}>
             {data?.source === 'demo' && <Text style={styles.eyebrow}>SAMPLE DATA</Text>}
             <Text style={styles.source}>{fitnessClass.formula}. Class XP grows independently of personal bests.</Text>
+            {!!data?.manualCount && <Text style={styles.source}>Class totals include manual entries. Running and cycling fastest times use Strava data only.</Text>}
             {classKey !== 'strength' && <Text style={styles.source}>{classKey === 'running' ? 'Times are supplied by Strava best efforts, using elapsed time. No result is calculated when Strava omits an effort.' : 'Times use elapsed distance/time samples, including stops, and may differ from Strava best efforts.'} Locked means no result is recorded yet; an activity may still be waiting for processing.</Text>}
             {!!data?.skillsPending && classKey !== 'strength' && <Text style={styles.source}>{data.skillsPending} activities awaiting processing across all classes. Processing continues automatically while the server runs.</Text>}
             {!!data?.syncRetryAt && <Text style={styles.source}>Sync paused. Automatic retry at {new Date(data.syncRetryAt).toLocaleTimeString()}.</Text>}
