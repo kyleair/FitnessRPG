@@ -3,11 +3,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, AppState, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Adventurer, Emblem, IconName } from '../components/Emblem';
+import { Adventurer, Emblem } from '../components/Emblem';
 import { Dashboard, FitnessClass } from '../dashboard';
 import { router } from 'expo-router';
 import { useDashboard } from '../DashboardContext';
 import { formatTime } from '../format';
+import { ActivityRow } from '../components/ActivityRow';
 
 import { api, apiUrl, SessionExpiredError, signOut } from '../api';
 const colors = { ink: '#f3e3bb', muted: '#c0ae83', gold: '#e8c765', border: '#876035', dark: '#211b18' };
@@ -28,7 +29,6 @@ export default function HomeScreen() {
   const [connecting, setConnecting] = useState(false);
   const [connection, setConnection] = useState<{ code: string; computerUrl: string } | null>(null);
   const refreshing = useRef(false);
-  const [expanded, setExpanded] = useState(false);
   const [detail, setDetail] = useState<{ title: string; body: string } | null>(null);
   const refresh = useCallback(async () => {
     if (!apiUrl || refreshing.current) return;
@@ -99,7 +99,7 @@ export default function HomeScreen() {
             <View style={styles.pinnedRow}>
               <View style={styles.pinned}><Text style={styles.pinnedLabel}>Fastest 5K</Text><Text style={styles.pinnedValue}>{best5k ? formatTime(best5k.timeMs) : '—'}</Text><Text style={styles.pinnedNote}>Best tracked time</Text></View>
               <View style={styles.pinned}><Text style={styles.pinnedLabel}>Bench Press</Text><Text style={styles.pinnedValue}>—</Text><Text style={styles.pinnedNote}>Not available</Text></View>
-              <View style={styles.pinned}><Text style={styles.pinnedLabel}>Monthly Distance</Text><Text style={styles.pinnedValue}>{number(data.monthlyDistanceKm)} <Text style={{ fontSize: 11 }}>km</Text></Text><Text style={styles.pinnedNote}>Imported · UTC</Text></View>
+              <View style={styles.pinned}><Text style={styles.pinnedLabel}>Monthly Distance</Text><Text style={styles.pinnedValue}>{number(data.monthlyDistanceKm)} <Text style={{ fontSize: 11 }}>km</Text></Text><Text style={styles.pinnedNote}>Recorded · UTC</Text></View>
             </View>
           </LinearGradient></View>
           <View style={styles.section}><Text style={[styles.sectionTitle, styles.homeSectionTitle]}>Your Classes</Text></View>
@@ -110,11 +110,12 @@ export default function HomeScreen() {
             <Text style={[styles.xp, styles.classXp]}>{number(fitnessClass.currentXp)} / {fitnessClass.nextLevelXp} XP</Text>{fitnessClass.xpUnavailable && <Text style={styles.small}>Lifting volume unavailable. Strength XP needs weight and reps.</Text>}<Text style={styles.cardLink}>View skills & progress  ›</Text>
           </Pressable>)}</View>
           <View style={styles.section}><Text style={[styles.sectionTitle, styles.homeSectionTitle]}>Quests and Activities</Text></View>
+          <View style={styles.scope}><Text style={styles.scopeText}>{data.source === 'demo' ? 'SAMPLE DATA' : `${data.importedCount} ACTIVITIES IMPORTED${data.manualCount ? ` · ${data.manualCount} MANUAL` : ''}`}{!data.historyComplete && data.source !== 'demo' ? ' · HISTORY IN PROGRESS' : ''}</Text><Text style={styles.small}>Experimental XP rules. History depends on your granted Strava permissions. {data.historyComplete ? 'All accessible history imported.' : 'Totals cover imported activities, not your full lifetime.'}</Text>{data.syncInProgress && <Text style={styles.small}>{data.skillsPending || 0} activities awaiting skill processing · {data.syncRetryAt ? `Sync paused until ${new Date(data.syncRetryAt).toLocaleTimeString()}.` : 'Sync continues automatically while the server runs.'}</Text>}{data.stale && <Text style={styles.error}>Some data could not be synced. Showing saved data.</Text>}</View>
           <Pressable accessibilityRole="button" onPress={() => setDetail({ title: 'Adventure board', body: 'Daily, weekly, and monthly quests are coming soon.\n\nPreview: complete three activities in a week, or explore a new fitness class. Quest targets, rewards, and completion tracking are not active yet.' })} style={({ pressed }) => [styles.questFrame, pressed && styles.pressed]}><LinearGradient colors={['#49331f', '#30231b']} style={styles.quest}><View style={styles.questEmblem}><Emblem name="quest" color="#e8c765" /></View><View style={styles.questCopy}><Label>ADVENTURE BOARD</Label><Text style={styles.questTitle}>Quests</Text><Text style={styles.body}>Daily, weekly, and monthly challenges.</Text><Text style={styles.preview}>COMING SOON</Text></View><Text style={styles.arrow}>›</Text></LinearGradient></Pressable>
-          <View style={styles.recent}><View style={styles.recentHeading}><Label>RECENT ACTIVITIES</Label><Text style={styles.strava}>{data.source === 'demo' ? 'DEMO' : 'STRAVA'}</Text></View>
+          <View style={styles.recent}><View style={styles.recentHeading}><Label>RECENT ACTIVITIES</Label><Text style={styles.strava}>{data.source === 'demo' ? 'DEMO' : data.manualCount ? 'HISTORY' : 'STRAVA'}</Text></View>
             {!data.recentActivities.length && <Text style={[styles.body, { marginVertical: 20 }]}>Your next adventure starts here. No activities imported yet.</Text>}
-            {(expanded ? data.recentActivities : data.recentActivities.slice(0, 1)).map(activity => <View key={activity.id} style={styles.activity}><View style={styles.activityMark}><Emblem name={(activity.classKey || 'quest') as IconName} size={25} /></View><View style={styles.activityCopy}><Text style={styles.activityName}>{activity.name}</Text><Text style={styles.activityMeta}>{number(activity.distance / 1000)} km · {Math.round(activity.movingTime / 60)} min</Text><Text style={styles.activityDate}>{new Date(activity.startDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })} · {activity.sportType}</Text></View><Text style={styles.activityXp}>{activity.classKey === 'strength' ? 'Volume needed' : activity.classKey ? `+${number(activity.xp)} XP` : 'No XP rule'}</Text></View>)}
-            {!!data.recentActivities.length && <Pressable accessibilityRole="button" accessibilityState={{ expanded }} onPress={() => setExpanded(value => !value)}><LinearGradient colors={['#e6be68', '#b68b49']} style={styles.activitiesButton}><Text style={styles.buttonText}>{expanded ? 'Show latest activity' : 'See activities'}</Text></LinearGradient></Pressable>}
+            {data.recentActivities.slice(0, 1).map(activity => <ActivityRow key={activity.id} activity={activity} disabled={loading} />)}
+            <Pressable accessibilityRole="button" onPress={() => router.push('/activities')}><LinearGradient colors={['#e6be68', '#b68b49']} style={styles.activitiesButton}><Text style={styles.buttonText}>See more activities  ›</Text></LinearGradient></Pressable>
           </View>
           <Text style={styles.footer}>{data.source === 'demo' ? 'Demo mode · connect your backend to begin.' : `Last synced ${data.syncedAt ? new Date(data.syncedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'just now'} · Pull down to refresh.`}</Text>
         </>}
@@ -175,13 +176,6 @@ const styles = StyleSheet.create({
   recent: { marginTop: 14, backgroundColor: '#302720', borderWidth: 1, borderColor: colors.border, padding: 16, borderRadius: 3 },
   recentHeading: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
   strava: { color: '#b8d47e', fontSize: 8, letterSpacing: 1, borderColor: '#6e8749', borderWidth: 1, paddingHorizontal: 7, paddingVertical: 4 },
-  activity: { flexDirection: 'row', gap: 10, alignItems: 'center', paddingVertical: 18, borderBottomWidth: 1, borderColor: '#4c3b2b' },
-  activityMark: { width: 34, height: 40, justifyContent: 'center', alignItems: 'center', backgroundColor: '#493522', borderRadius: 3 },
-  activityCopy: { flex: 1, minWidth: 0 },
-  activityName: { color: colors.ink, fontFamily: serif, fontSize: 15, fontWeight: '700', lineHeight: 21 },
-  activityMeta: { color: colors.muted, fontFamily: serif, fontSize: 11, marginTop: 4 },
-  activityDate: { color: '#ad997d', fontFamily: serif, fontSize: 10, marginTop: 4 },
-  activityXp: { color: colors.gold, fontFamily: serif, fontSize: 13, flexShrink: 1, maxWidth: 65 },
   activitiesButton: { borderWidth: 1, borderColor: '#d1a34f', alignItems: 'center', justifyContent: 'center', minHeight: 46, marginTop: 16, borderRadius: 3 },
   buttonText: { color: '#2e2116', fontFamily: serif, fontWeight: '700', fontSize: 14 },
   footer: { color: '#a18d72', fontFamily: serif, fontSize: 11, textAlign: 'center', lineHeight: 19, marginTop: 24 },

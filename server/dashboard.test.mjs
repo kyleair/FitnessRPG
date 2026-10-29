@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { activityXp, buildDashboard, createDashboardService, progression } from './dashboard.mjs';
+import { activityXp, activityPage, buildDashboard, createDashboardService, progression } from './dashboard.mjs';
 const activity = (id, sportType = 'Run', distance = 5000, startDate = '2026-10-25T08:00:00Z') => ({ id, name: 'Example', sportType, distance, startDate, movingTime: 1800, elevationGain: 20 });
 
 test('aggregates each class, deduplicates IDs, and excludes other sports from XP', () => {
@@ -150,4 +150,25 @@ test('legacy saved summaries and skills survive daily checks without being rewri
   assert.equal(result.classes[0].skills[1].best.timeMs, 1500000);
   assert.equal(result.importedCount, 2);
   await service.stop();
+});
+
+test('activity pages expose all 550 imported records beyond the dashboard limit, with XP and stable cursors', () => {
+  const activities = Array.from({ length: 550 }, (_, i) => activity(i + 1, i % 2 ? 'Ride' : 'Run', 6000, new Date(Date.UTC(2026, 9, 28) - i * 60000).toISOString()));
+  assert.equal(buildDashboard(activities).recentActivities.length, 30);
+  let cursor, ids = [];
+  do {
+    const result = activityPage([...activities, activities[0]], { cursor });
+    assert.equal(result.total, 550);
+    ids.push(...result.items.map(a => a.id));
+    assert.equal(result.items[0].xp, result.items[0].classKey === 'running' ? 6 : 2);
+    cursor = result.nextCursor;
+  } while (cursor !== null);
+  assert.equal(ids.length, 550);
+  assert.equal(new Set(ids).size, 550);
+  const first = activityPage(activities);
+  const withNewer = [activity(999, 'Run', 1000, '2026-10-29T08:00:00Z'), ...activities];
+  assert.equal(activityPage(withNewer, { cursor: first.nextCursor }).items[0].id, 51);
+  assert.deepEqual(activityPage([]), { items: [], total: 0, nextCursor: null });
+  for (const limit of [0, -1, 101, 1.5, NaN]) assert.throws(() => activityPage(activities, { limit }), /Invalid activity page/);
+  assert.throws(() => activityPage(activities, { cursor: '99999' }), /Invalid activity page/);
 });

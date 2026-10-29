@@ -53,6 +53,7 @@ export function classSkills(classKey, activities, cache) {
   return skillDefinitions[classKey].map(([key, name, distanceMeters, subclass]) => {
     let best = null;
     for (const activity of activities) {
+      if (activity.source === 'manual') continue;
       const entry = cache[activity.id];
       const timeMs = entry?.times?.[key];
       if (entry?.fingerprint !== fingerprint(activity) || entry?.version !== calculationVersion(classKey) || !Number.isFinite(timeMs)) continue;

@@ -13,11 +13,61 @@ export function openDatabase(path, clock = Date.now) {
     CREATE TABLE IF NOT EXISTS accounts (id TEXT PRIMARY KEY, tokens TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS snapshots (account TEXT PRIMARY KEY, data TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS api_budgets (id TEXT PRIMARY KEY, data TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS manual_activities (id INTEGER PRIMARY KEY AUTOINCREMENT, account TEXT NOT NULL,
+      request_id TEXT NOT NULL, data TEXT NOT NULL, UNIQUE(account, request_id));
     CREATE TABLE IF NOT EXISTS attempts (id TEXT PRIMARY KEY, session TEXT NOT NULL, browser TEXT,
       state TEXT UNIQUE, expires INTEGER NOT NULL);
   `);
+  // Upgrade databases created before manual corrections were supported.
+  const manualColumns = new Set(db.prepare('PRAGMA table_info(manual_activities)').all().map(column => column.name));
+  for (const [name, type] of [['revision', 'INTEGER NOT NULL DEFAULT 1'], ['deleted', 'INTEGER NOT NULL DEFAULT 0'], ['original_data', 'TEXT']]) {
+    if (!manualColumns.has(name)) db.exec(`ALTER TABLE manual_activities ADD COLUMN ${name} ${type}`);
+  }
+  db.exec('UPDATE manual_activities SET original_data = data WHERE original_data IS NULL');
+  const manualRecord = row => ({ ...JSON.parse(row.data), id: -row.id, revision: row.revision });
+  const manualRow = (account, id) => db.prepare('SELECT * FROM manual_activities WHERE account = ? AND id = ?').get(account, -id);
+  const failure = (status, message) => { throw Object.assign(new Error(message), { status }); };
   return {
     close: () => db.close(),
+    manualActivities(account) {
+      return db.prepare('SELECT * FROM manual_activities WHERE account = ? AND deleted = 0').all(account).map(manualRecord);
+    },
+    manualActivity(account, id) {
+      const row = manualRow(account, id);
+      if (!row || row.deleted) failure(404, 'Manual activity not found. It may have been deleted.');
+      return manualRecord(row);
+    },
+    saveManual(account, activity) {
+      const data = JSON.stringify(activity);
+      db.prepare('INSERT INTO manual_activities (account, request_id, data, original_data) VALUES (?, ?, ?, ?) ON CONFLICT(account, request_id) DO NOTHING').run(account, activity.requestId, data, data);
+      const row = db.prepare('SELECT * FROM manual_activities WHERE account = ? AND request_id = ?').get(account, activity.requestId);
+      if (row.deleted) failure(410, 'This activity was deleted. A retried save cannot restore it.');
+      if (row.original_data !== data) failure(409, 'This save request was already used. Reopen the form to create another activity.');
+      return manualRecord(row);
+    },
+    updateManual(account, id, activity, expectedRevision) {
+      const row = manualRow(account, id);
+      if (!row || row.deleted) failure(404, 'Manual activity not found. It may have been deleted.');
+      const data = JSON.stringify(activity);
+      // A lost response can retry the exact update without advancing revision.
+      if (JSON.parse(row.data).requestId === activity.requestId) {
+        if (row.data !== data) failure(409, 'This edit request was already used for different changes. Reopen the activity.');
+        return manualRecord(row);
+      }
+      if (row.revision !== expectedRevision) failure(409, 'This activity changed in another session. Reopen it to edit the latest version.');
+      const updated = db.prepare('UPDATE manual_activities SET data = ?, revision = revision + 1 WHERE account = ? AND id = ? AND deleted = 0 AND revision = ?').run(data, account, -id, expectedRevision);
+      if (!updated.changes) failure(409, 'This activity changed in another session. Reopen it before saving.');
+      return manualRecord(manualRow(account, id));
+    },
+    deleteManual(account, id, expectedRevision) {
+      const row = manualRow(account, id);
+      if (!row) failure(404, 'Manual activity not found.');
+      if (row.deleted) return; // Repeated delete requests are safe.
+      if (row.revision !== expectedRevision) failure(409, 'This activity changed in another session. Refresh before deleting it.');
+      // Keep a tombstone so a delayed create/update retry cannot resurrect it.
+      const removed = db.prepare("UPDATE manual_activities SET deleted = 1, data = '{}', original_data = '{}', revision = revision + 1 WHERE account = ? AND id = ? AND revision = ?").run(account, -id, expectedRevision);
+      if (!removed.changes) failure(409, 'This activity changed in another session. Refresh before deleting it.');
+    },
     budget(id) { const row = db.prepare('SELECT data FROM api_budgets WHERE id = ?').get(id); return row ? JSON.parse(row.data) : undefined; },
     saveBudget(id, data) { db.prepare('INSERT INTO api_budgets VALUES (?, ?) ON CONFLICT(id) DO UPDATE SET data = excluded.data').run(id, JSON.stringify(data)); },
     createSession() {

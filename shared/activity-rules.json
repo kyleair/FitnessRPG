@@ -1,0 +1,7 @@
+{
+  "strengthPoundsPerXp": 500,
+  "runningMetersPerXp": 1000,
+  "cyclingMetersPerXp": 3000,
+  "kgToLb": 2.2046226218487757,
+  "exercises": ["Bench press", "Back squat", "Deadlift", "Overhead press", "Barbell row", "Pull-up", "Romanian deadlift", "Walking lunge", "Dumbbell press", "Lat pulldown", "Leg press", "Biceps curl", "Triceps extension"]
+}

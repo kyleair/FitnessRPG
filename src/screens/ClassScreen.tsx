@@ -41,7 +41,7 @@ function SkillTile({ skill, classKey }: { skill: Skill; classKey: ClassKey }) {
       <Text style={styles.caption}>BEST ELAPSED TIME</Text>
       <Text style={styles.source}>{skill.best.activityName}</Text>
       <Text style={styles.source}>{new Date(skill.best.achievedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })} · Strava</Text>
-    </> : <Text style={styles.source}>{classKey === 'strength' ? 'Record a one-rep max to unlock. Strength entry is coming later.' : `Complete a ${skill.name} effort to unlock once its activity data is processed.`}</Text>}
+    </> : <Text style={styles.source}>{classKey === 'strength' ? 'Strength skill records are not available yet. Completed workout sets earn class XP.' : `Complete a ${skill.name} effort to unlock once its activity data is processed.`}</Text>}
   </View>;
 }
 

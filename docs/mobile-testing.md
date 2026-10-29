@@ -87,7 +87,9 @@ Do not use `127.0.0.1` as the phone's API address. The phone must use the comput
 - Class pages show recorded skills above locked skills in two-column grids. Demo skills and unsupported strength metrics remain empty; recorded skills show their activity, date, and source.
 - Pull-to-refresh on a class page updates the shared dashboard data; a direct class URL also loads the matching class.
 - Progress meters do not overflow their cards.
-- **See activities** expands and collapses the recent activity list.
+- **See more activities** opens a dedicated page with the current native styling. Verify the three action cards, three recent rows, and back navigation (including Android system back).
+- **Show all activities** expands the history. With more than 50 imported records, scroll or tap **Load older activities** to reach records beyond the first page; **Show recent activities** collapses it. Confirm the imported count, source, XP, loading, empty, and retry states.
+- Open `/activities` directly in web preview, then verify it loads the dashboard/session and that **Back to dashboard** works. Start workout and Log activity should open their native recording forms; Sync Strava should report the current daily-check/queue state.
 - Pull-to-refresh shows a loading state and does not create duplicate requests.
 - A backend failure shows an error or stale-data notice; it does not silently replace real data with demo data.
 - An empty Strava account shows an empty state rather than fabricated activity.
@@ -128,3 +130,21 @@ Record these details for the next debugging session:
 ## Future testing prompt
 
 When asked to “guide me through testing this on mobile on Android,” first ask or infer whether the goal is demo mode, backend mode, or Strava mode. Then use the Android steps above, followed by the interaction checklist and the failure details checklist. If the user reports an error, ask for the device model, Expo Go version, connection mode, exact error, and the last terminal output before changing code.
+
+## Manual recording checks
+
+- Log a 15 km ride with 52 minutes and a past date. Review +5 Cycling XP, save, and verify its Manual source label in history and the updated Cycling total. Verify distance/duration conversions for mi/hours and reject future/invalid dates and nonpositive durations.
+- Start a blank Strength workout, search for Bench press, enter 100 lb and 5 reps, then mark the set complete. Fill another set without checking it. Complete and review: only 500 lb volume / 1 Strength XP should count. Save and verify history, Strength XP, and volume. Check kg conversion, zero weight, add/remove sets, and template replacement confirmation.
+- Reload while a workout is unfinished. Verify draft values and completed checkboxes survive. Return to activities and reopen the workout to resume. Drafts must be scoped to the connected athlete and backend.
+- Simulate a lost save response, then retry the same submitted save. Verify one database record and one XP contribution. Invalid fields must not create records; save failures retain the draft. Completed records must survive a backend restart and ongoing Strava sync.
+- Log a marathon-length run or 100 km ride manually. Confirm it earns class XP but creates no running/cycling skill results or queued Strava detail requests. A Strava Strength summary without volume still earns no Strength XP.
+- Saving requires the backend and a connected athlete. Demo mode can review forms but must not pretend that an activity was persisted. Test mobile keyboards, dismissal, picker scrolling, date entry, large accessibility text, and Android system back on a physical phone.
+
+- Navigation regression: dashboard -> activities -> Log activity -> Log a past Strength workout -> save (or Back to activities). Verify this dismisses the recording screens to activities, and either Back to dashboard button opens the actual dashboard rather than a recording form. Repeat for a normal manual activity, a live Strength workout, and direct `/activities`/`workout?mode=log` links.
+
+## Manual edit/delete checks
+
+- A manual row shows Edit/Delete; a Strava row shows neither. Edit a ride's distance/date/name/duration, review the revised contribution, and Save changes. The same activity should remain with updated totals, not a duplicate. Verify unchanged dates retain their original time.
+- Edit a Strength workout's saved sets. Corrected existing sets stay complete; new sets need checking. Verify total volume, Strength XP/level, and history update after saving. Back to dashboard must still return home.
+- Cancel a delete confirmation and confirm nothing changes. Confirm deletion, then verify the row and its XP disappear in both recent and expanded history and after a backend restart.
+- Simulate lost update/delete responses and retry; verify one effect. Attempt a stale revision from another open edit session: it must report a conflict rather than overwrite newer changes. Other athletes' manual IDs must return not found; Strava IDs must reject update/delete. Retrying the original creation request after deletion must not restore it.

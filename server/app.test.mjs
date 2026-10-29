@@ -86,6 +86,16 @@ test('browser connection isolates athletes and persists sessions, rotating token
   assert.equal(refreshCalls, 2);
   assert.equal(activityCalls, 2);
   await app.idle();
+  const historyA = await (await request('/api/activities?limit=1', a)).json();
+  const historyB = await (await request('/api/activities', b)).json();
+  assert.deepEqual(historyA.items.map(item => item.id), [10]);
+  assert.deepEqual(historyB.items.map(item => item.id), [20]);
+  assert.equal(historyA.total, 1); assert.equal(historyA.nextCursor, null);
+  assert.equal(historyA.items[0].xp, 1);
+  assert.equal(activityCalls, 2, 'reading saved history does not refetch Strava');
+  assert.equal((await request('/api/activities')).status, 401);
+  assert.equal((await request('/api/activities?cursor=20', a)).status, 400);
+  assert.equal((await request('/api/activities?limit=500', a)).status, 400);
   const account = db.session(a).account;
   const rotated = db.tokens(account).refresh_token;
   assert.match(rotated, /^refresh-1-[12]$/);
