@@ -74,6 +74,11 @@ export function classSkills(classKey, activities, cache) {
   return displaySkillDefinitions[classKey].map(([key, name, subclass, measurement]) => {
     const calculatedDefinition = skillDefinitions[classKey].find(([candidate]) => candidate === key);
     const distanceMeters = calculatedDefinition?.[2] ?? null;
+    const eligible = Number.isFinite(distanceMeters) ? activities.filter(activity => activity.source !== 'manual' && activity.distance >= distanceMeters) : [];
+    const processing = eligible.some(activity => {
+      const entry = cache[activity.id];
+      return !entry || entry.fingerprint !== fingerprint(activity) || entry.version !== calculationVersion(classKey) || !!entry.retryAt;
+    });
     let best = null;
     for (const activity of activities) {
       if (activity.source === 'manual') continue;
@@ -84,7 +89,7 @@ export function classSkills(classKey, activities, cache) {
         best = { timeMs, activityId: activity.id, activityName: activity.name, achievedAt: activity.startDate, source: 'strava', method: classKey === 'running' ? 'strava_best_efforts' : 'distance_time_stream_v1' };
       }
     }
-    const unlocked = !!best || (Number.isFinite(distanceMeters) && activities.some(activity => activity.source !== 'manual' && activity.distance >= distanceMeters));
-    return { key: `${classKey}_${key}`, name, distanceMeters, subclass, measurement, unlocked, best };
+    const unlocked = !!best || processing;
+    return { key: `${classKey}_${key}`, name, distanceMeters, subclass, measurement, unlocked, processing, best };
   });
 }

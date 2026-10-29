@@ -36,15 +36,16 @@ function SkillActionIcon({ kind, color }: { kind: 'ranks' | 'history'; color: st
   </Svg>;
 }
 function SkillTile({ skill, classKey }: { skill: Skill; classKey: ClassKey }) {
-  const locked = !skill.best && !skill.unlocked;
+  const processing = !!skill.processing;
+  const locked = !skill.best && !processing;
   const theme = classThemes[classKey];
   const push = (mode: 'ranks' | 'history') => router.push({ pathname: `/classes/[classKey]/${mode}`, params: { classKey, skillKey: skill.key } });
   return <View style={[styles.tile, locked && styles.lockedTile]} accessible accessibilityLabel={`${skill.name}. ${locked ? 'Locked. No recorded result yet.' : skill.best ? `Best ${formatTime(skill.best.timeMs)}. ${skill.best.activityName}.` : 'Activity recorded. Result processing.'}`}>
     <View style={styles.tileHead}><View style={[styles.skillBadge, { borderColor: locked ? '#756954' : theme.accent }]}><SkillIcon kind={iconKind(skill)} size={44} color={locked ? '#a99a7d' : theme.accent} /></View><View style={styles.tileHeading}><Text style={styles.tileTitle}>{skill.name}</Text><Text style={styles.levelText}>{locked ? 'LOCKED' : skill.best ? 'LEVEL 1' : 'PROCESSING'}</Text></View></View>
-    <View style={styles.progressTrack}><View style={[styles.progressFill, { width: skill.best ? '100%' : skill.unlocked ? '35%' : '0%', backgroundColor: locked ? '#756954' : theme.accent }]} /></View>
-    <View style={styles.progressMeta}><Text style={styles.progressLabel}>{skill.best ? 'CURRENT BEST' : skill.unlocked ? 'PROCESSING' : 'NO RESULT'}</Text><Text style={styles.progressLabel}>{skill.best ? formatTime(skill.best.timeMs) : '—'}</Text></View>
+    <View style={styles.progressTrack}><View style={[styles.progressFill, { width: skill.best ? '100%' : processing ? '35%' : '0%', backgroundColor: locked ? '#756954' : theme.accent }]} /></View>
+    <View style={styles.progressMeta}><Text style={styles.progressLabel}>{skill.best ? 'CURRENT BEST' : processing ? 'PROCESSING' : 'NO RESULT'}</Text><Text style={styles.progressLabel}>{skill.best ? formatTime(skill.best.timeMs) : '—'}</Text></View>
     <View style={styles.tileDivider} />
-    {skill.best ? <Text style={styles.source} numberOfLines={1}>{skill.best.activityName} · {new Date(skill.best.achievedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</Text> : <Text style={styles.source} numberOfLines={3}>{classKey === 'strength' ? `Tracked as ${skill.measurement}.` : skill.unlocked ? 'Activity recorded. Result is still processing.' : `Complete a ${skill.name} effort to unlock.`}</Text>}
+    {skill.best ? <Text style={styles.source} numberOfLines={1}>{skill.best.activityName} · {new Date(skill.best.achievedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</Text> : <Text style={styles.source} numberOfLines={3}>{classKey === 'strength' ? `Tracked as ${skill.measurement}.` : processing ? 'Activity recorded. Result is still processing.' : `Complete a ${skill.name} effort to unlock.`}</Text>}
     {!locked && <View style={styles.actions}><Pressable accessibilityRole="button" onPress={() => push('ranks')} style={styles.actionButton}><SkillActionIcon kind="ranks" color={theme.accent} /><Text style={[styles.actionText, { color: theme.accent }]}>Ranks</Text></Pressable><Pressable accessibilityRole="button" onPress={() => push('history')} style={styles.actionButton}><SkillActionIcon kind="history" color={theme.accent} /><Text style={[styles.actionText, { color: theme.accent }]}>History</Text></Pressable></View>}
   </View>;
 }

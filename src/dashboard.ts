@@ -5,7 +5,7 @@ export interface ActivityPage {
   items: ActivityRecord[]; total: number; nextCursor: string | null; historyComplete: boolean; source: string;
 }
 export interface Skill {
-  key: string; name: string; distanceMeters: number | null; subclass: string; measurement: string; unlocked?: boolean;
+  key: string; name: string; distanceMeters: number | null; subclass: string; measurement: string; unlocked?: boolean; processing?: boolean;
   best: { timeMs: number; activityId: number; activityName: string; achievedAt: string; source: string; method: string } | null;
 }
 export interface FitnessClass {
