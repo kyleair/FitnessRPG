@@ -110,6 +110,19 @@
     .class-best { position: relative; z-index: 1; min-width: 66px; padding-left: 8px; border-left: 1px solid #6e875e; text-align: right; }.class-best small { display: block; color: #a9b897; font: 8px/1.25 var(--sans); letter-spacing: .08em; }.class-best strong { display: block; margin-top: 3px; color: var(--gold); font: 16px var(--serif); }.class-best span { display: block; margin-top: 2px; color: var(--ink); font: 9px var(--serif); }
     .running-skill-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 11px; }.running-skill-grid .skill-card { padding: 10px; border-width: 1px; border-color: #4f694f; background: #211d19; box-shadow: inset 0 1px #91ad7a33; }.running-skill-grid .skill-card:hover { border-color: var(--gold); transform: translateY(-1px); }.running-skill-grid .skill-emblem { width: 30px; height: 30px; margin-bottom: 7px; }.running-skill-grid .skill-emblem svg { width: 19px; height: 19px; }.running-skill-grid .skill-card h4 { margin: 4px 0 7px; font-size: 14px; }.running-skill-grid .skill-value { font-size: 19px; }.running-skill-grid .skill-detail { font-size: 9px; }
     .running-empty { padding: 13px; border: 1px dashed #5d6049; color: #a9b28b; background: #20251e; font: 11px/1.5 var(--serif); }
+    /* Mirror the original RPG skill-tile redesign: icon, level, progress, and actions. */
+    .running-skill-grid .skill-card { display: block; min-height: 0; padding: 16px; text-align: left; }
+    .subskill-header { display: grid; grid-template-columns: 70px minmax(0, 1fr) auto; align-items: center; gap: 12px; min-width: 0; }
+    .subskill-icon { display: grid; place-items: center; width: 70px; height: 70px; border: 3px solid #b88949; border-radius: 50%; background: radial-gradient(circle,#f6d58e 0 43%,#8e5c2c 45% 53%,#17110f 55% 73%,#b88949 75% 78%,#17110f 80%); color: #4b2d18; box-shadow: 0 0 0 4px #17110f,0 0 0 6px #c18b3c; }
+    .subskill-icon svg { width: 36px; height: 36px; stroke-width: 3.5; }
+    .subskill-copy { min-width: 0; }.subskill-copy .skill-label { margin: 0 0 4px; font-size: 9px; }.subskill-copy h4 { margin: 0; font-size: 16px !important; line-height: 1.08 !important; }
+    .subskill-stat { align-self: center; padding: 0; color: var(--gold); font: 15px var(--serif); text-align: right; white-space: nowrap; }
+    .skill-divider { height: 1px; margin: 16px 0 13px; background: #876035; }
+    .subskill-level { margin-bottom: 12px; color: #f0a33f; font-size: 38px; font-weight: 700; line-height: 1; text-align: center; text-shadow: 2px 2px #4a2815; }
+    .skill-progress { width: 100%; }.meter-row { display: grid; grid-template-columns: 18px minmax(0, 1fr) 18px; align-items: center; gap: 5px; }.meter-row .meter { min-width: 0; height: 18px; border: 2px solid #876035; border-radius: 4px; background: #120e0c; padding: 2px; }.meter-row .meter span { height: 100%; border-radius: 1px; background: linear-gradient(90deg,#f0a33f,#ffbe5b); }.meter-step { display: grid; place-items: center; width: 18px; height: 18px; color: #c0ae83; font: 1rem Georgia,serif; line-height: 1; }
+    .metric-row { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; margin: 8px 23px 0; color: #f3e3bb; font: 12px/1.25 var(--serif); }.metric-row b { color: #f3e3bb; font-weight: 400; }.metric-caption { margin: 4px 0 0; color: #c0ae83; font: 9px var(--sans); text-align: center; letter-spacing: .06em; }
+    .subskill-actions { display: flex; gap: 8px; margin-top: 16px; padding-top: 13px; border-top: 1px solid #634b33; }.subskill-actions .text-button { flex: 1; min-height: 38px; padding: 7px 8px; border: 2px solid #876035; border-radius: 5px; color: #f3e3bb; background: #2a2019; font: 12px var(--serif); cursor: pointer; }.locked-copy { margin: 0; color: var(--muted); font: 11px/1.5 var(--serif); }
+    @media (max-width: 380px) { .subskill-header { grid-template-columns: 56px minmax(0, 1fr); gap: 9px; }.subskill-icon { width: 56px; height: 56px; }.subskill-icon svg { width: 29px; height: 29px; }.subskill-stat { grid-column: 2; justify-self: start; text-align: left; }.running-skill-grid .skill-card { padding: 12px; } }
     .class-page-strength .summary .meter { color: var(--strength); }.class-page-strength .subclass { border-color: #76504f; background: linear-gradient(145deg, #302820, #29221f); box-shadow: inset 0 1px #cf696933; }.class-page-strength .subclass::before { background: var(--strength); }.class-page-strength .skill-card { border-color: #76504f; }.class-page-strength .skill-emblem { color: #e0a0a0; }
     .class-page-cycling .summary .meter { color: var(--cycling); }.class-page-cycling .subclass { border-color: #665481; background: linear-gradient(145deg, #2c2933, #24212b); box-shadow: inset 0 1px #aa8bd433; }.class-page-cycling .subclass::before { background: var(--cycling); }.class-page-cycling .skill-card { border-color: #665481; background: #211d25; }.class-page-cycling .skill-emblem { color: #c1a5ed; }
     .class-page-strength .class-generic-subclass { border-color: #76504f; box-shadow: inset 0 1px #cf696933; }.class-page-strength .class-generic-subclass::before { background: var(--strength); }.class-page-strength .class-skill-grid .skill-card { border-color: #76504f; }.class-page-strength .class-skill-grid .skill-emblem { color: #e0a0a0; }
@@ -185,6 +198,21 @@
       strength: { name: 'Strength', level: 'Level 0', xp: '0 total XP', current: '0 / 5 XP', progress: '0%', recorded: '0 / 3', accent: 'strength', sections: [['Push', ['Bench press']], ['Pull', ['Deadlift']], ['Legs', ['Squat']], ['Volume', []]] }
     };
     function hydrateIcons() { document.querySelectorAll('[data-icon]').forEach((node) => { node.innerHTML = icons[node.dataset.icon] || ''; }); }
+    function skillMarkupV2(skill, classKey) {
+      const strength = classKey === 'strength';
+      const samples = {
+        running: { '5K': ['Level 50', '29:32', '28:45', 72], '10K': ['Level 18', '1:02:14', '59:00', 54] },
+        cycling: { '20K': ['Level 24', '34:12', '33:30', 58] },
+        strength: { 'Bench press': ['Level 42', '185 lb', '200 lb', 82] }
+      };
+      const sample = samples[classKey]?.[skill];
+      const title = strength ? skill : `Fastest ${skill}`;
+      const category = strength ? 'POWER' : 'DISTANCE';
+      if (!sample) return `<article class="skill-card locked" data-screen="ranks" role="button" tabindex="0"><div class="subskill-header"><span class="subskill-icon" data-icon="${classKey}"></span><div class="subskill-copy"><div class="skill-label">${category}</div><h4>${title}</h4></div><div class="subskill-stat">Locked</div></div><div class="skill-divider"></div><p class="locked-copy">${strength ? 'Record a one-rep max to unlock.' : `Complete a ${skill} effort to unlock.`}</p></article>`;
+      const [level, currentValue, nextValue, progress] = sample;
+      return `<article class="skill-card" data-screen="ranks" role="button" tabindex="0"><div class="subskill-header"><span class="subskill-icon" data-icon="${classKey}"></span><div class="subskill-copy"><div class="skill-label">${category}</div><h4>${title}</h4></div><div class="subskill-stat">${currentValue}</div></div><div class="skill-divider"></div><div class="subskill-level"><span>${level}</span></div><div class="skill-progress"><div class="meter-row"><span class="meter-step" aria-hidden="true">−</span><div class="meter"><span style="width:${progress}%"></span></div><span class="meter-step" aria-hidden="true">+</span></div><div class="metric-row"><span>${currentValue}</span><b>${nextValue}</b></div><div class="metric-caption">CURRENT BEST &nbsp;·&nbsp; NEXT MILESTONE</div></div><div class="subskill-actions"><button class="text-button" data-screen="ranks">Ranks</button><button class="text-button" data-screen="ranks">History</button></div></article>`;
+    }
+
     function skillMarkup(skill, classKey) {
       const strength = classKey === 'strength';
       const recorded = classKey === 'running' && skill === '5K';
@@ -201,7 +229,7 @@
           { label: 'Climbing', glyph: '▲', tone: 'climbing', skills: [] }
         ];
         const runningMarkup = runningSections.map((section) => {
-          const cards = section.skills.length ? `<div class="running-skill-grid">${section.skills.map((skill) => skillMarkup(skill, 'running')).join('')}</div>` : '<div class="running-empty">No climbing skills yet. Elevation-based challenges will appear here.</div>';
+          const cards = section.skills.length ? `<div class="running-skill-grid">${section.skills.map((skill) => skillMarkupV2(skill, 'running')).join('')}</div>` : '<div class="running-empty">No climbing skills yet. Elevation-based challenges will appear here.</div>';
           return `<section class="running-subclass ${section.tone}"><div class="running-subclass-head"><span class="subclass-glyph">${section.glyph}</span><div><h3>${section.label}</h3></div><span class="subclass-count">${section.skills.length ? `${section.skills.length} SKILLS` : 'COMING SOON'}</span></div>${cards}</section>`;
         }).join('');
         screens.class.innerHTML = `<div class="class-header"><div><button class="back" data-screen="home">‹ &nbsp;Back to dashboard</button></div></div><div class="running-page"><div class="running-banner"><span class="running-crest" data-icon="running"></span><div><h2>Running</h2><div class="eyebrow">CLASS</div></div><div class="class-best"><small>LIFETIME RUNNING<br>SKILL</small><strong>Level 1</strong></div></div>${runningMarkup}</div><div class="notice"><span class="small">1 km = 1 XP. Times are supplied by Strava best efforts, using elapsed time. Locked means no result is recorded yet.</span></div>`;
@@ -209,7 +237,7 @@
         return;
       }
       const glyphs = { strength: ['⬆', '↘', '◆', '▦'], cycling: ['↯', '≈', '▲'] };
-      const sections = current.sections.map(([label, skills], index) => `<section class="running-subclass class-generic-subclass ${classKey}"><div class="running-subclass-head"><span class="subclass-glyph">${glyphs[classKey][index]}</span><div><h3>${label}</h3></div><span class="subclass-count">${skills.length ? `${skills.length} SKILL${skills.length === 1 ? '' : 'S'}` : 'COMING SOON'}</span></div>${skills.length ? `<div class="running-skill-grid class-skill-grid">${skills.map((skill) => skillMarkup(skill, classKey)).join('')}</div>` : `<div class="running-empty">No ${label.toLowerCase()} skills yet.</div>`}</section>`).join('');
+       const sections = current.sections.map(([label, skills], index) => `<section class="running-subclass class-generic-subclass ${classKey}"><div class="running-subclass-head"><span class="subclass-glyph">${glyphs[classKey][index]}</span><div><h3>${label}</h3></div><span class="subclass-count">${skills.length ? `${skills.length} SKILL${skills.length === 1 ? '' : 'S'}` : 'COMING SOON'}</span></div>${skills.length ? `<div class="running-skill-grid class-skill-grid">${skills.map((skill) => skillMarkupV2(skill, classKey)).join('')}</div>` : `<div class="running-empty">No ${label.toLowerCase()} skills yet.</div>`}</section>`).join('');
       screens.class.innerHTML = `<div class="class-page class-page-${classKey}"><div class="class-header"><div><button class="back" data-screen="home">‹ &nbsp;Back to dashboard</button></div></div><div class="running-banner class-banner ${classKey}"><span class="running-crest" data-icon="${classKey}"></span><div><h2>${current.name}</h2><div class="eyebrow">CLASS</div></div><div class="class-best"><small>LIFETIME ${current.name.toUpperCase()}<br>SKILL</small><strong>${current.level}</strong></div></div>${sections}<div class="notice"><span class="small">${classKey === 'strength' ? 'Strength XP is based on lifting volume. Locked means no result is recorded yet.' : '3 km = 1 XP. Times use elapsed distance/time samples, including stops. Locked means no result is recorded yet.'}</span></div></div>`;
       hydrateIcons();
     }
