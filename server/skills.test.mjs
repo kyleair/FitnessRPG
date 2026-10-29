@@ -8,8 +8,8 @@ const run = (id, distance = 6000) => ({ id, name: `Run ${id}`, sportType: 'Run',
 test('calculates subactivity elapsed efforts with interpolation and includes stops', () => {
   assert.deepEqual(bestTimes(stream([0, 1000, 1000, 2000], [0, 100, 200, 300]), [['two', '2K', 2000]]), { two: 300000 });
   assert.deepEqual(bestTimes(stream([0, 200, 1200, 2000], [0, 100, 200, 600]), [['one', '1K', 1000]]), { one: 100000 });
-  assert.deepEqual(bestTimes(stream([0, 6000], [0, 1800]), skillDefinitions.running), { '1k': 300000, '5k': 1500000 });
-  assert.deepEqual(bestTimes(stream([0, 999], [0, 300]), skillDefinitions.running), {});
+  assert.deepEqual(bestTimes(stream([0, 6000], [0, 1800]), skillDefinitions.running), { '1k': 300000, '5k': 1500000, '100m': 30000 });
+  assert.deepEqual(bestTimes(stream([0, 999], [0, 300]), skillDefinitions.running), { '100m': 30030 });
   assert.equal(bestTimes(stream([0, 2000, 1000], [0, 100, 200]), skillDefinitions.running), null);
   assert.equal(bestTimes(stream([0, 2000], [0, 0]), skillDefinitions.running), null);
   assert.equal(bestTimes(null, skillDefinitions.running), null);

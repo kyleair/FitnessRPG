@@ -1,7 +1,8 @@
 export const skillDefinitions = {
-  running: [["1k", "1K", 1000], ["5k", "5K", 5000], ["10k", "10K", 10000], ["half_marathon", "Half marathon", 21097.5], ["marathon", "Marathon", 42195]],
-  cycling: [["5k", "5K", 5000], ["20k", "20K", 20000], ["50k", "50K", 50000], ["75k", "75K", 75000], ["100k", "100K", 100000]],
-  strength: [["deadlift", "Deadlift", null], ["squat", "Squat", null], ["bench_press", "Bench press", null]],
+  // The fourth tuple value is the subclass shown on the class page.
+  running: [["1k", "1K", 1000, "speed"], ["5k", "5K", 5000, "speed"], ["10k", "10K", 10000, "endurance"], ["half_marathon", "Half marathon", 21097.5, "endurance"], ["marathon", "Marathon", 42195, "endurance"], ["100m", "100M", 100, "speed"]],
+  cycling: [["5k", "5K", 5000, "speed"], ["20k", "20K", 20000, "endurance"], ["50k", "50K", 50000, "endurance"], ["75k", "75K", 75000, "climbing"], ["100k", "100K", 100000, "climbing"]],
+  strength: [["bench_press", "Bench press", null, "push"], ["deadlift", "Deadlift", null, "pull"], ["squat", "Squat", null, "legs"]],
 };
 export const calculationVersion = classKey => classKey === 'running' ? 2 : 1;
 
@@ -49,7 +50,7 @@ export function bestTimes(streams, definitions) {
 }
 
 export function classSkills(classKey, activities, cache) {
-  return skillDefinitions[classKey].map(([key, name, distanceMeters]) => {
+  return skillDefinitions[classKey].map(([key, name, distanceMeters, subclass]) => {
     let best = null;
     for (const activity of activities) {
       if (activity.source === 'manual') continue;
@@ -60,6 +61,6 @@ export function classSkills(classKey, activities, cache) {
         best = { timeMs, activityId: activity.id, activityName: activity.name, achievedAt: activity.startDate, source: 'strava', method: classKey === 'running' ? 'strava_best_efforts' : 'distance_time_stream_v1' };
       }
     }
-    return { key: `${classKey}_${key}`, name, distanceMeters, best };
+    return { key: `${classKey}_${key}`, name, distanceMeters, subclass, best };
   });
 }

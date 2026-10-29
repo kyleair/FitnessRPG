@@ -174,6 +174,12 @@ Record decisions here as the project evolves. Keep entries short and link to the
 ## 2026-10-26 - Add all-time distance skills without tiers
 
 - Running skills: 1K, 5K, 10K, half marathon (21,097.5 m), marathon (42,195 m). Cycling skills: 5K, 20K, 50K, 75K, 100K. Deadlift, Squat, and Bench press show empty 1RM values until manual strength metrics are implemented.
+
+## 2026-10-28 - Organize class skills by subclass
+
+- **Decision:** Class pages group skills into Running/Cycling Speed, Endurance, and Climbing sections, and Strength Push, Pull, Legs, and Volume sections.
+- **Why:** Users should be able to understand what kind of ability each skill represents instead of scanning one undifferentiated list.
+- **Scope:** Add the 100M running skill under Speed; keep unsupported sections visible with an empty state so future metrics have a clear home. Existing XP and skill-result rules are unchanged.
 - Best means the fastest continuous target-distance effort inside an eligible activity, across processed accessible imported history. Use elapsed time, including stops within the effort; never scale whole-activity average pace. This supersedes the proposed rolling six-month performance window for this release. No ranks, skill levels, or tiers.
 - Compute best times from Strava distance/time streams with piecewise-linear interpolation between samples. Results are sample-based estimates and can differ from Strava's own best-effort calculation. Non-monotonic or invalid streams are unavailable; missing data never becomes a fabricated time.
 - Save per-activity results, source fingerprint, calculation version, fetch time, and retry metadata inside each account's existing atomic SQLite snapshot. Retain every processed activity's results so corrections/deletions can reveal a runner-up. Equal times keep the earliest activity date. No database schema migration or reconnect is needed.
