@@ -28,20 +28,20 @@ function BannerEmblem({ classKey, color }: { classKey: ClassKey; color: string }
   return <View style={[styles.bannerEmblem, { borderColor: color }]}><Emblem name={classKey} size={34} color={color} /></View>;
 }
 function SkillTile({ skill, classKey }: { skill: Skill; classKey: ClassKey }) {
-  const locked = !skill.best;
+  const locked = !skill.best && !skill.unlocked;
   const theme = classThemes[classKey];
-  const title = classKey === 'strength' ? skill.name : `Fastest ${skill.name}`;
-  return <View style={[styles.tile, locked && styles.lockedTile]} accessible accessibilityLabel={`${title}. ${locked ? 'Locked. No recorded result yet.' : `Best time ${formatTime(skill.best!.timeMs)}. ${skill.best!.activityName}. ${new Date(skill.best!.achievedAt).toLocaleDateString()}. Strava.`}`}>
+  const title = skill.name;
+  return <View style={[styles.tile, locked && styles.lockedTile]} accessible accessibilityLabel={`${title}. ${locked ? 'Locked. No recorded result yet.' : skill.best ? `Best time ${formatTime(skill.best.timeMs)}. ${skill.best.activityName}. ${new Date(skill.best.achievedAt).toLocaleDateString()}. Strava.` : 'Activity recorded. Result processing.'}`}>
     <View style={styles.tileHead}>
       <View style={[styles.emblem, { borderColor: locked ? '#9b8b72' : theme.accent }]}><Emblem name={classKey} size={28} color={locked ? '#b9aa90' : theme.accent} /></View>
       <View style={styles.tileHeading}><Text style={styles.eyebrow}>{classKey === 'strength' ? 'POWER' : 'DISTANCE'}</Text><Text style={styles.tileTitle}>{title}</Text></View>
     </View>
-    <Text style={[styles.value, locked && styles.lockedValue]}>{locked ? 'Locked' : formatTime(skill.best!.timeMs)}</Text>
+    <Text style={[styles.value, locked && styles.lockedValue]}>{locked ? 'Locked' : skill.best ? formatTime(skill.best.timeMs) : 'Processing'}</Text>
     {skill.best ? <>
-      <Text style={styles.caption}>BEST ELAPSED TIME</Text>
+      <Text style={styles.caption}>{skill.measurement.toUpperCase()}</Text>
       <Text style={styles.source}>{skill.best.activityName}</Text>
       <Text style={styles.source}>{new Date(skill.best.achievedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })} · Strava</Text>
-    </> : <Text style={styles.source}>{classKey === 'strength' ? 'Strength skill records are not available yet. Completed workout sets earn class XP.' : `Complete a ${skill.name} effort to unlock once its activity data is processed.`}</Text>}
+    </> : <Text style={styles.source}>{classKey === 'strength' ? `Tracked as ${skill.measurement}. Strength records are not available yet; completed workout sets earn class XP.` : skill.unlocked ? `Activity recorded. ${skill.measurement} result is still processing.` : `Tracked as ${skill.measurement}. Complete a ${skill.name} effort to unlock once its data is processed.`}</Text>}
   </View>;
 }
 
