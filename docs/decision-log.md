@@ -258,3 +258,11 @@ Record decisions here as the project evolves. Keep entries short and link to the
 - **Decision:** Monthly metrics update on Saturday and use the previous four weeks rather than calendar-month boundaries. The app should display the measurement unit explicitly instead of assuming every skill is a time.
 - **Why:** This gives each subclass a small, understandable set of directly measurable skills while covering speed, endurance, climbing, strength, and repeatable training volume.
 - **Implementation note:** The existing time-only skill result shape is no longer sufficient. Future implementation should use typed measurement kinds such as duration, distance, elevation, one-rep max, weighted reps, and volume, with source attribution and the relevant activity/window date.
+
+## 2026-10-30 - Add age- and gender-adjusted skill reference scales
+
+- **Decision:** Add a level 1-100 reference table for every current skill, grouped by Men/Women and the age bands 18-34, 35-39, 40-44, 45-49, 50-54, 55-59, 60-64, 65-69, 70-74, 75-79, and 80+.
+- **Method:** Define readable level-1 and level-100 anchors for each metric, then linearly interpolate the 99 intermediate levels. Lower-is-better metrics use elapsed time; higher-is-better metrics use distance, elevation, strength, reps, or volume.
+- **Marathon example:** Men aged 18-34 use 6:00:00 at level 1 and 2:00:00 at level 100, producing 5:57:35 at level 2 and 4:01:12 at level 50 after rounding to whole seconds.
+- **Scope:** These are first-pass tuning references, not official age-grade standards or a claim about world-record equivalence. The reference profile is currently selected and saved locally in the app because user profile demographics are not yet part of the account API.
+- **Why:** Put a complete, inspectable scale in place across all skills before tuning individual anchors or integrating profile data.
