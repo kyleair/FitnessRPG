@@ -27,7 +27,7 @@ test('browser connection isolates athletes and persists sessions, rotating token
         expires_at: refresh ? now / 1000 + 10000 : 1, athlete: { id } });
     }
     if (url.includes('/streams?')) return Response.json({ distance: { data: [0, 2000] }, time: { data: [0, 600] } });
-    if (/\/activities\/\d+$/.test(url)) return Response.json({ best_efforts: [{ distance: 1000, elapsed_time: 300 }] });
+    if (/\/activities\/\d+$/.test(url)) return Response.json({ best_efforts: [{ distance: 100, elapsed_time: 30 }] });
     activityCalls++;
     const id = Number(options.headers.Authorization.split('-')[1]);
     return Response.json([{ id: id * 10, name: `Athlete ${id} run`, sport_type: 'Run', distance: id * 1000,
@@ -104,7 +104,7 @@ test('browser connection isolates athletes and persists sessions, rotating token
   assert.equal((await (await request('/api/session', a)).json()).connected, true);
   const restoredDashboard = await (await request('/api/dashboard', a)).json();
   assert.equal(restoredDashboard.recentActivities[0].id, 10);
-  assert.equal(restoredDashboard.classes[0].skills[0].best.activityId, 10);
+  assert.equal(restoredDashboard.classes[0].skills.find(skill => skill.key === 'running_100m').best.activityId, 10);
   assert.equal(activityCalls, 2, 'restart reuses persisted cooldown and snapshot');
   now += 86400000; offline = true;
   await request('/api/dashboard', a);

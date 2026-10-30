@@ -147,7 +147,7 @@ test('legacy saved summaries and skills survive daily checks without being rewri
   const result = await drain(service);
   assert.deepEqual(seen, [2]);
   assert.equal(result.classes[0].xp, 11);
-  assert.equal(result.classes[0].skills[1].best.timeMs, 1500000);
+  assert.equal(result.classes[0].skills.find(skill => skill.key === 'running_5k').best.timeMs, 1500000);
   assert.equal(result.importedCount, 2);
   await service.stop();
 });

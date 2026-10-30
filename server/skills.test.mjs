@@ -33,7 +33,7 @@ test('processes the whole queue, persists results, and never rechecks completed 
   service = createDashboardService({ ...options, initial: saved });
   await service.get(); await service.run();
   assert.equal(calls, 55);
-  assert.equal((await service.get()).classes[0].skills[1].best.activityId, 1);
+  assert.equal((await service.get()).classes[0].skills.find(skill => skill.key === 'running_5k').best.activityId, 1);
 });
 
 test('failed details retry without starving other work; unavailable results remain processed', async () => {
@@ -75,7 +75,9 @@ test('running never calls streams and replaces legacy cached calculations; cycli
   await service.get(); await service.run();
   const result = await service.get();
   assert.equal(details, 1); assert.equal(streams, 1);
-  assert.equal(result.classes[0].skills[1].best.timeMs, 1519000);
-  assert.equal(result.classes[0].skills[1].best.method, 'strava_best_efforts');
-  assert.equal(result.classes[2].skills[0].best.method, 'distance_time_stream_v1');
+  const running5k = result.classes[0].skills.find(skill => skill.key === 'running_5k');
+  const cycling5k = result.classes[2].skills.find(skill => skill.key === 'cycling_5k');
+  assert.equal(running5k.best.timeMs, 1519000);
+  assert.equal(running5k.best.method, 'strava_best_efforts');
+  assert.equal(cycling5k.best.method, 'distance_time_stream_v1');
 });

@@ -242,3 +242,19 @@ Record decisions here as the project evolves. Keep entries short and link to the
 - Authenticate and scope every load/update/delete to the manual row's account. Require the loaded revision for mutations to reject stale changes. Recognize exact edit retries, make delete retries idempotent, and retain original creation retry identity across updates.
 - Confirm deletion in the UI. Remove its history and XP contribution immediately; clear the stored activity payload and keep only the deletion marker/opaque save identity needed to prevent delayed retries resurrecting it. No restore action is included.
 - Upgrade existing manual tables automatically without losing records. Manual edits/deletes never alter Strava snapshots/cursors, issue Strava writes, or make manual entries eligible for fastest-time skills. Refresh the activity hub on return from editing so both collapsed and expanded views update.
+
+# 2026-10-29 - Define the first complete subclass skill set
+
+- **Decision:** Replace the current partial distance-skill list with the following subclass metrics. These are skill definitions, not class-XP rules.
+- **Running / Speed:** 100M, 200M, 400M, and 800M, each measured by best duration.
+- **Running / Endurance:** 5K, 10K, half marathon, and full marathon measured by best duration; Longest Run measured by longest completed run duration; Monthly Distance measured as total running kilometers in the trailing 28 days.
+- **Running / Climbing:** Total Elevation in One Run measured by elevation gained; Longest Sustained Climb measured by climb duration; Monthly Elevation measured by elevation gained in the trailing 28 days.
+- **Cycling / Speed:** 1K, 5K, and 10K, each measured by best duration.
+- **Cycling / Endurance:** Longest Ride measured by kilometers; 20K, 50K, 100K, and 160K measured by best duration; Monthly Distance measured by kilometers ridden in the trailing 28 days.
+- **Cycling / Climbing:** Monthly Elevation measured by elevation gained in the trailing 28 days; Vertical Meters in One Hour measured by elevation gained during a rolling one-hour effort; Longest Sustained Climb measured by climb duration; Total Elevation in One Ride measured by elevation gained.
+- **Strength / Push:** Bench Press and Overhead Press measured by one-rep max; Dips measured by maximum reps together with added weight; Monthly Pressing Volume measured by total completed pressing volume in the trailing 28 days.
+- **Strength / Pull:** Deadlift measured by one-rep max; Pull-Ups and Chin-Ups measured by maximum reps together with added weight; Monthly Pulling Volume measured by total completed pulling volume in the trailing 28 days.
+- **Strength / Legs:** Back Squat and Leg Press measured by one-rep max; Monthly Leg Volume measured by total completed leg volume in the trailing 28 days.
+- **Decision:** Monthly metrics update on Saturday and use the previous four weeks rather than calendar-month boundaries. The app should display the measurement unit explicitly instead of assuming every skill is a time.
+- **Why:** This gives each subclass a small, understandable set of directly measurable skills while covering speed, endurance, climbing, strength, and repeatable training volume.
+- **Implementation note:** The existing time-only skill result shape is no longer sufficient. Future implementation should use typed measurement kinds such as duration, distance, elevation, one-rep max, weighted reps, and volume, with source attribution and the relevant activity/window date.

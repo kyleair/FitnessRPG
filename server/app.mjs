@@ -87,7 +87,11 @@ export function createApp({ db, env, fetchImpl = fetch, clock = Date.now }) {
             await exclusive(account, async () => { await services.get(account)?.stop(); db.connect(attempt.session, account, safeTokens(value)); services.delete(account); });
           } });
         try { await oauth.complete(url); }
-        catch { return page(400, 'Could not connect', '<p>Authorization was declined, activity permission was missing, or Strava could not complete the connection. Return to Expo Go and try again.</p>'); }
+        catch (error) {
+          const detail = error instanceof Error ? error.message : 'Unknown Strava authorization error.';
+          console.error(`[strava oauth] ${detail}`);
+          return page(400, 'Could not connect', `<p>${escapeHtml(detail)}</p><p>Return to Expo Go and start a new connection.</p>`);
+        }
         response.setHeader('Set-Cookie', 'fitness_oauth=; HttpOnly; SameSite=Lax; Path=/auth/strava; Max-Age=0');
         return page(200, 'Strava connected', '<p>You can now return to Expo Go. Your activities will load automatically, or tap Check connection.</p>');
       }
