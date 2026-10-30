@@ -9,6 +9,8 @@ import { useDashboard } from '../DashboardContext';
 import { type ClassKey, type Dashboard, type Skill } from '../dashboard';
 import { SkillIcon, type SkillIconKind } from '../components/SkillIcon';
 import { formatTime } from '../format';
+import { ageBands, formatProgressionValue, genders, progressionTable, progressionUnitLabel, type AgeBand, type SkillGender } from '../skill-progression';
+import { useProgressionProfile } from '../progression-profile';
 
 const themes = {
   running: { accent: '#78a878', border: '#596c50', panel: '#302820', banner: '#244b36' },
@@ -30,6 +32,8 @@ export default function SkillDetailScreen({ mode }: { mode: 'ranks' | 'history' 
   const skillKey = typeof params.skillKey === 'string' ? params.skillKey : null;
   const { data, setData } = useDashboard();
   const [loading, setLoading] = useState(false);
+  const { profile, updateProfile } = useProgressionProfile();
+  const { gender, ageBand } = profile;
   const skill = findSkill(data, classKey, skillKey);
   const theme = classKey ? themes[classKey] : themes.running;
 
@@ -47,6 +51,11 @@ export default function SkillDetailScreen({ mode }: { mode: 'ranks' | 'history' 
   const value = skill?.best ? formatTime(skill.best.timeMs) : '—';
   const subclass = skill?.subclass.toUpperCase() ?? 'SKILL';
   const history = useMemo(() => skill?.best ? [{ label: new Date(skill.best.achievedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }), value, source: skill.best.activityName }] : [], [skill, value]);
+  const progression = skill ? progressionTable(skill.key.replace(`${classKey}_`, ''), gender, ageBand) : null;
+
+  const saveProfile = (next: Partial<{ gender: SkillGender; ageBand: AgeBand }>) => {
+    updateProfile(next);
+  };
 
   return <LinearGradient colors={['#3b2a22', '#211b18', '#191513']} style={styles.screen}>
     <StatusBar style="light" />
@@ -61,6 +70,15 @@ export default function SkillDetailScreen({ mode }: { mode: 'ranks' | 'history' 
           {mode === 'ranks' ? <>
             <View style={styles.panel}><Text style={styles.panelTitle}>Your best</Text><Text style={[styles.best, { color: theme.accent }]}>{value}</Text><Text style={styles.body}>{skill?.best ? `${skill.best.activityName} · ${skill.best.source}` : skill?.processing ? 'Result is still processing.' : 'No recorded result yet.'}</Text></View>
             <View style={styles.panel}><Text style={styles.panelTitle}>Milestones</Text><RankRow label="Unlocked" value={skill?.best ? 'Complete' : 'Locked'} accent={theme.accent} /><RankRow label="Next personal best" value={skill?.best ? 'Improve your time' : 'Record an effort'} accent={theme.accent} /><Text style={styles.note}>Rank tiers are a visual preview while the progression rules are being finalized.</Text></View>
+            {progression && <View style={styles.panel}>
+              <Text style={styles.panelTitle}>Level reference table</Text>
+              <Text style={styles.body}>Calibrated for {genders.find(item => item.key === gender)?.label}, age {ageBand}. Values are {progressionUnitLabel(progression.unit)}; level 1 is the accessible starting point and level 100 is the elite reference.</Text>
+              <View style={styles.selectorGroup}><Text style={styles.selectorLabel}>Gender</Text><View style={styles.selectorRow}>{genders.map(item => <Pressable key={item.key} onPress={() => saveProfile({ gender: item.key })} style={[styles.selector, gender === item.key && { borderColor: theme.accent, backgroundColor: theme.panel }]}><Text style={[styles.selectorText, gender === item.key && { color: theme.accent }]}>{item.label}</Text></Pressable>)}</View></View>
+              <Text style={styles.selectorLabel}>Age band</Text><View style={styles.ageGrid}>{ageBands.map(item => <Pressable key={item} onPress={() => saveProfile({ ageBand: item })} style={[styles.ageButton, ageBand === item && { borderColor: theme.accent, backgroundColor: theme.panel }]}><Text style={[styles.selectorText, ageBand === item && { color: theme.accent }]}>{item}</Text></Pressable>)}</View>
+              <View style={styles.tableHeader}><Text style={styles.tableHeaderText}>LEVEL</Text><Text style={styles.tableHeaderText}>TARGET</Text></View>
+              {progression.levels.map(row => <View key={row.level} style={styles.tableRow}><Text style={styles.tableLevel}>{row.level}</Text><Text style={[styles.tableValue, { color: row.level === 1 || row.level === 100 ? theme.accent : '#f3e3bb' }]}>{formatProgressionValue(row.value, progression.unit)}</Text></View>)}
+              <Text style={styles.note}>First-pass estimates use straight-line interpolation between the two anchors and age adjustments. They are intended for tuning, not official age grading.</Text>
+            </View>}
           </> : <View style={styles.panel}><Text style={styles.panelTitle}>History</Text>{history.length ? history.map(item => <View key={item.label} style={styles.historyRow}><View><Text style={styles.historyDate}>{item.label}</Text><Text style={styles.body}>{item.source}</Text></View><Text style={[styles.historyValue, { color: theme.accent }]}>{item.value}</Text></View>) : <Text style={styles.body}>{skill?.processing ? 'Activity recorded. The result is still processing.' : 'No attempts recorded for this skill yet.'}</Text>}</View>}
         </>}
       </ScrollView>
@@ -77,5 +95,5 @@ const styles = StyleSheet.create({
   screen: { flex: 1 }, content: { width: '100%', maxWidth: 470, alignSelf: 'center', padding: 16, paddingBottom: 48 },
   back: { minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start', paddingRight: 16 }, backText: { color: '#e8c765', fontFamily: serif, fontSize: 14 },
   hero: { minHeight: 104, flexDirection: 'row', alignItems: 'center', gap: 14, padding: 14, borderWidth: 1, marginBottom: 18 }, iconFrame: { width: 68, height: 68, alignItems: 'center', justifyContent: 'center', borderWidth: 1, backgroundColor: '#211b18' }, heroCopy: { flex: 1 }, eyebrow: { color: '#c0ae83', fontFamily: serif, fontSize: 10, letterSpacing: 1 }, title: { color: '#f3e3bb', fontFamily: serif, fontSize: 28, marginTop: 4 }, meta: { color: '#cbbb99', fontSize: 12, marginTop: 4 },
-  panel: { padding: 16, borderWidth: 1, borderColor: '#876035', backgroundColor: '#302720', marginBottom: 14, gap: 10 }, panelTitle: { color: '#f3e3bb', fontFamily: serif, fontSize: 20 }, best: { fontFamily: serif, fontSize: 34 }, body: { color: '#d9c89e', fontSize: 14, lineHeight: 21 }, rankRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#514331' }, rankValue: { fontFamily: serif, fontSize: 16 }, note: { color: '#a9946d', fontSize: 12, lineHeight: 18, marginTop: 6 }, historyRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#514331' }, historyDate: { color: '#f3e3bb', fontFamily: serif, fontSize: 16 }, historyValue: { fontFamily: serif, fontSize: 22 },
+  panel: { padding: 16, borderWidth: 1, borderColor: '#876035', backgroundColor: '#302720', marginBottom: 14, gap: 10 }, panelTitle: { color: '#f3e3bb', fontFamily: serif, fontSize: 20 }, best: { fontFamily: serif, fontSize: 34 }, body: { color: '#d9c89e', fontSize: 14, lineHeight: 21 }, rankRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#514331' }, rankValue: { fontFamily: serif, fontSize: 16 }, note: { color: '#a9946d', fontSize: 12, lineHeight: 18, marginTop: 6 }, historyRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#514331' }, historyDate: { color: '#f3e3bb', fontFamily: serif, fontSize: 16 }, historyValue: { fontFamily: serif, fontSize: 22 }, selectorGroup: { gap: 6, marginTop: 6 }, selectorLabel: { color: '#a9946d', fontFamily: serif, fontSize: 12, letterSpacing: 0.5, marginTop: 4 }, selectorRow: { flexDirection: 'row', gap: 8 }, selector: { minHeight: 40, paddingHorizontal: 14, justifyContent: 'center', borderWidth: 1, borderColor: '#69563a', backgroundColor: '#211b18' }, selectorText: { color: '#d9c89e', fontFamily: serif, fontSize: 13 }, ageGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 }, ageButton: { minWidth: 58, minHeight: 36, paddingHorizontal: 8, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#69563a', backgroundColor: '#211b18' }, tableHeader: { flexDirection: 'row', justifyContent: 'space-between', paddingTop: 8, paddingBottom: 5, borderBottomWidth: 1, borderBottomColor: '#876035' }, tableHeaderText: { color: '#a9946d', fontFamily: serif, fontSize: 10, letterSpacing: 1 }, tableRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 7, borderBottomWidth: 1, borderBottomColor: '#3e352b' }, tableLevel: { width: 60, color: '#cbbb99', fontFamily: serif, fontSize: 13 }, tableValue: { flex: 1, textAlign: 'right', fontFamily: serif, fontSize: 14 },
 });
