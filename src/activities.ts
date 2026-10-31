@@ -5,6 +5,7 @@ export interface Activity {
   distance: number;
   movingTime: number;
   elevationGain: number | null;
+  elapsedTime?: number | null;
   startDate: string;
   source?: 'strava' | 'manual';
   revision?: number;

@@ -1,7 +1,7 @@
 export const skillDefinitions = {
   // These are the currently calculated provider metrics. Keep unsupported
   // display-only skills out of this list until their data source exists.
-  running: [["1k", "1K", 1000, "speed"], ["5k", "5K", 5000, "speed"], ["10k", "10K", 10000, "endurance"], ["half_marathon", "Half marathon", 21097.5, "endurance"], ["marathon", "Marathon", 42195, "endurance"], ["100m", "100M", 100, "speed"]],
+  running: [["100m", "100M", 100, "speed"], ["200m", "200M", 200, "speed"], ["400m", "400M", 400, "speed"], ["800m", "800M", 800, "speed"], ["5k", "5K", 5000, "endurance"], ["10k", "10K", 10000, "endurance"], ["half_marathon", "Half marathon", 21097.5, "endurance"], ["marathon", "Marathon", 42195, "endurance"]],
   cycling: [["1k", "1K", 1000, "speed"], ["5k", "5K", 5000, "speed"], ["10k", "10K", 10000, "speed"], ["20k", "20K", 20000, "endurance"], ["50k", "50K", 50000, "endurance"], ["100k", "100K", 100000, "endurance"], ["160k", "160K", 160000, "endurance"]],
   strength: [["bench_press", "Bench press", null, "push"], ["deadlift", "Deadlift", null, "pull"], ["squat", "Squat", null, "legs"]],
 };
@@ -25,7 +25,7 @@ export const displaySkillDefinitions = {
     ["back_squat", "Back squat", "legs", "one-rep max"], ["leg_press", "Leg press", "legs", "one-rep max"], ["monthly_leg_volume", "Monthly leg volume", "legs", "volume"],
   ],
 };
-export const calculationVersion = classKey => classKey === 'cycling' ? 2 : classKey === 'running' ? 2 : 1;
+export const calculationVersion = classKey => classKey === 'cycling' ? 2 : classKey === 'running' ? 3 : 1;
 
 export function runningBestTimes(details) {
   if (!Array.isArray(details?.best_efforts)) return null;
@@ -39,7 +39,15 @@ export function runningBestTimes(details) {
   }
   return times;
 }
-export const fingerprint = activity => JSON.stringify([activity.sportType, activity.distance, activity.movingTime, activity.startDate, ...(['Ride', 'VirtualRide', 'MountainBikeRide', 'GravelRide'].includes(activity.sportType) ? [activity.elevationGain] : [])]);
+export const fingerprint = activity => JSON.stringify([activity.sportType, activity.distance, activity.movingTime, activity.startDate, ...(['Ride', 'VirtualRide', 'MountainBikeRide', 'GravelRide'].includes(activity.sportType) ? [activity.elevationGain] : []), ...(['Run', 'TrailRun', 'VirtualRun'].includes(activity.sportType) ? [activity.elevationGain, activity.elapsedTime] : [])]);
+
+// Running requests are checkpointed separately so a stream retry does not
+// spend another request fetching already-saved provider best efforts.
+export function needsSkillProcessing(activity, classKey, entry) {
+  if (activity.source === 'manual' || !['running', 'cycling'].includes(classKey)) return false;
+  return entry?.fingerprint !== fingerprint(activity) || entry?.version !== calculationVersion(classKey)
+    || (classKey === 'running' && (!entry.detailsProcessed || !entry.streamsProcessed));
+}
 
 // Piecewise-linear distance/time trace. A minimum occurs when either endpoint
 // touches a sample. Scan both endpoint sets so uneven sampling does not bias it.
@@ -71,7 +79,7 @@ export function bestTimes(streams, definitions) {
 }
 
 export function classSkills(classKey, activities, cache, now = new Date()) {
-  if (classKey === 'cycling') return cyclingSkills(activities, cache, now);
+  if (classKey === 'cycling' || classKey === 'running') return enduranceSkills(classKey, activities, cache, now);
   return displaySkillDefinitions[classKey].map(([key, name, subclass, measurement]) => {
     const calculatedDefinition = skillDefinitions[classKey].find(([candidate]) => candidate === key);
     const distanceMeters = calculatedDefinition?.[2] ?? null;
@@ -98,11 +106,26 @@ export function classSkills(classKey, activities, cache, now = new Date()) {
 // Validate dimensions independently: missing altitude must not discard speed results.
 export function cyclingMetrics(streams) {
   const times = bestTimes(streams, skillDefinitions.cycling);
+  const result = altitudeMetrics(streams);
+  const { longest_sustained_climb, ...metrics } = result.metrics;
+  if (longest_sustained_climb) metrics.longest_sustained_cycling_climb = longest_sustained_climb;
+  return { times, metrics, unavailable: result.unavailable || times === null };
+}
+
+export const runningStreamDefinitions = skillDefinitions.running.filter(([key]) => ['100m', '200m', '800m'].includes(key));
+export function runningStreamMetrics(streams) {
+  const times = bestTimes(streams, runningStreamDefinitions);
+  const result = altitudeMetrics(streams);
+  const climb = result.metrics.longest_sustained_climb;
+  return { times, metrics: climb ? { longest_sustained_run_climb: climb } : {}, unavailable: result.unavailable || times === null };
+}
+
+function altitudeMetrics(streams) {
   const t = streams?.time?.data, altitude = streams?.altitude?.data;
   const metrics = {};
   const valid = Array.isArray(t) && Array.isArray(altitude) && t.length >= 2 && t.length === altitude.length
     && t.every((v, i) => Number.isFinite(v) && v >= 0 && (!i || v > t[i - 1]) && Number.isFinite(altitude[i]));
-  if (!valid) return { times, metrics, unavailable: true };
+  if (!valid) return { metrics, unavailable: true };
   const gain = [0];
   let climbStart = 0, longest = 0;
   for (let i = 1; i < t.length; i++) {
@@ -110,7 +133,7 @@ export function cyclingMetrics(streams) {
     if (altitude[i] > altitude[i - 1]) longest = Math.max(longest, t[i] - t[climbStart]);
     else climbStart = i;
   }
-  if (longest > 0) metrics.longest_sustained_cycling_climb = { kind: 'duration', value: longest * 1000, unit: 'ms' };
+  if (longest > 0) metrics.longest_sustained_climb = { kind: 'duration', value: longest * 1000, unit: 'ms' };
   // A piecewise-linear rolling gain maximum touches a sample at either endpoint.
   // Both scans advance monotone cursors, so processing remains O(samples).
   let best = 0;
@@ -127,53 +150,63 @@ export function cyclingMetrics(streams) {
     }
     metrics.vertical_meters_one_hour = { kind: 'elevation', value: best, unit: 'm' };
   }
-  return { times, metrics, unavailable: times === null };
+  return { metrics, unavailable: false };
 }
 
-export function cyclingWindow(now) {
+export function fourWeekWindow(now) {
   const end = new Date(now);
   end.setUTCHours(0, 0, 0, 0);
   end.setUTCDate(end.getUTCDate() - (end.getUTCDay() + 1) % 7);
   return { start: new Date(end.getTime() - 28 * 86400000).toISOString(), end: end.toISOString() };
 }
 
-function cyclingSkills(activities, cache, now) {
+function enduranceSkills(classKey, activities, cache, now) {
   const imported = activities.filter(a => a.source !== 'manual');
-  const window = cyclingWindow(now);
-  return displaySkillDefinitions.cycling.map(([key, name, subclass, measurement]) => {
-    const distanceMeters = skillDefinitions.cycling.find(([id]) => id === key)?.[2] ?? null;
-    const monthly = key === 'monthly_distance' || key === 'monthly_elevation_cycling';
-    const summary = monthly || key === 'longest_ride' || key === 'total_elevation_ride';
+  const window = fourWeekWindow(now);
+  return displaySkillDefinitions[classKey].map(([key, name, subclass, measurement]) => {
+    const distanceMeters = skillDefinitions[classKey].find(([id]) => id === key)?.[2] ?? null;
+    const monthly = key === 'monthly_distance' || key === 'monthly_elevation_cycling' || key === 'monthly_elevation_run';
+    const summary = monthly || key === 'longest_ride' || key === 'total_elevation_ride' || key === 'total_elevation_run' || key === 'longest_run';
     const kind = measurement === 'kilometers' ? 'distance' : measurement;
     const unit = kind === 'distance' ? 'km' : kind === 'elevation' ? 'm' : 'ms';
     const eligible = imported.filter(a => !distanceMeters || a.distance >= distanceMeters);
-    const current = a => cache[a.id]?.version === calculationVersion('cycling') && cache[a.id]?.fingerprint === fingerprint(a);
-    const processing = !summary && eligible.some(a => !current(a) || cache[a.id]?.retryAt);
+    const current = a => cache[a.id]?.version === calculationVersion(classKey) && cache[a.id]?.fingerprint === fingerprint(a);
+    const processing = (!summary || key === 'longest_run') && eligible.some(a => {
+      if (key === 'longest_run' && Number.isFinite(a.elapsedTime)) return false;
+      if (!current(a)) return true;
+      if (classKey === 'cycling') return !!cache[a.id]?.retryAt;
+      const entry = cache[a.id];
+      if (key === 'longest_run') return !entry.detailsProcessed;
+      if (distanceMeters) return !entry.detailsProcessed || (runningStreamDefinitions.some(([id]) => id === key) && !Number.isFinite(entry.times?.[key]) && !entry.streamsProcessed);
+      return !entry.streamsProcessed;
+    });
     let best = null;
-    const explanation = monthly ? 'Previous 28 days ending Saturday 00:00 UTC; updates weekly. Imported Strava rides only.'
-      : key === 'longest_sustained_cycling_climb' ? 'Longest continuously rising altitude trace; flat or descending samples end the climb. Sample-based elapsed duration.'
+    const explanation = monthly ? `Previous 28 days ending Saturday 00:00 UTC; updates weekly. Imported Strava ${classKey === 'running' ? 'runs' : 'rides'} only.`
+      : key === 'longest_sustained_cycling_climb' || key === 'longest_sustained_run_climb' ? 'Longest continuously rising altitude trace; flat or descending samples end the climb. Sample-based elapsed duration.'
       : key === 'vertical_meters_one_hour' ? 'Greatest positive altitude gain in a full rolling 60 minutes, including stops. Sample-based estimate.'
-      : summary ? 'Calculated from saved Strava ride summaries.' : 'Fastest continuous distance effort, using elapsed time including stops.';
+      : key === 'longest_run' ? 'Longest completed run by elapsed duration, including stops; uses summary or activity-detail elapsed time.'
+      : summary ? 'Calculated from saved Strava summaries.' : classKey === 'running' ? 'Exact Strava best effort when returned; 100M, 200M and 800M use distance/time streams when absent. Elapsed time includes stops.' : 'Fastest continuous distance effort, using elapsed time including stops.';
     if (monthly) {
       const field = kind === 'distance' ? 'distance' : 'elevationGain';
       const items = imported.filter(a => Date.parse(a.startDate) >= Date.parse(window.start) && Date.parse(a.startDate) < Date.parse(window.end));
       const known = items.filter(a => Number.isFinite(a[field]) && a[field] >= 0);
       if (known.length || (imported.length && !items.length)) best = { kind, value: known.reduce((sum, a) => sum + a[field], 0) / (unit === 'km' ? 1000 : 1), unit,
-        activityId: null, activityName: `${known.length} Strava rides`, achievedAt: window.end, source: 'strava', method: 'summary_window_v1', window, activityCount: known.length, partial: known.length !== items.length };
+        activityId: null, activityName: `${known.length} Strava ${classKey === 'running' ? 'runs' : 'rides'}`, achievedAt: window.end, source: 'strava', method: 'summary_window_v1', window, activityCount: known.length, partial: known.length !== items.length };
     } else {
       for (const activity of eligible) {
         let value;
         if (key === 'longest_ride') value = activity.distance / 1000;
-        else if (key === 'total_elevation_ride') value = activity.elevationGain;
+        else if (key === 'total_elevation_ride' || key === 'total_elevation_run') value = activity.elevationGain;
+        else if (key === 'longest_run') value = Number.isFinite(activity.elapsedTime) ? activity.elapsedTime * 1000 : current(activity) ? cache[activity.id].metrics?.longest_run?.value : undefined;
         else if (current(activity)) value = distanceMeters ? cache[activity.id].times?.[key] : cache[activity.id].metrics?.[key]?.value;
         if (!Number.isFinite(value) || value < 0 || (kind !== 'elevation' && value === 0)) continue;
         const lower = !!distanceMeters;
         if (!best || (lower ? value < best.value : value > best.value) || (value === best.value && activity.startDate < best.achievedAt)) {
           best = { kind, value, unit, ...(kind === 'duration' ? { timeMs: value } : {}), activityId: activity.id, activityName: activity.name,
-            achievedAt: activity.startDate, source: 'strava', method: summary ? 'strava_summary_v1' : distanceMeters ? 'distance_time_stream_v1' : 'altitude_time_stream_v1' };
+            achievedAt: activity.startDate, source: 'strava', method: key === 'longest_run' && !Number.isFinite(activity.elapsedTime) ? 'strava_details_v1' : summary ? 'strava_summary_v1' : distanceMeters ? cache[activity.id]?.methods?.[key] ?? 'distance_time_stream_v1' : 'altitude_time_stream_v1' };
         }
       }
     }
-    return { key: `cycling_${key}`, name, subclass, measurement, distanceMeters, processing, unlocked: !!best || processing, best, explanation, ...(monthly ? { window } : {}) };
+    return { key: `${classKey}_${key}`, name, subclass, measurement, distanceMeters, processing, unlocked: !!best || processing, best, explanation, ...(monthly ? { window } : {}) };
   });
 }

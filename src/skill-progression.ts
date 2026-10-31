@@ -27,7 +27,7 @@ const anchors: Record<string, Anchor> = {
   '75k': { unit: 'duration', direction: 'lower', men: [21000, 9000], women: [24000, 10200] },
   '100k': { unit: 'duration', direction: 'lower', men: [27000, 12600], women: [30000, 13800] },
   '160k': { unit: 'duration', direction: 'lower', men: [54000, 21600], women: [60000, 24000] },
-  'longest_run': { unit: 'kilometers', direction: 'higher', men: [5, 80], women: [5, 70] },
+  'longest_run': { unit: 'duration', direction: 'higher', men: [1800, 43200], women: [1800, 36000] },
   'longest_ride': { unit: 'kilometers', direction: 'higher', men: [20, 300], women: [15, 260] },
   'monthly_distance': { unit: 'kilometers', direction: 'higher', men: [15, 1000], women: [15, 850] },
   'monthly_elevation_run': { unit: 'meters', direction: 'higher', men: [100, 12000], women: [80, 10000] },

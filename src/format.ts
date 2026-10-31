@@ -18,7 +18,8 @@ export function skillAttribution(skill: Skill) {
   if (!best) return skill.explanation ?? 'No recorded result yet.';
   if (best.window) {
     const date = (value: string) => new Date(value).toLocaleDateString(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' });
-    return `${date(best.window.start)} – ${date(best.window.end)} (end exclusive, UTC) · ${best.activityName}${best.partial ? ' · Missing elevation for some rides' : ''}`;
+    return `${date(best.window.start)} – ${date(best.window.end)} (end exclusive, UTC) · ${best.activityName}${best.partial ? ' · Missing elevation for some activities' : ''}`;
   }
-  return `${best.activityName} · ${new Date(best.achievedAt).toLocaleDateString()} · Strava`;
+  const method = best.method === 'strava_best_efforts' ? 'Strava best effort' : best.method.includes('stream') ? 'Strava stream estimate' : 'Strava';
+  return `${best.activityName} · ${new Date(best.achievedAt).toLocaleDateString()} · ${method}`;
 }

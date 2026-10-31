@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { cyclingMetrics, cyclingWindow, fingerprint, calculationVersion } from './skills.mjs';
+import { cyclingMetrics, fourWeekWindow, fingerprint, calculationVersion } from './skills.mjs';
 import { buildDashboard, createDashboardService } from './dashboard.mjs';
 import { openDatabase } from './database.mjs';
 
@@ -41,8 +41,8 @@ test('invalid or missing altitude does not discard valid distance efforts and vi
 });
 
 test('four-week windows update on Saturday UTC, exclude the end and include the start', () => {
-  assert.deepEqual(cyclingWindow(now), { start: '2026-10-03T00:00:00.000Z', end: '2026-10-31T00:00:00.000Z' });
-  assert.equal(cyclingWindow(new Date('2026-10-30T23:59:59Z')).end, '2026-10-24T00:00:00.000Z');
+  assert.deepEqual(fourWeekWindow(now), { start: '2026-10-03T00:00:00.000Z', end: '2026-10-31T00:00:00.000Z' });
+  assert.equal(fourWeekWindow(new Date('2026-10-30T23:59:59Z')).end, '2026-10-24T00:00:00.000Z');
   const activities = [ride(1, { startDate: '2026-10-03T00:00:00Z' }), ride(2, { startDate: '2026-10-31T00:00:00Z' }),
     ride(3, { startDate: '2026-10-02T23:59:59Z' }), ride(-1, { source: 'manual' }), ride(4, { elevationGain: null }), ride(1, { startDate: '2026-10-03T00:00:00Z' })];
   const dashboard = buildDashboard(activities, { now });

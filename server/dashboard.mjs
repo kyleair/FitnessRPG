@@ -1,4 +1,4 @@
-import { skillDefinitions, calculationVersion, fingerprint, runningBestTimes, cyclingMetrics, classSkills } from './skills.mjs';
+import { calculationVersion, fingerprint, runningBestTimes, runningStreamMetrics, needsSkillProcessing, cyclingMetrics, classSkills } from './skills.mjs';
 import rules from './activity-rules.mjs';
 const classTypes = {
   running: ['Run', 'TrailRun', 'VirtualRun'],
@@ -53,7 +53,7 @@ export function buildDashboard(activities, { now = new Date(), historyComplete =
   return {
     source: unique.some(a => a.source === 'manual') ? 'mixed' : 'strava', syncedAt, stale, skillsStale,
     skillsUnavailable: unique.filter(a => a.source !== 'manual' && skillCache[a.id]?.version === calculationVersion(classFor(a.sportType)) && skillCache[a.id]?.unavailable && skillCache[a.id]?.fingerprint === fingerprint(a)).length,
-    skillsPending: unique.filter(a => a.source !== 'manual' && (classFor(a.sportType) === 'cycling' || (skillDefinitions[classFor(a.sportType)]?.[0][2] && a.distance >= skillDefinitions[classFor(a.sportType)][0][2])) && (!skillCache[a.id] || skillCache[a.id].fingerprint !== fingerprint(a) || skillCache[a.id].version !== calculationVersion(classFor(a.sportType)))).length, historyComplete, importedCount: unique.filter(a => a.source !== 'manual').length, activityCount: unique.length, manualCount: unique.filter(a => a.source === 'manual').length,
+    skillsPending: unique.filter(a => needsSkillProcessing(a, classFor(a.sportType), skillCache[a.id])).length, historyComplete, importedCount: unique.filter(a => a.source !== 'manual').length, activityCount: unique.length, manualCount: unique.filter(a => a.source === 'manual').length,
     month, monthlyDistanceKm: unique.filter(activity => activity.startDate.slice(0, 7) === month)
       .reduce((total, activity) => total + activity.distance, 0) / 1000,
     classes, recentActivities: unique.slice(0, 30).map(activity => ({ ...activity, source: activity.source || 'strava', classKey: classFor(activity.sportType), xp: activityXp(activity) })),
@@ -72,9 +72,7 @@ export function createDashboardService({ client, clock = Date.now, initial = {},
   }
   function needsSkill(a) {
     const key = classFor(a.sportType), entry = state.skillCache[a.id];
-    return a.source !== 'manual' && (key === 'cycling' || (skillDefinitions[key]?.[0][2] && a.distance >= skillDefinitions[key][0][2]))
-      && (key === 'running' ? client.details : client.streams)
-      && (!entry || entry.fingerprint !== fingerprint(a) || entry.version !== calculationVersion(key));
+    return needsSkillProcessing(a, key, entry) && (key === 'running' ? client.details && client.streams : client.streams);
   }
   function nextWork() {
     if (state.scan || !state.historyComplete) return clock();
@@ -104,11 +102,28 @@ export function createDashboardService({ client, clock = Date.now, initial = {},
     if (!activity) return;
     const key = classFor(activity.sportType);
     try {
-      const result = key === 'running' ? { times: runningBestTimes(await client.details(activity.id)) } : cyclingMetrics(await client.streams(activity.id));
-      const { times } = result;
+      let result;
+      const previous = state.skillCache[activity.id];
+      const entry = previous?.fingerprint === fingerprint(activity) && previous?.version === calculationVersion(key) ? previous : {};
+      if (key === 'running' && !entry.detailsProcessed) {
+        const details = await client.details(activity.id);
+        const times = runningBestTimes(details);
+        const elapsed = details?.elapsed_time;
+        result = { times: times ?? {}, methods: Object.fromEntries(Object.keys(times ?? {}).map(id => [id, 'strava_best_efforts'])),
+          metrics: Number.isFinite(elapsed) && elapsed > 0 ? { longest_run: { kind: 'duration', value: elapsed * 1000, unit: 'ms' } } : {},
+          detailsProcessed: true, detailsCheckedAt: clock(), streamsProcessed: false, providerUnavailable: times === null, unavailable: times === null };
+      } else if (key === 'running') {
+        const streams = runningStreamMetrics(await client.streams(activity.id));
+        result = { ...entry, times: { ...streams.times, ...entry.times },
+          methods: { ...Object.fromEntries(Object.keys(streams.times ?? {}).map(id => [id, 'distance_time_stream_v1'])), ...entry.methods },
+          metrics: { ...entry.metrics, ...streams.metrics }, streamsProcessed: true, streamsCheckedAt: clock(),
+          unavailable: entry.providerUnavailable || streams.unavailable };
+      } else {
+        result = cyclingMetrics(await client.streams(activity.id));
+      }
       if (stopped) return;
       await commit({ ...state, retryAt: null, skillCache: { ...state.skillCache,
-        [activity.id]: { fingerprint: fingerprint(activity), version: calculationVersion(key), checkedAt: clock(), attemptedAt: clock(), times, ...(result.metrics ? { metrics: result.metrics } : {}), unavailable: result.unavailable ?? times === null } } });
+        [activity.id]: { ...result, fingerprint: fingerprint(activity), version: calculationVersion(key), checkedAt: clock(), attemptedAt: clock(), retryAt: null } } });
     } catch (error) {
       if (stopped) return;
       if (error.rateLimited) throw error;
