@@ -15,9 +15,9 @@ test('calculates subactivity elapsed efforts with interpolation and includes sto
   assert.equal(bestTimes(null, skillDefinitions.running), null);
 });
 
-test('cycling supports all five targets and running includes official marathon distances', () => {
-  const times = bestTimes(stream([0, 100000], [0, 10000]), skillDefinitions.cycling);
-  assert.deepEqual(Object.values(times), [500000, 2000000, 5000000, 7500000, 10000000]);
+test('cycling supports all seven targets and running includes official marathon distances', () => {
+  const times = bestTimes(stream([0, 160000], [0, 16000]), skillDefinitions.cycling);
+  assert.deepEqual(Object.values(times), [100000, 500000, 1000000, 2000000, 5000000, 10000000, 16000000]);
   assert.equal(bestTimes(stream([0, 42195], [0, 12600]), skillDefinitions.running).marathon, 12600000);
 });
 

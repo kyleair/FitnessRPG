@@ -35,7 +35,7 @@ test('requests keyed distance/time streams and treats missing streams as unavail
   let status = 200;
   const client = createStravaClient({ clientId: 'id', clientSecret: 'secret', initialTokens: { access_token: 'test', expires_at: Date.now() / 1000 + 3600 }, saveTokens: async () => {},
     fetchImpl: async (url, options) => {
-      assert.match(url, /activities\/42\/streams\?keys=time,distance&key_by_type=true/);
+      assert.match(url, /activities\/42\/streams\?keys=time,distance,altitude&key_by_type=true/);
       assert.equal(options.headers.Authorization, 'Bearer test');
       return status === 200 ? Response.json({ distance: { data: [0, 1000] }, time: { data: [0, 300] } }) : new Response(null, { status });
     } });

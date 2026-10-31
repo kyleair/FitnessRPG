@@ -195,3 +195,10 @@ Manual rows in Activities (and the dashboard's latest activity) have **Edit** an
 Delete asks for confirmation, then removes the manual entry and its contribution from totals. It cannot be undone in the app. A minimal deletion marker is retained to stop delayed save retries from restoring the entry; its stored activity payload is cleared. Changes never issue Strava write calls or create fastest-time results.
 
 Authenticated `GET /api/activities/:id` loads a manual entry; `PUT` replaces it with a validated payload plus `expectedRevision`; `DELETE` accepts `{ expectedRevision }`. IDs must be negative local manual IDs owned by the connected athlete. Revision mismatches return 409 instead of overwriting another session's changes. Exact edit/delete retries are safe. Original creation retries return the latest saved record or 410 if it was deleted. The backend automatically upgrades existing manual tables with revision/deletion metadata on restart; existing entries are preserved. Edit drafts are scoped by activity and revision and kept separate from new-entry drafts.
+
+
+## Cycling skill processing
+
+Cycling now calculates the full catalog: 1K/5K/10K/20K/50K/100K/160K elapsed best times, longest ride, four-week distance/elevation totals, greatest elevation gain in a rolling hour, longest sustained climb, and total elevation in one ride. Values show explicit units and Strava ride/window attribution. Monthly skills cover the 28 days before the most recent Saturday 00:00 UTC; the dashboard's calendar-month distance remains separate.
+
+Restart the backend to queue a one-time version-2 cycling stream pass for saved rides. It requests altitude alongside distance/time within the existing API budget and stores only compact results in each account's SQLite snapshot. No reconnect, dependency install, schema migration, or raw-stream storage is required. Summary skills appear immediately; missing stream dimensions leave only the affected skills empty. See `docs/decision-log.md` for the experimental sustained-climb rule and data coverage limitations.

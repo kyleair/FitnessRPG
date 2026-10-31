@@ -4,7 +4,7 @@ export interface Activity {
   sportType: string;
   distance: number;
   movingTime: number;
-  elevationGain: number;
+  elevationGain: number | null;
   startDate: string;
   source?: 'strava' | 'manual';
   revision?: number;

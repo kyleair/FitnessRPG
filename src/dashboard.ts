@@ -6,7 +6,8 @@ export interface ActivityPage {
 }
 export interface Skill {
   key: string; name: string; distanceMeters: number | null; subclass: string; measurement: string; unlocked?: boolean; processing?: boolean;
-  best: { timeMs: number; activityId: number; activityName: string; achievedAt: string; source: string; method: string } | null;
+  explanation?: string; window?: { start: string; end: string };
+  best: { timeMs?: number; kind?: 'duration' | 'distance' | 'elevation'; value?: number; unit?: 'ms' | 'km' | 'm'; window?: { start: string; end: string }; partial?: boolean; activityId: number | null; activityName: string; achievedAt: string; source: string; method: string } | null;
 }
 export interface FitnessClass {
   key: ClassKey; name: string; skills: Skill[]; xp: number; level: number; currentXp: number;
