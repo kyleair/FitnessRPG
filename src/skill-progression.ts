@@ -11,7 +11,7 @@ export type SkillRank = {
   ornate: boolean;
 };
 
-const skillRankTiers = [
+export const skillRankTiers = [
   { name: 'Iron', color: '#8d9296', borderWidth: 1, borderRadius: 4, ornate: false },
   { name: 'Bronze', color: '#b87333', borderWidth: 1, borderRadius: 4, ornate: false },
   { name: 'Silver', color: '#c8d0d8', borderWidth: 1, borderRadius: 4, ornate: false },
