@@ -291,6 +291,6 @@ Record decisions here as the project evolves. Keep entries short and link to the
 - Reuse unit-aware tiles, milestones, ranks and current-result history. Display per-result provider-versus-stream attribution. No schema migration, reconnect, raw-stream storage, weekly historical series or class-XP change is needed.
 ## 2026-10-31 - Name skill progression ranks and color-code skill tiers
 
-- **Decision:** Display the current 1-100 skill progression as `Rank #` rather than `Level #`. Rank tiers are Iron (1-10), Bronze (11-20), Silver (21-30), Gold (31-40), Platinum (41-50), Diamond (51-60), Champ (61-70), Grand Champ (71-85), and Master (86-100).
+- **Decision:** Display the current 1-100 skill progression as five divisions within each rank tier: Iron, Bronze, Silver, Gold, Platinum, Diamond, Champ, Grand Champ, and Master. The 100-point progression maps to 45 displayed divisions, so a score of 25 displays as Silver 2.
 - **Visual treatment:** Skill cards use intuitive material colors through Diamond. Champ, Grand Champ, and Master use stronger borders, rounded frames, and a restrained glow to make the endgame tiers feel more ceremonial without reducing readability.
 - **Why:** Fitness class progression already uses levels; calling performance progression ranks keeps the two systems distinct and makes the skill cards easier to scan.

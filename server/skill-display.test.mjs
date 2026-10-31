@@ -32,10 +32,14 @@ test('Longest Run level references use increasing duration rather than kilometer
 
 test('skill ranks use material tiers and reserve ornate styling for the endgame', () => {
   assert.equal(skillRank(1).name, 'Iron');
+  assert.equal(skillRank(1).division, 1);
   assert.equal(skillRank(20).name, 'Bronze');
+  assert.equal(skillRank(25).name, 'Silver');
+  assert.equal(skillRank(25).division, 2);
   assert.equal(skillRank(60).name, 'Diamond');
-  assert.equal(skillRank(61).name, 'Champ');
-  assert.equal(skillRank(71).name, 'Grand Champ');
+  assert.equal(skillRank(61).name, 'Diamond');
+  assert.equal(skillRank(71).name, 'Champ');
   assert.equal(skillRank(100).name, 'Master');
+  assert.equal(skillRank(100).division, 5);
   assert.equal(skillRank(100).ornate, true);
 });
