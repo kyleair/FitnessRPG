@@ -35,7 +35,7 @@ test('requests keyed distance/time streams and treats missing streams as unavail
   let status = 200;
   const client = createStravaClient({ clientId: 'id', clientSecret: 'secret', initialTokens: { access_token: 'test', expires_at: Date.now() / 1000 + 3600 }, saveTokens: async () => {},
     fetchImpl: async (url, options) => {
-      assert.match(url, /activities\/42\/streams\?keys=time,distance&key_by_type=true/);
+      assert.match(url, /activities\/42\/streams\?keys=time,distance,altitude&key_by_type=true/);
       assert.equal(options.headers.Authorization, 'Bearer test');
       return status === 200 ? Response.json({ distance: { data: [0, 1000] }, time: { data: [0, 300] } }) : new Response(null, { status });
     } });
@@ -60,4 +60,17 @@ test('passes incremental pagination and every activity request through the budge
   await client.details(1); await client.streams(1);
   assert.equal(reservations, 3);
   assert.match(urls[0], /per_page=200&before=456&after=123/);
+});
+
+test('maps elapsed duration separately from moving time and leaves missing elapsed duration unknown', async () => {
+  const client = createStravaClient({ initialTokens: { access_token: 'test', expires_at: Date.now() / 1000 + 3600 }, saveTokens: async () => {},
+    fetchImpl: async () => Response.json([
+      { id: 1, sport_type: 'Run', moving_time: 300, elapsed_time: 420, start_date: '2026-10-20T12:00:00Z' },
+      { id: 2, sport_type: 'Run', moving_time: 300, start_date: '2026-10-20T12:00:00Z' },
+    ]) });
+  const activities = await client.activities();
+  assert.equal(activities[0].movingTime, 300);
+  assert.equal(activities[0].elapsedTime, 420);
+  assert.equal(activities[1].elapsedTime, null);
+  assert.equal(activities[0].elevationGain, null);
 });

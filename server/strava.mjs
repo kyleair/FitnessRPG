@@ -32,7 +32,7 @@ export function createStravaClient({ clientId, clientSecret, initialTokens, save
     },
     async streams(id) {
       const token = await accessToken();
-      const response = await request(`https://www.strava.com/api/v3/activities/${id}/streams?keys=time,distance&key_by_type=true`, {
+      const response = await request(`https://www.strava.com/api/v3/activities/${id}/streams?keys=time,distance,altitude&key_by_type=true`, {
         headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(15000),
       });
       if (response.status === 404) return null;
@@ -53,7 +53,7 @@ export function createStravaClient({ clientId, clientSecret, initialTokens, save
       const amount = value => Number.isFinite(value) ? Math.max(0, value) : 0;
       return data.filter(item => Number.isFinite(item.id) && Number.isFinite(Date.parse(item.start_date)))
         .map(item => ({ id: item.id, name: String(item.name || 'Untitled activity'), sportType: item.sport_type || item.type || 'Workout',
-          distance: amount(item.distance), movingTime: amount(item.moving_time), elevationGain: amount(item.total_elevation_gain), startDate: item.start_date }));
+          distance: amount(item.distance), movingTime: amount(item.moving_time), elapsedTime: Number.isFinite(item.elapsed_time) && item.elapsed_time >= 0 ? item.elapsed_time : null, elevationGain: Number.isFinite(item.total_elevation_gain) && item.total_elevation_gain >= 0 ? item.total_elevation_gain : null, startDate: item.start_date }));
     },
   };
   function request(url, options) {

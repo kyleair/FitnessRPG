@@ -1,3 +1,4 @@
+import { fingerprint, calculationVersion } from './skills.mjs';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { activityXp, activityPage, buildDashboard, createDashboardService, progression } from './dashboard.mjs';
@@ -94,7 +95,7 @@ test('failures preserve committed pages, back off, and resume the same cursor', 
 
 test('failed disk writes retain committed data', async () => {
   let fail = false;
-  const service = createDashboardService({ schedule: noTimers, client: { activities: async () => [activity(1)], details: async () => ({ best_efforts: [] }) },
+  const service = createDashboardService({ schedule: noTimers, client: { streams: async () => null, activities: async () => [activity(1)], details: async () => ({ best_efforts: [] }) },
     persist: async () => { if (fail) throw new Error('disk full'); } });
   await service.get(); fail = true;
   await service.run();
@@ -104,8 +105,8 @@ test('failed disk writes retain committed data', async () => {
 });
 
 test('empty accounts complete and initial errors do not switch to demo', async () => {
-  await assert.rejects(createDashboardService({ schedule: noTimers, client: { activities: async () => { throw new Error('offline'); } } }).get(), /offline/);
-  assert.equal((await drain(createDashboardService({ schedule: noTimers, client: { activities: async () => [] } }))).historyComplete, true);
+  await assert.rejects(createDashboardService({ schedule: noTimers, client: { streams: async () => null, activities: async () => { throw new Error('offline'); } } }).get(), /offline/);
+  assert.equal((await drain(createDashboardService({ schedule: noTimers, client: { streams: async () => null, activities: async () => [] } }))).historyComplete, true);
 });
 
 test('class XP reflects corrections and deletions independently of personal bests', () => {
@@ -119,7 +120,7 @@ test('queue automatically continues and wakes after budget pauses without anothe
   let now = Date.UTC(2026, 9, 28, 12), scheduled, fail = true, calls = 0;
   const service = createDashboardService({ clock: () => now,
     schedule: (fn, ms) => { scheduled = { fn, ms }; return () => { scheduled = null; }; },
-    client: { activities: async () => [activity(1)], details: async () => {
+    client: { streams: async () => null, activities: async () => [activity(1)], details: async () => {
       calls++;
       if (fail) throw Object.assign(new Error('budget'), { rateLimited: true, retryAt: now + 900000 });
       return { best_efforts: [{ distance: 5000, elapsed_time: 1500 }] };
@@ -136,13 +137,13 @@ test('queue automatically continues and wakes after budget pauses without anothe
   await service.stop();
 });
 
-test('legacy saved summaries and skills survive daily checks without being rewritten or refetched', async () => {
+test('current saved summaries and completed skills survive daily checks without being rewritten or refetched', async () => {
   const now = Date.UTC(2026, 9, 28, 12), old = activity(1), seen = [];
-  const skillCache = { 1: { fingerprint: JSON.stringify([old.sportType, old.distance, old.movingTime, old.startDate]), version: 2,
+  const skillCache = { 1: { fingerprint: fingerprint(old), version: calculationVersion('running'), detailsProcessed: true, streamsProcessed: true,
     times: { '5k': 1500000 }, checkedAt: now - 10 * 86400000 } };
   const service = createDashboardService({ schedule: noTimers, clock: () => now,
     initial: { activities: [old], skillCache, historyComplete: true, syncedAt: now - 86400000 },
-    client: { activities: async () => [{ ...old, distance: 9999 }, activity(2, 'Run', 6000, '2026-10-28T08:00:00Z')],
+    client: { streams: async () => null, activities: async () => [{ ...old, distance: 9999 }, activity(2, 'Run', 6000, '2026-10-28T08:00:00Z')],
       details: async id => { seen.push(id); return { best_efforts: [] }; } } });
   const result = await drain(service);
   assert.deepEqual(seen, [2]);

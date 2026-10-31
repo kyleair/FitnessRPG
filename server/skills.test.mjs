@@ -8,16 +8,16 @@ const run = (id, distance = 6000) => ({ id, name: `Run ${id}`, sportType: 'Run',
 test('calculates subactivity elapsed efforts with interpolation and includes stops', () => {
   assert.deepEqual(bestTimes(stream([0, 1000, 1000, 2000], [0, 100, 200, 300]), [['two', '2K', 2000]]), { two: 300000 });
   assert.deepEqual(bestTimes(stream([0, 200, 1200, 2000], [0, 100, 200, 600]), [['one', '1K', 1000]]), { one: 100000 });
-  assert.deepEqual(bestTimes(stream([0, 6000], [0, 1800]), skillDefinitions.running), { '1k': 300000, '5k': 1500000, '100m': 30000 });
-  assert.deepEqual(bestTimes(stream([0, 999], [0, 300]), skillDefinitions.running), { '100m': 30030 });
+  assert.deepEqual(bestTimes(stream([0, 6000], [0, 1800]), skillDefinitions.running), { '100m': 30000, '200m': 60000, '400m': 120000, '800m': 240000, '5k': 1500000 });
+  assert.deepEqual(bestTimes(stream([0, 999], [0, 300]), skillDefinitions.running), { '100m': 30030, '200m': 60060, '400m': 120120, '800m': 240240 });
   assert.equal(bestTimes(stream([0, 2000, 1000], [0, 100, 200]), skillDefinitions.running), null);
   assert.equal(bestTimes(stream([0, 2000], [0, 0]), skillDefinitions.running), null);
   assert.equal(bestTimes(null, skillDefinitions.running), null);
 });
 
-test('cycling supports all five targets and running includes official marathon distances', () => {
-  const times = bestTimes(stream([0, 100000], [0, 10000]), skillDefinitions.cycling);
-  assert.deepEqual(Object.values(times), [500000, 2000000, 5000000, 7500000, 10000000]);
+test('cycling supports all seven targets and running includes official marathon distances', () => {
+  const times = bestTimes(stream([0, 160000], [0, 16000]), skillDefinitions.cycling);
+  assert.deepEqual(Object.values(times), [100000, 500000, 1000000, 2000000, 5000000, 10000000, 16000000]);
   assert.equal(bestTimes(stream([0, 42195], [0, 12600]), skillDefinitions.running).marathon, 12600000);
 });
 
@@ -25,7 +25,7 @@ test('processes the whole queue, persists results, and never rechecks completed 
   let now = Date.parse('2026-10-26T13:00:00Z'), saved, calls = 0;
   const activities = Array.from({ length: 55 }, (_, i) => run(i + 1));
   const options = { schedule: () => () => {}, clock: () => now, persist: async value => { saved = structuredClone(value); },
-    client: { activities: async () => activities, details: async id => { calls++; return { best_efforts: [{ distance: 5000, elapsed_time: id * 500 }] }; } } };
+    client: { streams: async () => null, activities: async () => activities, details: async id => { calls++; return { best_efforts: [{ distance: 5000, elapsed_time: id * 500 }] }; } } };
   let service = createDashboardService(options);
   await service.get(); await service.run();
   assert.equal(calls, 55); assert.equal((await service.get()).skillsPending, 0);
@@ -40,7 +40,7 @@ test('failed details retry without starving other work; unavailable results rema
   let now = Date.parse('2026-10-26T13:00:00Z'), fail = true;
   const seen = [];
   const service = createDashboardService({ schedule: () => () => {}, clock: () => now,
-    client: { activities: async () => [run(1), run(2)], details: async id => { seen.push(id); if (id === 1 && fail) throw new Error('offline'); return null; } } });
+    client: { streams: async () => null, activities: async () => [run(1), run(2)], details: async id => { seen.push(id); if (id === 1 && fail) throw new Error('offline'); return null; } } });
   await service.get(); await service.run();
   let result = await service.get();
   assert.equal(result.skillsPending, 1); assert.equal(result.skillsUnavailable, 1);
@@ -66,15 +66,15 @@ test('running uses provider elapsed best efforts, handles half marathon rounding
   assert.deepEqual(runningBestTimes({ best_efforts: [] }), {});
 });
 
-test('running never calls streams and replaces legacy cached calculations; cycling still uses streams', async () => {
+test('running replaces legacy caches with provider details and streams; cycling uses streams', async () => {
   const activities = [run(1), { ...run(2, 100000), sportType: 'Ride' }];
   let details = 0, streams = 0;
   const service = createDashboardService({ schedule: () => () => {}, initial: { activities, skillCache: { 1: { version: 1, times: { '5k': 1 } } } },
     client: { activities: async () => activities, details: async id => { assert.equal(id, 1); details++; return { best_efforts: [{ distance: 5000, elapsed_time: 1519 }] }; },
-      streams: async id => { assert.equal(id, 2); streams++; return stream([0, 100000], [0, 10000]); } } });
+      streams: async id => { assert.ok([1, 2].includes(id)); streams++; return stream([0, 100000], [0, 10000]); } } });
   await service.get(); await service.run();
   const result = await service.get();
-  assert.equal(details, 1); assert.equal(streams, 1);
+  assert.equal(details, 1); assert.equal(streams, 2);
   const running5k = result.classes[0].skills.find(skill => skill.key === 'running_5k');
   const cycling5k = result.classes[2].skills.find(skill => skill.key === 'cycling_5k');
   assert.equal(running5k.best.timeMs, 1519000);

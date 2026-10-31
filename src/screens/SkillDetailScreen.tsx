@@ -8,7 +8,7 @@ import { api, apiUrl } from '../api';
 import { useDashboard } from '../DashboardContext';
 import { type ClassKey, type Dashboard, type Skill } from '../dashboard';
 import { SkillIcon, type SkillIconKind } from '../components/SkillIcon';
-import { formatTime } from '../format';
+import { formatSkillResult, skillAttribution } from '../format';
 import { ageBands, formatProgressionValue, genders, progressionTable, progressionUnitLabel, type AgeBand, type SkillGender } from '../skill-progression';
 import { useProgressionProfile } from '../progression-profile';
 
@@ -48,9 +48,9 @@ export default function SkillDetailScreen({ mode }: { mode: 'ranks' | 'history' 
   }, [classKey, data, setData]);
 
   const title = skill?.name ?? 'Skill';
-  const value = skill?.best ? formatTime(skill.best.timeMs) : '—';
+  const value = skill?.best ? formatSkillResult(skill.best) : '—';
   const subclass = skill?.subclass.toUpperCase() ?? 'SKILL';
-  const history = useMemo(() => skill?.best ? [{ label: new Date(skill.best.achievedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }), value, source: skill.best.activityName }] : [], [skill, value]);
+  const history = useMemo(() => skill?.best ? [{ label: new Date(skill.best.achievedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }), value, source: skillAttribution(skill) }] : [], [skill, value]);
   const progression = skill ? progressionTable(skill.key.replace(`${classKey}_`, ''), gender, ageBand) : null;
 
   const saveProfile = (next: Partial<{ gender: SkillGender; ageBand: AgeBand }>) => {
@@ -65,11 +65,12 @@ export default function SkillDetailScreen({ mode }: { mode: 'ranks' | 'history' 
         {loading && !skill ? <ActivityIndicator color="#e8c765" /> : <>
           <View style={[styles.hero, { borderColor: theme.border, backgroundColor: theme.banner }]}>
             <View style={[styles.iconFrame, { borderColor: theme.accent }]}><SkillIcon kind={skill ? iconKind(skill) : 'volume'} color={theme.accent} size={46} /></View>
-            <View style={styles.heroCopy}><Text style={styles.eyebrow}>{classKey?.toUpperCase() ?? 'FITNESS'} · {subclass}</Text><Text style={styles.title}>{title}</Text><Text style={styles.meta}>{mode === 'ranks' ? 'Ranks and milestones' : 'Recorded attempts'}</Text></View>
+            <View style={styles.heroCopy}><Text style={styles.eyebrow}>{classKey?.toUpperCase() ?? 'FITNESS'} · {subclass}</Text><Text style={styles.title}>{title}</Text><Text style={styles.meta}>{mode === 'ranks' ? 'Ranks and milestones' : 'Recorded result'}</Text></View>
           </View>
+          {skill?.explanation && <View style={styles.panel}><Text style={styles.body}>{skill.explanation}</Text><Text style={styles.note}>Results cover imported history; pending imports may change them. History shows the current saved result.</Text></View>}
           {mode === 'ranks' ? <>
             <View style={styles.panel}><Text style={styles.panelTitle}>Your best</Text><Text style={[styles.best, { color: theme.accent }]}>{value}</Text><Text style={styles.body}>{skill?.best ? `${skill.best.activityName} · ${skill.best.source}` : skill?.processing ? 'Result is still processing.' : 'No recorded result yet.'}</Text></View>
-            <View style={styles.panel}><Text style={styles.panelTitle}>Milestones</Text><RankRow label="Unlocked" value={skill?.best ? 'Complete' : 'Locked'} accent={theme.accent} /><RankRow label="Next personal best" value={skill?.best ? 'Improve your time' : 'Record an effort'} accent={theme.accent} /><Text style={styles.note}>Rank tiers are a visual preview while the progression rules are being finalized.</Text></View>
+            <View style={styles.panel}><Text style={styles.panelTitle}>Milestones</Text><RankRow label="Unlocked" value={skill?.best ? 'Complete' : 'Locked'} accent={theme.accent} /><RankRow label="Next personal best" value={skill?.best ? 'Improve your result' : 'Record an effort'} accent={theme.accent} /><Text style={styles.note}>Rank tiers are a visual preview while the progression rules are being finalized.</Text></View>
             {progression && <View style={styles.panel}>
               <Text style={styles.panelTitle}>Level reference table</Text>
               <Text style={styles.body}>Calibrated for {genders.find(item => item.key === gender)?.label}, age {ageBand}. Values are {progressionUnitLabel(progression.unit)}; level 1 is the accessible starting point and level 100 is the elite reference.</Text>

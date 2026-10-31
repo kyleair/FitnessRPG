@@ -10,8 +10,8 @@ import { useDashboard } from '../DashboardContext';
 import { type Dashboard, type ClassKey, type Skill } from '../dashboard';
 import { Emblem } from '../components/Emblem';
 import { SkillIcon, type SkillIconKind } from '../components/SkillIcon';
-import { formatTime } from '../format';
-import { progressionTable, type AgeBand, type SkillGender } from '../skill-progression';
+import { formatSkillResult, skillAttribution } from '../format';
+import { formatProgressionValue, progressionTable, type AgeBand, type SkillGender } from '../skill-progression';
 import { useProgressionProfile } from '../progression-profile';
 
 const accents = { running: '#78a878', cycling: '#a482d2', strength: '#c85b55' };
@@ -35,8 +35,10 @@ function iconKind(skill: Skill): SkillIconKind { return skill.subclass as SkillI
 function skillMilestones(skill: Skill, gender: SkillGender, ageBand: AgeBand) {
   if (!skill.best) return null;
   const progression = progressionTable(skill.key.replace(`${skill.key.split('_')[0]}_`, ''), gender, ageBand);
-  if (!progression || skill.measurement !== 'duration') return null;
-  const value = skill.best.timeMs / 1000;
+  if (!progression) return null;
+  const rawValue = skill.best.value ?? skill.best.timeMs;
+  if (rawValue === undefined) return null;
+  const value = skill.measurement === 'duration' ? rawValue / 1000 : rawValue;
   const level = progression.direction === 'lower'
     ? progression.levels.reduce((result, row) => value <= row.value ? row.level : result, 1)
     : progression.levels.reduce((result, row) => value >= row.value ? row.level : result, 1);
@@ -47,7 +49,7 @@ function skillMilestones(skill: Skill, gender: SkillGender, ageBand: AgeBand) {
   const progress = safeLevel === 100 || span === 0 ? 1 : progression.direction === 'lower'
     ? Math.max(0, Math.min(1, (currentLevel - value) / span))
     : Math.max(0, Math.min(1, (value - currentLevel) / span));
-  return { level: safeLevel, currentLevel: currentLevel * 1000, nextLevel: nextLevel * 1000, progress, unit: progression.unit };
+  return { level: safeLevel, currentLevel, nextLevel, progress, unit: progression.unit };
 }
 function SkillActionIcon({ kind, color }: { kind: 'ranks' | 'history'; color: string }) {
   return <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
@@ -60,14 +62,15 @@ function SkillTile({ skill, classKey, gender, ageBand }: { skill: Skill; classKe
   const theme = classThemes[classKey];
   const milestones = skillMilestones(skill, gender, ageBand);
   const push = (mode: 'ranks' | 'history') => router.push({ pathname: `/classes/[classKey]/${mode}`, params: { classKey, skillKey: skill.key } });
-  return <View style={[styles.tile, locked && styles.lockedTile]} accessible accessibilityLabel={`${skill.name}. ${locked ? 'Locked. No recorded result yet.' : skill.best ? `Best ${formatTime(skill.best.timeMs)}. ${skill.best.activityName}.` : 'Activity recorded. Result processing.'}`}>
+  return <View style={[styles.tile, locked && styles.lockedTile]} accessible accessibilityLabel={`${skill.name}. ${locked ? 'Locked. No recorded result yet.' : skill.best ? `Best ${formatSkillResult(skill.best)}. ${skill.best.activityName}.` : 'Activity recorded. Result processing.'}`}>
     <View style={styles.tileHead}><View style={[styles.skillBadge, { borderColor: locked ? '#756954' : theme.accent }]}><SkillIcon kind={iconKind(skill)} size={38} color={locked ? '#a99a7d' : theme.accent} /></View><View style={styles.tileHeading}><Text style={styles.tileTitle}>{skill.name}</Text></View></View>
     <View style={styles.tileDivider} />
     <Text style={[styles.levelText, locked && styles.lockedLevel]}>{locked ? 'LOCKED' : skill.best ? `LEVEL ${milestones?.level ?? 1}` : 'PROCESSING'}</Text>
     <View style={styles.progressTrack}><View style={[styles.progressFill, { width: `${(milestones?.progress ?? (processing ? 0.35 : 0)) * 100}%`, backgroundColor: locked ? '#756954' : theme.accent }]} /></View>
-    <View style={styles.progressMeta}><Text style={styles.progressValue}>{milestones ? formatTime(milestones.currentLevel) : '—'}</Text><Text style={styles.progressValue}>{milestones ? formatTime(milestones.nextLevel) : '—'}</Text></View>
+    <View style={styles.progressMeta}><Text style={styles.progressValue}>{milestones ? formatProgressionValue(milestones.currentLevel, milestones.unit) : '—'}</Text><Text style={styles.progressValue}>{milestones ? formatProgressionValue(milestones.nextLevel, milestones.unit) : '—'}</Text></View>
     <View style={styles.tileDivider} />
-    {!skill.best && <Text style={styles.source} numberOfLines={3}>{classKey === 'strength' ? `Tracked as ${skill.measurement}.` : processing ? 'Activity recorded. Result is still processing.' : `Complete a ${skill.name} effort to unlock.`}</Text>}
+    {skill.best && <><Text style={styles.progressValue}>{formatSkillResult(skill.best)}</Text><Text style={styles.source}>{skillAttribution(skill)}</Text></>}
+    {!skill.best && <Text style={styles.source} numberOfLines={3}>{classKey === 'strength' ? `Tracked as ${skill.measurement}.` : processing ? 'Activity recorded. Result is still processing.' : skill.explanation ?? `Complete a ${skill.name} effort to unlock.`}</Text>}
     {!locked && <View style={styles.actions}><Pressable accessibilityRole="button" onPress={() => push('ranks')} style={styles.actionButton}><SkillActionIcon kind="ranks" color={theme.accent} /><Text style={[styles.actionText, { color: theme.accent }]}>Ranks</Text></Pressable><Pressable accessibilityRole="button" onPress={() => push('history')} style={styles.actionButton}><SkillActionIcon kind="history" color={theme.accent} /><Text style={[styles.actionText, { color: theme.accent }]}>History</Text></Pressable></View>}
   </View>;
 }
