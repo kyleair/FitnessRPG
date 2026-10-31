@@ -22,12 +22,18 @@ export const skillRankTiers = [
   { name: 'Grand Champ', color: '#c99bff', borderWidth: 2, borderRadius: 10, ornate: true },
   { name: 'Master', color: '#f5d477', borderWidth: 2, borderRadius: 12, ornate: true },
 ] as const;
+export const skillRankCount = skillRankTiers.length * 5;
 
 export function skillRank(level: number): SkillRank {
   const safeLevel = Math.max(1, Math.min(100, Math.round(level)));
   const rankNumber = Math.ceil(safeLevel * 45 / 100);
   const tier = skillRankTiers[Math.floor((rankNumber - 1) / 5)];
   return { ...tier, division: ((rankNumber - 1) % 5 + 1) as 1 | 2 | 3 | 4 | 5 };
+}
+
+export function skillRankScore(rankNumber: number) {
+  const safeRank = Math.max(1, Math.min(skillRankCount, Math.round(rankNumber)));
+  return Math.max(1, Math.min(100, Math.ceil((safeRank - 1) * 100 / skillRankCount) + 1));
 }
 
 export const ageBands: AgeBand[] = ['18-34', '35-39', '40-44', '45-49', '50-54', '55-59', '60-64', '65-69', '70-74', '75-79', '80+'];
