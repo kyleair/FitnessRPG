@@ -11,6 +11,8 @@ import { type Dashboard, type ClassKey, type Skill } from '../dashboard';
 import { Emblem } from '../components/Emblem';
 import { SkillIcon, type SkillIconKind } from '../components/SkillIcon';
 import { formatTime } from '../format';
+import { progressionTable, type AgeBand, type SkillGender } from '../skill-progression';
+import { useProgressionProfile } from '../progression-profile';
 
 const accents = { running: '#78a878', cycling: '#a482d2', strength: '#c85b55' };
 const classThemes = {
@@ -30,29 +32,38 @@ function BannerEmblem({ classKey, color }: { classKey: ClassKey; color: string }
   return <View style={[styles.bannerEmblem, { borderColor: color }]}><Emblem name={classKey} size={34} color={color} /></View>;
 }
 function iconKind(skill: Skill): SkillIconKind { return skill.subclass as SkillIconKind; }
-function skillMilestones(skill: Skill) {
+function skillMilestones(skill: Skill, gender: SkillGender, ageBand: AgeBand) {
   if (!skill.best) return null;
-  const span = Math.max(20000, Math.round(skill.best.timeMs * 0.02));
-  const currentLevel = skill.best.timeMs + Math.round(span * 0.51);
-  const nextLevel = Math.max(1000, skill.best.timeMs - Math.round(span * 0.49));
-  const progress = Math.max(0, Math.min(1, (currentLevel - skill.best.timeMs) / (currentLevel - nextLevel)));
-  return { currentLevel, nextLevel, progress };
+  const progression = progressionTable(skill.key.replace(`${skill.key.split('_')[0]}_`, ''), gender, ageBand);
+  if (!progression || skill.measurement !== 'duration') return null;
+  const value = skill.best.timeMs / 1000;
+  const level = progression.direction === 'lower'
+    ? progression.levels.reduce((result, row) => value <= row.value ? row.level : result, 1)
+    : progression.levels.reduce((result, row) => value >= row.value ? row.level : result, 1);
+  const safeLevel = Math.max(1, Math.min(100, level));
+  const currentLevel = progression.levels[safeLevel - 1].value;
+  const nextLevel = progression.levels[Math.min(99, safeLevel)].value;
+  const span = Math.abs(currentLevel - nextLevel);
+  const progress = safeLevel === 100 || span === 0 ? 1 : progression.direction === 'lower'
+    ? Math.max(0, Math.min(1, (currentLevel - value) / span))
+    : Math.max(0, Math.min(1, (value - currentLevel) / span));
+  return { level: safeLevel, currentLevel: currentLevel * 1000, nextLevel: nextLevel * 1000, progress, unit: progression.unit };
 }
 function SkillActionIcon({ kind, color }: { kind: 'ranks' | 'history'; color: string }) {
   return <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
     {kind === 'ranks' ? <><Path d="M4 19V5M4 19h16" /><Path d="M8 16v-4M12 16V8M16 16v-7M20 16v-3" /></> : <><Path d="M12 7v5l3 2" /><Path d="M20 12a8 8 0 1 1-2.34-5.66" /><Path d="M20 4v5h-5" /></>}
   </Svg>;
 }
-function SkillTile({ skill, classKey }: { skill: Skill; classKey: ClassKey }) {
+function SkillTile({ skill, classKey, gender, ageBand }: { skill: Skill; classKey: ClassKey; gender: SkillGender; ageBand: AgeBand }) {
   const processing = !!skill.processing;
   const locked = !skill.best && !processing;
   const theme = classThemes[classKey];
-  const milestones = skillMilestones(skill);
+  const milestones = skillMilestones(skill, gender, ageBand);
   const push = (mode: 'ranks' | 'history') => router.push({ pathname: `/classes/[classKey]/${mode}`, params: { classKey, skillKey: skill.key } });
   return <View style={[styles.tile, locked && styles.lockedTile]} accessible accessibilityLabel={`${skill.name}. ${locked ? 'Locked. No recorded result yet.' : skill.best ? `Best ${formatTime(skill.best.timeMs)}. ${skill.best.activityName}.` : 'Activity recorded. Result processing.'}`}>
     <View style={styles.tileHead}><View style={[styles.skillBadge, { borderColor: locked ? '#756954' : theme.accent }]}><SkillIcon kind={iconKind(skill)} size={38} color={locked ? '#a99a7d' : theme.accent} /></View><View style={styles.tileHeading}><Text style={styles.tileTitle}>{skill.name}</Text></View></View>
     <View style={styles.tileDivider} />
-    <Text style={[styles.levelText, locked && styles.lockedLevel]}>{locked ? 'LOCKED' : skill.best ? 'LEVEL 1' : 'PROCESSING'}</Text>
+    <Text style={[styles.levelText, locked && styles.lockedLevel]}>{locked ? 'LOCKED' : skill.best ? `LEVEL ${milestones?.level ?? 1}` : 'PROCESSING'}</Text>
     <View style={styles.progressTrack}><View style={[styles.progressFill, { width: `${(milestones?.progress ?? (processing ? 0.35 : 0)) * 100}%`, backgroundColor: locked ? '#756954' : theme.accent }]} /></View>
     <View style={styles.progressMeta}><Text style={styles.progressValue}>{milestones ? formatTime(milestones.currentLevel) : '—'}</Text><Text style={styles.progressValue}>{milestones ? formatTime(milestones.nextLevel) : '—'}</Text></View>
     <View style={styles.tileDivider} />
@@ -65,6 +76,7 @@ export default function ClassScreen() {
   const { classKey: param } = useLocalSearchParams<{ classKey: string }>();
   const classKey = typeof param === 'string' && Object.hasOwn(accents, param) ? param as ClassKey : null;
   const { data, setData } = useDashboard();
+  const { profile } = useProgressionProfile();
   const [loading, setLoading] = useState(false), [error, setError] = useState('');
   const busy = useRef(false);
   const refresh = useCallback(async () => {
@@ -80,7 +92,7 @@ export default function ClassScreen() {
     {fitnessClass && classKey ? <View style={[styles.classBanner, { borderColor: theme.border, backgroundColor: theme.banner }]}><BannerEmblem classKey={classKey} color={theme.accent} /><View style={styles.bannerCopy}><Text style={styles.eyebrow}>CLASS</Text><Text style={styles.bannerTitle}>{fitnessClass.name}</Text></View><View style={[styles.bestSkill, { borderLeftColor: theme.border }]}><Text style={styles.bestSkillLabel}>LIFETIME {fitnessClass.name.toUpperCase()}{`\n`}SKILL</Text><Text style={[styles.bestSkillName, { color: theme.accent }]}>Level {fitnessClass.level}</Text></View></View> : <Text style={styles.title}>{classKey ? 'Class skills' : 'Class not found'}</Text>}
     {!!error && <View style={styles.notice}><Text style={styles.body} accessibilityRole="alert">{error}{data ? ' Showing saved data.' : ''}</Text><Pressable accessibilityRole="button" style={styles.back} onPress={refresh}><Text style={styles.backText}>Try again</Text></Pressable></View>}
     {!fitnessClass && loading && <ActivityIndicator color="#e8c765" />}{!fitnessClass && !loading && <Text style={styles.body}>{classKey ? 'Return to the dashboard to connect Strava, or pull down to retry.' : 'Choose Running, Cycling, or Strength from the dashboard.'}</Text>}
-    {fitnessClass && classKey && <>{subclassSections[classKey].map(([key, label, glyph]) => { const skills = fitnessClass.skills.filter(skill => skill.subclass === key); return <View key={key} style={[styles.subclass, { borderColor: theme.border, backgroundColor: theme.panel }]}><View style={styles.subclassHeader}><View style={[styles.subclassGlyph, { borderColor: theme.accent }]}><Text style={[styles.subclassGlyphText, { color: theme.accent }]}>{glyph}</Text></View><Text style={styles.sectionTitle}>{label}</Text><Text style={styles.subclassCount}>{skills.length ? `${skills.length} SKILL${skills.length === 1 ? '' : 'S'}` : 'COMING SOON'}</Text></View>{skills.length ? <View style={styles.grid}>{skills.map(skill => <SkillTile key={skill.key} skill={skill} classKey={classKey} />)}</View> : <Text style={styles.body}>No {label.toLowerCase()} skills yet.</Text>}</View>; })}<View style={styles.notice}><Text style={styles.source}>{classKey === 'running' ? '1 km = 1 XP. Times are supplied by Strava best efforts, using elapsed time. Locked means no result is recorded yet.' : classKey === 'cycling' ? '3 km = 1 XP. Times use elapsed distance/time samples, including stops. Locked means no result is recorded yet.' : 'Strength XP is based on lifting volume. Locked means no result is recorded yet.'}</Text></View></>}
+    {fitnessClass && classKey && <>{subclassSections[classKey].map(([key, label, glyph]) => { const skills = fitnessClass.skills.filter(skill => skill.subclass === key); return <View key={key} style={[styles.subclass, { borderColor: theme.border, backgroundColor: theme.panel }]}><View style={styles.subclassHeader}><View style={[styles.subclassGlyph, { borderColor: theme.accent }]}><Text style={[styles.subclassGlyphText, { color: theme.accent }]}>{glyph}</Text></View><Text style={styles.sectionTitle}>{label}</Text><Text style={styles.subclassCount}>{skills.length ? `${skills.length} SKILL${skills.length === 1 ? '' : 'S'}` : 'COMING SOON'}</Text></View>{skills.length ? <View style={styles.grid}>{skills.map(skill => <SkillTile key={skill.key} skill={skill} classKey={classKey} gender={profile.gender} ageBand={profile.ageBand} />)}</View> : <Text style={styles.body}>No {label.toLowerCase()} skills yet.</Text>}</View>; })}<View style={styles.notice}><Text style={styles.source}>{classKey === 'running' ? `1 km = 1 XP. Reference profile: ${profile.gender}, age ${profile.ageBand}. Times are supplied by Strava best efforts. Locked means no result is recorded yet.` : classKey === 'cycling' ? `3 km = 1 XP. Reference profile: ${profile.gender}, age ${profile.ageBand}. Times use elapsed distance/time samples. Locked means no result is recorded yet.` : 'Strength XP is based on lifting volume. Locked means no result is recorded yet.'}</Text></View></>}
   </ScrollView></SafeAreaView></LinearGradient>;
 }
 
