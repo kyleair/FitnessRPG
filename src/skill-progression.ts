@@ -2,6 +2,31 @@ export type SkillGender = 'men' | 'women';
 export type AgeBand = '18-34' | '35-39' | '40-44' | '45-49' | '50-54' | '55-59' | '60-64' | '65-69' | '70-74' | '75-79' | '80+';
 export type ProgressionUnit = 'duration' | 'kilometers' | 'meters' | 'kilograms' | 'pounds' | 'reps';
 export type ProgressionDirection = 'lower' | 'higher';
+export type SkillRank = {
+  name: 'Iron' | 'Bronze' | 'Silver' | 'Gold' | 'Platinum' | 'Diamond' | 'Champ' | 'Grand Champ' | 'Master';
+  color: string;
+  borderWidth: number;
+  borderRadius: number;
+  ornate: boolean;
+};
+
+const skillRanks: SkillRank[] = [
+  { name: 'Iron', color: '#8d9296', borderWidth: 1, borderRadius: 4, ornate: false },
+  { name: 'Bronze', color: '#b87333', borderWidth: 1, borderRadius: 4, ornate: false },
+  { name: 'Silver', color: '#c8d0d8', borderWidth: 1, borderRadius: 4, ornate: false },
+  { name: 'Gold', color: '#e6bd57', borderWidth: 1, borderRadius: 4, ornate: false },
+  { name: 'Platinum', color: '#72d4c4', borderWidth: 1, borderRadius: 5, ornate: false },
+  { name: 'Diamond', color: '#72baff', borderWidth: 1, borderRadius: 5, ornate: false },
+  { name: 'Champ', color: '#f07b9b', borderWidth: 2, borderRadius: 8, ornate: true },
+  { name: 'Grand Champ', color: '#c99bff', borderWidth: 2, borderRadius: 10, ornate: true },
+  { name: 'Master', color: '#f5d477', borderWidth: 2, borderRadius: 12, ornate: true },
+];
+
+export function skillRank(level: number): SkillRank {
+  const safeLevel = Math.max(1, Math.min(100, Math.round(level)));
+  const index = safeLevel <= 60 ? Math.floor((safeLevel - 1) / 10) : safeLevel <= 70 ? 6 : safeLevel <= 85 ? 7 : 8;
+  return skillRanks[index];
+}
 
 export const ageBands: AgeBand[] = ['18-34', '35-39', '40-44', '45-49', '50-54', '55-59', '60-64', '65-69', '70-74', '75-79', '80+'];
 export const genders: { key: SkillGender; label: string }[] = [{ key: 'men', label: 'Men' }, { key: 'women', label: 'Women' }];

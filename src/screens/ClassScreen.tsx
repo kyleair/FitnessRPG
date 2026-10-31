@@ -11,7 +11,7 @@ import { type Dashboard, type ClassKey, type Skill } from '../dashboard';
 import { Emblem } from '../components/Emblem';
 import { SkillIcon, type SkillIconKind } from '../components/SkillIcon';
 import { formatSkillResult, skillAttribution } from '../format';
-import { formatProgressionValue, progressionTable, type AgeBand, type SkillGender } from '../skill-progression';
+import { formatProgressionValue, progressionTable, skillRank, type AgeBand, type SkillGender } from '../skill-progression';
 import { useProgressionProfile } from '../progression-profile';
 
 const accents = { running: '#78a878', cycling: '#a482d2', strength: '#c85b55' };
@@ -61,11 +61,12 @@ function SkillTile({ skill, classKey, gender, ageBand }: { skill: Skill; classKe
   const locked = !skill.best && !processing;
   const theme = classThemes[classKey];
   const milestones = skillMilestones(skill, gender, ageBand);
+  const rank = milestones ? skillRank(milestones.level) : null;
   const push = (mode: 'ranks' | 'history') => router.push({ pathname: `/classes/[classKey]/${mode}`, params: { classKey, skillKey: skill.key } });
-  return <View style={[styles.tile, locked && styles.lockedTile]} accessible accessibilityLabel={`${skill.name}. ${locked ? 'Locked. No recorded result yet.' : skill.best ? `Best ${formatSkillResult(skill.best)}. ${skill.best.activityName}.` : 'Activity recorded. Result processing.'}`}>
-    <View style={styles.tileHead}><View style={[styles.skillBadge, { borderColor: locked ? '#756954' : theme.accent }]}><SkillIcon kind={iconKind(skill)} size={38} color={locked ? '#a99a7d' : theme.accent} /></View><View style={styles.tileHeading}><Text style={styles.tileTitle}>{skill.name}</Text></View></View>
+  return <View style={[styles.tile, locked && styles.lockedTile, rank && { borderColor: rank.color, borderWidth: rank.borderWidth, borderRadius: rank.borderRadius }, rank?.ornate && { shadowColor: rank.color, shadowOpacity: 0.35, shadowRadius: 8, shadowOffset: { width: 0, height: 0 }, elevation: 3 }]} accessible accessibilityLabel={`${skill.name}. ${locked ? 'Locked. No recorded result yet.' : skill.best ? `${rank?.name} rank ${milestones?.level ?? 1}. Best ${formatSkillResult(skill.best)}. ${skill.best.activityName}.` : 'Activity recorded. Result processing.'}`}>
+    <View style={styles.tileHead}><View style={[styles.skillBadge, { borderColor: rank?.color ?? (locked ? '#756954' : theme.accent), borderWidth: rank?.ornate ? 2 : 1 }]}><SkillIcon kind={iconKind(skill)} size={38} color={locked ? '#a99a7d' : rank?.color ?? theme.accent} /></View><View style={styles.tileHeading}><Text style={styles.tileTitle}>{skill.name}</Text></View></View>
     <View style={styles.tileDivider} />
-    <Text style={[styles.levelText, locked && styles.lockedLevel]}>{locked ? 'LOCKED' : skill.best ? `LEVEL ${milestones?.level ?? 1}` : 'PROCESSING'}</Text>
+    <Text style={[styles.levelText, locked && styles.lockedLevel, rank && { color: rank.color }]}>{locked ? 'LOCKED' : skill.best ? `${rank?.name.toUpperCase()} RANK ${milestones?.level ?? 1}` : 'PROCESSING'}</Text>
     <View style={styles.progressTrack}><View style={[styles.progressFill, { width: `${(milestones?.progress ?? (processing ? 0.35 : 0)) * 100}%`, backgroundColor: locked ? '#756954' : theme.accent }]} /></View>
     <View style={styles.progressMeta}><Text style={styles.progressValue}>{milestones ? formatProgressionValue(milestones.currentLevel, milestones.unit) : '—'}</Text><Text style={styles.progressValue}>{milestones ? formatProgressionValue(milestones.nextLevel, milestones.unit) : '—'}</Text></View>
     <View style={styles.tileDivider} />
