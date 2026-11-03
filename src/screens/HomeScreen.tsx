@@ -7,8 +7,10 @@ import { Adventurer, Emblem } from '../components/Emblem';
 import { Dashboard, FitnessClass } from '../dashboard';
 import { router } from 'expo-router';
 import { useDashboard } from '../DashboardContext';
-import { formatTime } from '../format';
 import { ActivityRow } from '../components/ActivityRow';
+import { SkillIcon, type SkillIconKind } from '../components/SkillIcon';
+import { topRankedSkills } from '../skill-display';
+import { useProgressionProfile } from '../progression-profile';
 
 import { api, apiUrl, SessionExpiredError, signOut } from '../api';
 const colors = { ink: '#f3e3bb', muted: '#c0ae83', gold: '#e8c765', border: '#876035', dark: '#211b18' };
@@ -21,8 +23,12 @@ function Meter({ value, color = '#d58a36' }: { value: number; color?: string }) 
   return <View style={styles.meter} accessible accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: 100, now: Math.round(value * 100) }}><View style={[styles.fill, { backgroundColor: color, width: `${Math.max(0, Math.min(1, value)) * 100}%` }]} /></View>;
 }
 function Label({ children }: { children: React.ReactNode }) { return <Text style={styles.label}>{children}</Text>; }
+function iconKind(kind: string): SkillIconKind {
+  return kind === 'speed' || kind === 'endurance' || kind === 'climbing' || kind === 'push' || kind === 'pull' || kind === 'legs' || kind === 'volume' ? kind : 'volume';
+}
 export default function HomeScreen() {
   const { data, setData } = useDashboard();
+  const { profile } = useProgressionProfile();
   const [loading, setLoading] = useState(!!apiUrl);
   const [error, setError] = useState('');
   const [connected, setConnected] = useState(false);
@@ -72,7 +78,7 @@ export default function HomeScreen() {
   function inspectClass(fitnessClass: FitnessClass) {
     router.push({ pathname: '/classes/[classKey]', params: { classKey: fitnessClass.key } });
   }
-  const best5k = data?.classes.find(item => item.key === 'running')?.skills.find(skill => skill.key === 'running_5k')?.best;
+  const topSkills = data ? topRankedSkills(data, profile.gender, profile.ageBand) : [];
   return <LinearGradient colors={['#3b2a22', '#211b18', '#191513']} style={styles.screen}>
     <StatusBar style="light" />
     <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
@@ -97,9 +103,11 @@ export default function HomeScreen() {
             <View style={styles.heroTop}><View style={styles.heroCopy}><Text style={styles.heroTitle}>Wrecking Ball</Text><Text style={styles.heroDescription}>A nimble runner with the power to move mountains.</Text></View>
               <Pressable accessibilityRole="button" accessibilityLabel="Preview avatar and cosmetics" onPress={() => setDetail({ title: 'Your adventurer', body: 'This is a placeholder avatar from the Classic RPG design. Equipment, cosmetic drops, and class discovery are not connected yet. Your actual Strava data powers the class cards below.' })} style={styles.avatar}><Adventurer /><Text style={styles.star}>✦</Text></Pressable></View>
             <View style={styles.pinnedRow}>
-              <View style={styles.pinned}><Text style={styles.pinnedLabel}>Fastest 5K</Text><Text style={styles.pinnedValue}>{best5k ? formatTime(best5k.timeMs ?? 0) : '—'}</Text><Text style={styles.pinnedNote}>Best tracked time</Text></View>
-              <View style={styles.pinned}><Text style={styles.pinnedLabel}>Bench Press</Text><Text style={styles.pinnedValue}>—</Text><Text style={styles.pinnedNote}>Not available</Text></View>
-              <View style={styles.pinned}><Text style={styles.pinnedLabel}>Monthly Distance</Text><Text style={styles.pinnedValue}>{number(data.monthlyDistanceKm)} <Text style={{ fontSize: 11 }}>km</Text></Text><Text style={styles.pinnedNote}>Recorded · UTC</Text></View>
+              {topSkills.length ? topSkills.map(({ classKey, skill, rank }) => <View key={skill.key} style={[styles.pinned, { borderColor: rank.color }]} accessible accessibilityLabel={`${skill.name}, ${rank.name} ${rank.division}`}>
+                <View style={styles.pinnedSkillHead}><SkillIcon kind={iconKind(skill.subclass)} color={rank.color} size={26} /><Text style={styles.pinnedLabel} numberOfLines={2}>{skill.name}</Text></View>
+                <Text style={[styles.pinnedValue, { color: rank.color }]}>{rank.name} {rank.division}</Text>
+                <Text style={styles.pinnedNote}>{classKey.toUpperCase()} · Best recorded</Text>
+              </View>) : <View style={styles.emptyPinned}><Text style={styles.pinnedLabel}>No ranked skills yet</Text><Text style={styles.pinnedNote}>Complete an activity to unlock your first skill.</Text></View>}
             </View>
           </LinearGradient></View>
           <View style={styles.section}><Text style={[styles.sectionTitle, styles.homeSectionTitle]}>Your Classes</Text></View>
@@ -145,6 +153,8 @@ const styles = StyleSheet.create({
   star: { position: 'absolute', top: 3, right: 5, color: colors.gold, fontSize: 15 },
   pinnedRow: { flexDirection: 'row', gap: 6 },
   pinned: { flex: 1, minWidth: 0, padding: 8, borderWidth: 1, borderColor: '#7b5a37', borderRadius: 3, backgroundColor: '#261d18' },
+  emptyPinned: { flex: 1, padding: 8, borderWidth: 1, borderColor: '#7b5a37', borderRadius: 3, backgroundColor: '#261d18', gap: 5 },
+  pinnedSkillHead: { minHeight: 52, alignItems: 'center', justifyContent: 'space-between', gap: 3 },
   pinnedLabel: { color: '#bfb3a0', fontFamily: serif, fontSize: 10, lineHeight: 14, minHeight: 28 },
   pinnedValue: { color: colors.gold, fontFamily: serif, fontSize: 18, marginTop: 5 },
   pinnedNote: { color: '#b3a18b', fontSize: 8, marginTop: 5 },
