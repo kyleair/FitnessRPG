@@ -104,11 +104,12 @@ export default function HomeScreen() {
               <Pressable accessibilityRole="button" accessibilityLabel="Preview avatar and cosmetics" onPress={() => setDetail({ title: 'Your adventurer', body: 'This is a placeholder avatar from the Classic RPG design. Equipment, cosmetic drops, and class discovery are not connected yet. Your actual Strava data powers the class cards below.' })} style={styles.avatar}><Adventurer /><Text style={styles.star}>✦</Text></Pressable></View>
             <View style={styles.pinnedRow}>
               {topSkills.length ? topSkills.map(({ classKey, skill, rank }) => <View key={skill.key} style={[styles.pinned, { borderColor: rank.color }]} accessible accessibilityLabel={`${skill.name}, ${rank.name} ${rank.division}`}>
-                <View style={styles.pinnedSkillHead}><SkillIcon kind={iconKind(skill.subclass)} color={rank.color} size={26} /><Text style={styles.pinnedLabel} numberOfLines={2}>{skill.name}</Text></View>
+                <Text style={styles.pinnedClass}>{classKey[0].toUpperCase() + classKey.slice(1)}</Text>
+                <View style={styles.pinnedSkillHead}><SkillIcon kind={iconKind(skill.subclass)} color={rank.color} size={34} /><Text style={styles.pinnedLabel} numberOfLines={2}>{skill.name}</Text></View>
                 <Text style={[styles.pinnedValue, { color: rank.color }]}>{rank.name} {rank.division}</Text>
-                <Text style={styles.pinnedNote}>{classKey.toUpperCase()} · Best recorded</Text>
               </View>) : <View style={styles.emptyPinned}><Text style={styles.pinnedLabel}>No ranked skills yet</Text><Text style={styles.pinnedNote}>Complete an activity to unlock your first skill.</Text></View>}
             </View>
+            <Text style={styles.topSkillsLabel}>Top Skills</Text>
           </LinearGradient></View>
           <View style={styles.section}><Text style={[styles.sectionTitle, styles.homeSectionTitle]}>Your Classes</Text></View>
           <View style={styles.grid}>{data.classes.map(fitnessClass => <Pressable key={fitnessClass.key} accessibilityRole="button" accessibilityLabel={`${fitnessClass.name}, level ${fitnessClass.level}. View progress`} onPress={() => inspectClass(fitnessClass)} style={({ pressed }) => [styles.classCard, { backgroundColor: classCardBackgrounds[fitnessClass.key], borderColor: classColors[fitnessClass.key] }, pressed && styles.pressed]}>
@@ -154,10 +155,12 @@ const styles = StyleSheet.create({
   pinnedRow: { flexDirection: 'row', gap: 6 },
   pinned: { flex: 1, minWidth: 0, padding: 8, borderWidth: 1, borderColor: '#7b5a37', borderRadius: 3, backgroundColor: '#261d18' },
   emptyPinned: { flex: 1, padding: 8, borderWidth: 1, borderColor: '#7b5a37', borderRadius: 3, backgroundColor: '#261d18', gap: 5 },
-  pinnedSkillHead: { minHeight: 52, alignItems: 'center', justifyContent: 'space-between', gap: 3 },
+  pinnedClass: { color: '#c0ae83', fontFamily: serif, fontSize: 9, letterSpacing: 1, textAlign: 'center', marginBottom: 4 },
+  pinnedSkillHead: { minHeight: 64, alignItems: 'center', justifyContent: 'space-between', gap: 3 },
   pinnedLabel: { color: '#bfb3a0', fontFamily: serif, fontSize: 10, lineHeight: 14, minHeight: 28 },
   pinnedValue: { color: colors.gold, fontFamily: serif, fontSize: 18, marginTop: 5 },
   pinnedNote: { color: '#b3a18b', fontSize: 8, marginTop: 5 },
+  topSkillsLabel: { color: colors.gold, fontFamily: serif, fontSize: 10, letterSpacing: 1.6, textAlign: 'center', marginTop: 8 },
   section: { marginTop: 28, marginBottom: 14, gap: 5 },
   sectionTitle: { color: colors.ink, fontFamily: serif, fontSize: 19, fontWeight: '700', lineHeight: 26 },
   homeSectionTitle: { fontSize: 21 },
