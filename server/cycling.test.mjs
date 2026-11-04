@@ -40,6 +40,16 @@ test('invalid or missing altitude does not discard valid distance efforts and vi
   assert.deepEqual(cyclingMetrics(trace([0, 0], [0, 20])).metrics, {});
 });
 
+test('cycling speed efforts exclude downhill-heavy segments using distance-specific descent limits', () => {
+  const gentle = { distance: { data: [0, 1000, 2000, 3000, 4000, 5000] }, time: { data: [0, 60, 120, 180, 240, 300] }, altitude: { data: [100, 94, 88, 82, 76, 70] } };
+  const gentleResult = cyclingMetrics(gentle).times;
+  assert.equal(gentleResult['1k'], undefined); // 6 m descent exceeds the 1K limit.
+  assert.equal(gentleResult['4k'], 240000); // 24 m descent stays below the 4K limit of 40 m.
+
+  const steep = { distance: { data: Array.from({ length: 11 }, (_, i) => i * 1000) }, time: { data: Array.from({ length: 11 }, (_, i) => i * 60) }, altitude: { data: Array.from({ length: 11 }, (_, i) => 100 - i * 11) } };
+  assert.equal(cyclingMetrics(steep).times['10k'], undefined); // 110 m descent exceeds the 10K limit of 100 m.
+});
+
 test('four-week windows update on Saturday UTC, exclude the end and include the start', () => {
   assert.deepEqual(fourWeekWindow(now), { start: '2026-10-03T00:00:00.000Z', end: '2026-10-31T00:00:00.000Z' });
   assert.equal(fourWeekWindow(new Date('2026-10-30T23:59:59Z')).end, '2026-10-24T00:00:00.000Z');
@@ -66,7 +76,7 @@ test('summary skills are immediate, exclude manual rides, retain ties and missin
 test('upgrades cycling cache through the queue, saves compact results in isolated SQLite snapshots, and resumes without refetch', async () => {
   const db = openDatabase(':memory:');
   const activity = ride(1, { distance: 500 }); // short rides still need climbing processing
-  const old = { activities: [activity], historyComplete: true, syncedAt: now.getTime(), activityCheckAt: now.getTime(), skillCache: { 1: { version: 1, fingerprint: fingerprint(activity), times: { '5k': 1 } } } };
+  const old = { activities: [activity], historyComplete: true, syncedAt: now.getTime(), activityCheckAt: now.getTime(), skillCache: { 1: { version: 1, fingerprint: fingerprint(activity), times: { '4k': 1 } } } };
   db.saveSnapshot('a', old);
   db.saveSnapshot('b', { activities: [], skillCache: {} });
   let calls = 0;

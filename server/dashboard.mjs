@@ -108,9 +108,7 @@ export function createDashboardService({ client, clock = Date.now, initial = {},
       if (key === 'running' && !entry.detailsProcessed) {
         const details = await client.details(activity.id);
         const times = runningBestTimes(details);
-        const elapsed = details?.elapsed_time;
-        result = { times: times ?? {}, methods: Object.fromEntries(Object.keys(times ?? {}).map(id => [id, 'strava_best_efforts'])),
-          metrics: Number.isFinite(elapsed) && elapsed > 0 ? { longest_run: { kind: 'duration', value: elapsed * 1000, unit: 'ms' } } : {},
+        result = { times: times ?? {}, methods: Object.fromEntries(Object.keys(times ?? {}).map(id => [id, 'strava_best_efforts'])), metrics: {},
           detailsProcessed: true, detailsCheckedAt: clock(), streamsProcessed: false, providerUnavailable: times === null, unavailable: times === null };
       } else if (key === 'running') {
         const streams = runningStreamMetrics(await client.streams(activity.id));

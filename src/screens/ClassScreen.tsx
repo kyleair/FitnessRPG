@@ -11,7 +11,7 @@ import { type Dashboard, type ClassKey, type Skill } from '../dashboard';
 import { Emblem } from '../components/Emblem';
 import { SkillIcon, type SkillIconKind } from '../components/SkillIcon';
 import { formatSkillResult } from '../format';
-import { formatProgressionValue, progressionTable, skillRank, type AgeBand, type SkillGender } from '../skill-progression';
+import { formatProgressionValue, progressionMeasurementValue, progressionTable, skillRank, type AgeBand, type SkillGender } from '../skill-progression';
 import { useProgressionProfile } from '../progression-profile';
 
 const accents = { running: '#78a878', cycling: '#a482d2', strength: '#c85b55' };
@@ -34,11 +34,10 @@ function BannerEmblem({ classKey, color }: { classKey: ClassKey; color: string }
 function iconKind(skill: Skill): SkillIconKind { return skill.subclass as SkillIconKind; }
 function skillMilestones(skill: Skill, gender: SkillGender, ageBand: AgeBand) {
   if (!skill.best) return null;
-  const progression = progressionTable(skill.key.replace(`${skill.key.split('_')[0]}_`, ''), gender, ageBand);
+  const progression = progressionTable(skill.key, gender, ageBand);
   if (!progression) return null;
-  const rawValue = skill.best.value ?? skill.best.timeMs;
-  if (rawValue === undefined) return null;
-  const value = skill.measurement === 'duration' ? rawValue / 1000 : rawValue;
+  const value = progressionMeasurementValue(skill.best, progression.unit);
+  if (value === null) return null;
   const level = progression.direction === 'lower'
     ? progression.levels.reduce((result, row) => value <= row.value ? row.level : result, 1)
     : progression.levels.reduce((result, row) => value >= row.value ? row.level : result, 1);
@@ -49,7 +48,7 @@ function skillMilestones(skill: Skill, gender: SkillGender, ageBand: AgeBand) {
   const progress = safeLevel === 100 || span === 0 ? 1 : progression.direction === 'lower'
     ? Math.max(0, Math.min(1, (currentLevel - value) / span))
     : Math.max(0, Math.min(1, (value - currentLevel) / span));
-  return { level: safeLevel, currentLevel, nextLevel, progress, unit: progression.unit };
+  return { level: safeLevel, currentLevel, nextLevel, progress, unit: progression.unit, decimalPlaces: progression.decimalPlaces };
 }
 function SkillActionIcon({ kind, color }: { kind: 'ranks' | 'history'; color: string }) {
   return <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
@@ -68,7 +67,7 @@ function SkillTile({ skill, classKey, gender, ageBand }: { skill: Skill; classKe
     <View style={styles.tileDivider} />
     <Text style={[styles.levelText, locked && styles.lockedLevel, rank && { color: rank.color }]}>{locked ? 'LOCKED' : skill.best ? `${rank?.name.toUpperCase()} ${rank?.division}` : 'PROCESSING'}</Text>
     <View style={styles.progressTrack}><View style={[styles.progressFill, { width: `${(milestones?.progress ?? (processing ? 0.35 : 0)) * 100}%`, backgroundColor: locked ? '#756954' : theme.accent }]} /></View>
-    <View style={styles.progressMeta}><Text style={styles.progressValue}>{milestones ? formatProgressionValue(milestones.currentLevel, milestones.unit) : '—'}</Text><Text style={styles.progressValue}>{milestones ? formatProgressionValue(milestones.nextLevel, milestones.unit) : '—'}</Text></View>
+    <View style={styles.progressMeta}><Text style={styles.progressValue}>{milestones ? formatProgressionValue(milestones.currentLevel, milestones.unit, milestones.decimalPlaces) : '—'}</Text><Text style={styles.progressValue}>{milestones ? formatProgressionValue(milestones.nextLevel, milestones.unit, milestones.decimalPlaces) : '—'}</Text></View>
     {!skill.best && <Text style={styles.source} numberOfLines={3}>{classKey === 'strength' ? `Tracked as ${skill.measurement}.` : processing ? 'Activity recorded. Result is still processing.' : skill.explanation ?? `Complete a ${skill.name} effort to unlock.`}</Text>}
     {!locked && <View style={styles.actions}><Pressable accessibilityRole="button" onPress={() => push('ranks')} style={styles.actionButton}><SkillActionIcon kind="ranks" color={theme.accent} /><Text style={[styles.actionText, { color: theme.accent }]}>Ranks</Text></Pressable><Pressable accessibilityRole="button" onPress={() => push('history')} style={styles.actionButton}><SkillActionIcon kind="history" color={theme.accent} /><Text style={[styles.actionText, { color: theme.accent }]}>History</Text></Pressable></View>}
   </View>;

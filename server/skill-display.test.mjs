@@ -7,7 +7,7 @@ import { stripTypeScriptTypes } from 'node:module';
 // Explicit stripping also supports Node 22.13, before automatic TS loading.
 const loadTypeScript = async path => import(`data:text/javascript;base64,${Buffer.from(stripTypeScriptTypes(readFileSync(new URL(path, import.meta.url), 'utf8'))).toString('base64')}`);
 const { formatSkillResult, skillAttribution } = await loadTypeScript('../src/format.ts');
-const { progressionTable, skillRank, skillRankCount, skillRankScore } = await loadTypeScript('../src/skill-progression.ts');
+const { formatProgressionValue, progressionMeasurementValue, progressionTable, skillRank, skillRankCount, skillRankScore } = await loadTypeScript('../src/skill-progression.ts');
 
 const result = extra => ({ timeMs: 300000, activityId: 1, activityName: 'Morning run', achievedAt: '2026-10-20T12:00:00Z', source: 'strava', method: 'strava_best_efforts', ...extra });
 
@@ -22,12 +22,35 @@ test('skill displays keep duration, distance, and elevation units separate and e
   assert.match(skillAttribution({ best: result({ window, activityName: '2 Strava runs', partial: true }) }), /UTC.*2 Strava runs.*Missing elevation for some activities/);
 });
 
-test('Longest Run level references use increasing duration rather than kilometers', () => {
+test('running progression references use requested anchors and sprint precision', () => {
+  const sprint = progressionTable('100m', 'men', '18-34');
+  assert.equal(sprint.decimalPlaces, 2);
+  assert.equal(sprint.levels[0].value, 25);
+  assert.equal(sprint.levels[99].value, 9.58);
+  assert.equal(formatProgressionValue(9.58, 'duration', sprint.decimalPlaces), '0:09.58');
+  assert.equal(progressionTable('5k', 'men', '18-34').levels[0].value, 3000);
+  assert.equal(progressionTable('10k', 'men', '18-34').levels[0].value, 6000);
+  assert.equal(progressionTable('10k', 'men', '18-34').levels[99].value, 1590);
+  assert.equal(progressionTable('monthly_distance', 'men', '18-34').levels[99].value, 750);
+});
+
+test('cycling progression references use the revised distance targets', () => {
+  assert.equal(progressionTable('cycling_1k', 'men', '18-34').levels[99].value, 60);
+  assert.equal(progressionTable('cycling_4k', 'men', '18-34').levels[0].value, 1440);
+  assert.equal(progressionTable('cycling_4k', 'men', '18-34').levels[99].value, 300);
+  assert.equal(progressionTable('cycling_10k', 'men', '18-34').levels[0].value, 3000);
+  assert.equal(progressionTable('cycling_10k', 'men', '18-34').levels[99].value, 720);
+  assert.equal(progressionTable('cycling_monthly_distance', 'men', '18-34').levels[99].value, 3000);
+});
+
+test('Longest Run level references use increasing kilometers', () => {
   const table = progressionTable('longest_run', 'men', '18-34');
-  assert.equal(table.unit, 'duration');
+  assert.equal(table.unit, 'kilometers');
   assert.equal(table.direction, 'higher');
-  assert.equal(table.levels[0].value, 1800);
-  assert.equal(table.levels[99].value, 43200);
+  assert.equal(table.levels[0].value, 10);
+  assert.equal(table.levels[99].value, 100);
+  assert.equal(progressionMeasurementValue({ kind: 'distance', unit: 'km', value: 12 }, table.unit), 12);
+  assert.equal(progressionMeasurementValue({ kind: 'duration', unit: 'ms', value: 5233000 }, table.unit), null);
 });
 
 test('skill ranks use material tiers and reserve ornate styling for the endgame', () => {

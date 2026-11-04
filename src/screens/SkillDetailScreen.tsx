@@ -51,7 +51,7 @@ export default function SkillDetailScreen({ mode }: { mode: 'ranks' | 'history' 
   const value = skill?.best ? formatSkillResult(skill.best) : '—';
   const subclass = skill?.subclass.toUpperCase() ?? 'SKILL';
   const history = useMemo(() => skill?.best ? [{ label: new Date(skill.best.achievedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }), value, source: skillAttribution(skill) }] : [], [skill, value]);
-  const progression = skill ? progressionTable(skill.key.replace(`${classKey}_`, ''), gender, ageBand) : null;
+  const progression = skill ? progressionTable(skill.key, gender, ageBand) : null;
   const rankRows = progression ? Array.from({ length: skillRankCount }, (_, index) => {
     const score = skillRankScore(index + 1);
     return { rank: skillRank(score), value: progression.levels[score - 1].value };
@@ -81,7 +81,7 @@ export default function SkillDetailScreen({ mode }: { mode: 'ranks' | 'history' 
               <View style={styles.selectorGroup}><Text style={styles.selectorLabel}>Gender</Text><View style={styles.selectorRow}>{genders.map(item => <Pressable key={item.key} onPress={() => saveProfile({ gender: item.key })} style={[styles.selector, gender === item.key && { borderColor: theme.accent, backgroundColor: theme.panel }]}><Text style={[styles.selectorText, gender === item.key && { color: theme.accent }]}>{item.label}</Text></Pressable>)}</View></View>
               <Text style={styles.selectorLabel}>Age band</Text><View style={styles.ageGrid}>{ageBands.map(item => <Pressable key={item} onPress={() => saveProfile({ ageBand: item })} style={[styles.ageButton, ageBand === item && { borderColor: theme.accent, backgroundColor: theme.panel }]}><Text style={[styles.selectorText, ageBand === item && { color: theme.accent }]}>{item}</Text></Pressable>)}</View>
               <View style={styles.tableHeader}><Text style={styles.tableHeaderText}>RANK</Text><Text style={styles.tableHeaderText}>TARGET</Text></View>
-              {rankRows.map(row => <View key={`${row.rank.name}-${row.rank.division}`} style={styles.tableRow}><Text style={[styles.tableRank, { color: row.rank.color }]}>{row.rank.name} {row.rank.division}</Text><Text style={styles.tableValue}>{formatProgressionValue(row.value, progression.unit)}</Text></View>)}
+              {rankRows.map(row => <View key={`${row.rank.name}-${row.rank.division}`} style={styles.tableRow}><Text style={[styles.tableRank, { color: row.rank.color }]}>{row.rank.name} {row.rank.division}</Text><Text style={styles.tableValue}>{formatProgressionValue(row.value, progression.unit, progression.decimalPlaces)}</Text></View>)}
               <Text style={styles.note}>First-pass estimates use straight-line interpolation between the two anchors and age adjustments. They are intended for tuning, not official age grading.</Text>
             </View>}
           </> : <View style={styles.panel}><Text style={styles.panelTitle}>History</Text>{history.length ? history.map(item => <View key={item.label} style={styles.historyRow}><View><Text style={styles.historyDate}>{item.label}</Text><Text style={styles.body}>{item.source}</Text></View><Text style={[styles.historyValue, { color: theme.accent }]}>{item.value}</Text></View>) : <Text style={styles.body}>{skill?.processing ? 'Activity recorded. The result is still processing.' : 'No attempts recorded for this skill yet.'}</Text>}</View>}

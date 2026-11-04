@@ -44,9 +44,9 @@ test('prefers exact provider efforts, fills only unsupported sprint distances, a
   assert.equal(skill(dashboard, '800m').best.method, 'strava_best_efforts');
   assert.equal(skill(dashboard, '100m').best.method, 'distance_time_stream_v1');
   assert.equal(skill(dashboard, '200m').best.value, 60000);
-  assert.equal(skill(dashboard, 'longest_run').best.value, 400000);
-  assert.equal(skill(dashboard, 'longest_run').best.method, 'strava_details_v1');
-  assert.equal(skill(dashboard, 'longest_run').best.unit, 'ms');
+  assert.equal(skill(dashboard, 'longest_run').best.value, 1);
+  assert.equal(skill(dashboard, 'longest_run').best.method, 'strava_summary_v1');
+  assert.equal(skill(dashboard, 'longest_run').best.unit, 'km');
   assert.equal(skill(dashboard, 'longest_sustained_run_climb').best.value, 300000);
   assert.equal(dashboard.skillsPending, 0);
   assert.equal(saved.skillCache[1].detailsCheckedAt, now);
@@ -55,20 +55,20 @@ test('prefers exact provider efforts, fills only unsupported sprint distances, a
   await service.stop();
 });
 
-test('summary/window running skills work immediately, choose longest duration, and exclude manual and cycling data', () => {
-  const activities = [run(1, { distance: 10000, elapsedTime: 3600, startDate: '2026-10-03T00:00:00Z' }), run(2, { elapsedTime: 4000, elevationGain: null }),
-    run(3, { elapsedTime: 2000, startDate: '2026-10-31T00:00:00Z' }), run(4, { elapsedTime: 2000, startDate: '2026-10-02T23:59:59Z' }),
+test('summary/window running skills work immediately, choose longest distance, and exclude manual and cycling data', () => {
+  const activities = [run(1, { distance: 10000, elapsedTime: 3600, startDate: '2026-10-03T00:00:00Z' }), run(2, { distance: 12000, elapsedTime: 4000, elevationGain: null }),
+    run(3, { distance: 8000, elapsedTime: 2000, startDate: '2026-10-31T00:00:00Z' }), run(4, { distance: 15000, elapsedTime: 2000, startDate: '2026-10-02T23:59:59Z' }),
     run(-1, { source: 'manual', elapsedTime: 99999, distance: 9999999, elevationGain: 99999 }), run(5, { sportType: 'Ride', elapsedTime: 99999, elevationGain: 99999 })];
   const dashboard = buildDashboard([...activities, activities[0]], { now: new Date(now) });
-  assert.equal(skill(dashboard, 'longest_run').best.activityId, 2);
-  assert.equal(skill(dashboard, 'longest_run').best.value, 4000000);
+  assert.equal(skill(dashboard, 'longest_run').best.activityId, 4);
+  assert.equal(skill(dashboard, 'longest_run').best.value, 15);
   assert.equal(skill(dashboard, 'longest_run').processing, false);
-  assert.equal(skill(dashboard, 'monthly_distance').best.value, 11);
+  assert.equal(skill(dashboard, 'monthly_distance').best.value, 22);
   assert.equal(skill(dashboard, 'monthly_elevation_run').best.value, 120);
   assert.equal(skill(dashboard, 'monthly_elevation_run').best.partial, true);
   assert.equal(skill(dashboard, 'monthly_distance').best.activityName, '2 Strava runs');
   assert.equal(skill(dashboard, 'total_elevation_run').best.value, 120);
-  assert.equal(skill(buildDashboard([run(1)], { now: new Date(now) }), 'longest_run').best, null); // never substitute movingTime
+  assert.equal(skill(buildDashboard([run(1)], { now: new Date(now) }), 'longest_run').best.value, 1);
   assert.equal(skill(buildDashboard([], { now: new Date(now) }), 'monthly_distance').best, null);
   assert.equal(skill(buildDashboard(activities, { now: new Date('2026-12-05T00:00:00Z') }), 'monthly_distance').best.value, 0);
 });
@@ -88,7 +88,7 @@ test('checkpoints provider results before a budget pause and resumes streams fro
   assert.equal(saved.skillCache[1].detailsProcessed, true);
   assert.equal(saved.skillCache[1].streamsProcessed, false);
   assert.equal((await service.get()).skillsPending, 1);
-  assert.equal(skill(await service.get(), 'longest_run').best.value, 45000);
+  assert.equal(skill(await service.get(), 'longest_run').best.value, 0.05);
   assert.equal(skill(await service.get(), 'longest_sustained_run_climb').processing, true);
   await service.stop(); clock += 900001; blocked = false;
   service = createDashboardService({ ...options, initial: db.snapshot('a') });
