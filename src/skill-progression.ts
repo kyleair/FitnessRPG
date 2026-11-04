@@ -61,7 +61,7 @@ const anchors: Record<string, Anchor> = {
   '100k': { unit: 'duration', direction: 'lower', men: [27000, 12600], women: [30000, 13800] },
   '160k': { unit: 'duration', direction: 'lower', men: [54000, 21600], women: [60000, 24000] },
   'cycling_1k': { unit: 'duration', direction: 'lower', men: [330, 60], women: [390, 60] },
-  'cycling_4k': { unit: 'duration', direction: 'lower', men: [1440, 300], women: [1440, 300] },
+  'cycling_4k': { unit: 'duration', direction: 'lower', men: [1200, 300], women: [1200, 300] },
   'cycling_10k': { unit: 'duration', direction: 'lower', men: [3000, 720], women: [3000, 720] },
   'longest_run': { unit: 'kilometers', direction: 'higher', men: [10, 100], women: [10, 100] },
   'longest_ride': { unit: 'kilometers', direction: 'higher', men: [20, 300], women: [15, 260] },

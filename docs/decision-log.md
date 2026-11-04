@@ -305,7 +305,7 @@ Record decisions here as the project evolves. Keep entries short and link to the
 ## 2026-11-04 - Tune cycling speed references
 
 - Replace the Cycling 5K skill with a 4K skill.
-- Set Cycling 1K's fastest reference to 1:00, Cycling 4K's references to 24:00 and 5:00, and Cycling 10K's references to 50:00 and 12:00.
+- Set Cycling 1K's fastest reference to 1:00, Cycling 4K's references to 20:00 and 5:00, and Cycling 10K's references to 50:00 and 12:00.
 - These are experimental cycling progression anchors and remain separate from the Running 5K and 10K scales.
 - Set the Men 18-34 Cycling Monthly Distance ceiling to 3,000 km.
 - Exclude downhill-heavy cycling speed segments from stream-derived distance times: cumulative descent may not exceed 5 m per kilometer for 1K, or 10 m per kilometer for longer speed targets. Missing altitude leaves the distance-time calculation available, with no descent filter.

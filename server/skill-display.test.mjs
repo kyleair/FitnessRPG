@@ -36,7 +36,7 @@ test('running progression references use requested anchors and sprint precision'
 
 test('cycling progression references use the revised distance targets', () => {
   assert.equal(progressionTable('cycling_1k', 'men', '18-34').levels[99].value, 60);
-  assert.equal(progressionTable('cycling_4k', 'men', '18-34').levels[0].value, 1440);
+  assert.equal(progressionTable('cycling_4k', 'men', '18-34').levels[0].value, 1200);
   assert.equal(progressionTable('cycling_4k', 'men', '18-34').levels[99].value, 300);
   assert.equal(progressionTable('cycling_10k', 'men', '18-34').levels[0].value, 3000);
   assert.equal(progressionTable('cycling_10k', 'men', '18-34').levels[99].value, 720);
