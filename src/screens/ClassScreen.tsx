@@ -11,7 +11,8 @@ import { type Dashboard, type ClassKey, type Skill } from '../dashboard';
 import { Emblem } from '../components/Emblem';
 import { SkillIcon, type SkillIconKind } from '../components/SkillIcon';
 import { formatSkillResult } from '../format';
-import { formatProgressionValue, progressionMeasurementValue, progressionTable, skillRank, type AgeBand, type SkillGender } from '../skill-progression';
+import { formatProgressionValue, skillRank, type AgeBand, type SkillGender } from '../skill-progression';
+import { skillMilestones } from '../skill-display';
 import { useProgressionProfile } from '../progression-profile';
 
 const accents = { running: '#78a878', cycling: '#a482d2', strength: '#c85b55' };
@@ -32,24 +33,6 @@ function BannerEmblem({ classKey, color }: { classKey: ClassKey; color: string }
   return <View style={[styles.bannerEmblem, { borderColor: color }]}><Emblem name={classKey} size={34} color={color} /></View>;
 }
 function iconKind(skill: Skill): SkillIconKind { return skill.subclass as SkillIconKind; }
-function skillMilestones(skill: Skill, gender: SkillGender, ageBand: AgeBand) {
-  if (!skill.best) return null;
-  const progression = progressionTable(skill.key, gender, ageBand);
-  if (!progression) return null;
-  const value = progressionMeasurementValue(skill.best, progression.unit);
-  if (value === null) return null;
-  const level = progression.direction === 'lower'
-    ? progression.levels.reduce((result, row) => value <= row.value ? row.level : result, 1)
-    : progression.levels.reduce((result, row) => value >= row.value ? row.level : result, 1);
-  const safeLevel = Math.max(1, Math.min(100, level));
-  const currentLevel = progression.levels[safeLevel - 1].value;
-  const nextLevel = progression.levels[Math.min(99, safeLevel)].value;
-  const span = Math.abs(currentLevel - nextLevel);
-  const progress = safeLevel === 100 || span === 0 ? 1 : progression.direction === 'lower'
-    ? Math.max(0, Math.min(1, (currentLevel - value) / span))
-    : Math.max(0, Math.min(1, (value - currentLevel) / span));
-  return { level: safeLevel, currentLevel, nextLevel, progress, unit: progression.unit, decimalPlaces: progression.decimalPlaces };
-}
 function SkillActionIcon({ kind, color }: { kind: 'ranks' | 'history'; color: string }) {
   return <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
     {kind === 'ranks' ? <><Path d="M4 19V5M4 19h16" /><Path d="M8 16v-4M12 16V8M16 16v-7M20 16v-3" /></> : <><Path d="M12 7v5l3 2" /><Path d="M20 12a8 8 0 1 1-2.34-5.66" /><Path d="M20 4v5h-5" /></>}
@@ -59,7 +42,7 @@ function SkillTile({ skill, classKey, gender, ageBand }: { skill: Skill; classKe
   const processing = !!skill.processing;
   const locked = !skill.best && !processing;
   const theme = classThemes[classKey];
-  const milestones = skillMilestones(skill, gender, ageBand);
+  const milestones = skillMilestones(skill, classKey, gender, ageBand);
   const rank = milestones ? skillRank(milestones.level) : null;
   const push = (mode: 'ranks' | 'history') => router.push({ pathname: `/classes/[classKey]/${mode}`, params: { classKey, skillKey: skill.key } });
   return <View style={[styles.tile, locked && styles.lockedTile, rank && { borderColor: rank.color, borderWidth: rank.borderWidth, borderRadius: rank.borderRadius }, rank?.ornate && { shadowColor: rank.color, shadowOpacity: 0.35, shadowRadius: 8, shadowOffset: { width: 0, height: 0 }, elevation: 3 }]} accessible accessibilityLabel={`${skill.name}. ${locked ? 'Locked. No recorded result yet.' : skill.best ? `${rank?.name} ${rank?.division}. Best ${formatSkillResult(skill.best)}.` : 'Activity recorded. Result processing.'}`}>
