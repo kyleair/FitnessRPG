@@ -48,7 +48,7 @@ export function buildDashboard(activities, { now = new Date(), historyComplete =
       distanceKm: items.reduce((total, activity) => total + activity.distance, 0) / 1000,
       minutes: items.reduce((total, activity) => total + activity.movingTime, 0) / 60,
       xpUnavailable: key === 'strength' && !items.some(activity => Number.isFinite(activity.volumeLb)),
-      formula: { running: '1 km = 1 XP', cycling: '3 km = 1 XP', strength: `${rules.strengthPoundsPerXp} lb lifted = 1 XP; only completed sets count. Strava summaries without lifting volume earn no Strength XP` }[key] };
+      formula: { running: '1 km = 1 XP', cycling: '2 km = 1 XP', strength: `${rules.strengthPoundsPerXp.toLocaleString()} lb lifted = 1 XP; only completed sets count. Strava summaries without lifting volume earn no Strength XP` }[key] };
   });
   return {
     source: unique.some(a => a.source === 'manual') ? 'mixed' : 'strava', syncedAt, stale, skillsStale,

@@ -20,9 +20,10 @@ const workout = (patch = {}) => manual({ requestId: 'workout_request_0001', kind
 test('validates manual records, calculates volume server-side, and awards only explained class XP', () => {
   const run = validateManual(manual({ xp: 999, source: 'strava' }), now);
   assert.equal(run.source, 'manual'); assert.equal(run.xp, undefined); assert.equal(activityXp(run), 42.195);
-  assert.equal(activityXp(validateManual(manual({ sportType: 'Ride', distance: 15000 }), now)), 5);
+  assert.equal(activityXp(validateManual(manual({ sportType: 'Ride', distance: 15000 }), now)), 7.5);
   const strength = validateManual(workout({ volumeLb: 9999999 }), now);
-  assert.equal(strength.volumeLb, 1500); assert.equal(activityXp(strength), 3);
+  assert.equal(strength.volumeLb, 1500); assert.equal(activityXp(strength), 0.1);
+  assert.equal(activityXp({ source: 'manual', sportType: 'WeightTraining', volumeLb: 15000 }), 1);
   const kg = validateManual(workout({ weightUnit: 'kg' }), now);
   assert.ok(Math.abs(kg.volumeLb - 3306.93393277) < 0.00001);
   assert.equal(activityXp(validateManual(workout({ exercises: [{ name: 'Pull-up', sets: [{ weight: 0, reps: 10, completed: true }] }] }), now)), 0);
@@ -46,7 +47,7 @@ test('manual records never become fastest times, pending skill fetches, or Strav
   const result = buildDashboard(entries, { skillCache: cache });
   assert.equal(result.skillsPending, 0);
   assert.ok(result.classes.every(item => item.skills.every(skill => skill.best === null)));
-  assert.equal(result.classes[1].xp, 3); assert.equal(result.classes[1].xpUnavailable, false);
+  assert.equal(result.classes[1].xp, 0.1); assert.equal(result.classes[1].xpUnavailable, false);
   assert.equal(result.importedCount, 0); assert.equal(result.activityCount, 3);
   let saved;
   const service = createDashboardService({ clock: () => now, manualActivities: () => entries, schedule: () => () => {}, persist: value => { saved = value; },
@@ -97,7 +98,7 @@ test('manual saves are account-scoped, idempotent under retries, survive restart
   assert.equal(other.total, 1);
   assert.ok(!other.items.some(a => a.id === saved.activity.id));
   const summary = await (await request(tokens[0], 'GET', undefined, '/api/dashboard')).json();
-  assert.equal(summary.classes[1].xp, 3); assert.equal(summary.manualCount, 2); assert.equal(summary.skillsPending, 0);
+  assert.equal(summary.classes[1].xp, 0.1); assert.equal(summary.manualCount, 2); assert.equal(summary.skillsPending, 0);
   assert.equal(upstream, 0);
   assert.equal((await request(tokens[0], 'POST', manual())).status, 201);
   assert.equal(db.manualActivities(accounts[0]).length, 2);
@@ -111,7 +112,7 @@ test('manual saves are account-scoped, idempotent under retries, survive restart
   assert.equal(update.status, 200);
   const revised = await update.json();
   assert.equal(revised.activity.id, saved.activity.id); assert.equal(revised.activity.revision, 2);
-  assert.equal(revised.dashboard.classes[0].xp, 0); assert.equal(revised.dashboard.classes[2].xp, 5);
+  assert.equal(revised.dashboard.classes[0].xp, 0); assert.equal(revised.dashboard.classes[2].xp, 7.5);
   assert.equal((await request(tokens[0], 'PUT', changed, route)).status, 200, 'exact update retries succeed once');
   assert.equal((await (await request(tokens[0], 'GET', undefined, route)).json()).activity.revision, 2);
   assert.equal((await request(tokens[0], 'PUT', { ...changed, requestId: 'stale_request_00001' }, route)).status, 409);
@@ -125,7 +126,7 @@ test('manual saves are account-scoped, idempotent under retries, survive restart
   const strengthRoute = `/api/activities/${strengthId}`;
   const strengthChange = workout({ requestId: 'strength_edit_0001', expectedRevision: 1, exercises: [{ name: 'Bench press', sets: [{ weight: 200, reps: 5, completed: true }] }] });
   const strengthUpdate = await (await request(tokens[0], 'PUT', strengthChange, strengthRoute)).json();
-  assert.equal(strengthUpdate.activity.volumeLb, 1000); assert.equal(strengthUpdate.dashboard.classes[1].xp, 2);
+  assert.equal(strengthUpdate.activity.volumeLb, 1000); assert.equal(strengthUpdate.dashboard.classes[1].xp, 1000 / 15000);
   assert.equal((await request(tokens[0], 'DELETE', { expectedRevision: 1 }, strengthRoute)).status, 409);
   const removed = await (await request(tokens[0], 'DELETE', { expectedRevision: 2 }, strengthRoute)).json();
   assert.equal(removed.dashboard.classes[1].xp, 0);

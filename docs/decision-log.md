@@ -205,6 +205,12 @@ Record decisions here as the project evolves. Keep entries short and link to the
 - Change the experimental Cycling rate from 5 km per XP to 3 km per XP, including fractional XP. Running, Strength, eligible activity types, and level thresholds stay unchanged.
 - Apply the rate to imported activity totals, recent activities, and demo progress. Saved activity distances are recalculated with the new rate after restarting the backend; no migration or reconnect is needed.
 
+## 2026-11-05 - Balance class XP rates for comparable effort
+
+- Change the experimental rates to Running 1 km/XP, Cycling 2 km/XP, and Strength 15,000 lb lifted/XP.
+- Keep Strength XP limited to completed manual sets with known weight and reps; imported summaries without lifting volume remain unavailable rather than earning duration-based XP.
+- Explain each formula in the class UI and manual-entry previews. Totals continue to derive from saved activities, so no migration is needed.
+
 ## 2026-10-28 - Persist a budget-aware import queue and retain processed workouts
 
 - Replace the manual one-minute/three-activity batches with consecutive 200-summary pages and an automatic backend skill queue. The first page blocks initial load; subsequent pages and skills run off-screen while the server runs. The app polls saved progress only while active and work remains.

@@ -133,8 +133,8 @@ When asked to “guide me through testing this on mobile on Android,” first as
 
 ## Manual recording checks
 
-- Log a 15 km ride with 52 minutes and a past date. Review +5 Cycling XP, save, and verify its Manual source label in history and the updated Cycling total. Verify distance/duration conversions for mi/hours and reject future/invalid dates and nonpositive durations.
-- Start a blank Strength workout, search for Bench press, enter 100 lb and 5 reps, then mark the set complete. Fill another set without checking it. Complete and review: only 500 lb volume / 1 Strength XP should count. Save and verify history, Strength XP, and volume. Check kg conversion, zero weight, add/remove sets, and template replacement confirmation.
+- Log a 15 km ride with 52 minutes and a past date. Review +7.5 Cycling XP, save, and verify its Manual source label in history and the updated Cycling total. Verify distance/duration conversions for mi/hours and reject future/invalid dates and nonpositive durations.
+- Start a blank Strength workout, search for Bench press, enter 100 lb and 5 reps, then mark the set complete. Fill another set without checking it. Complete and review: only 500 lb volume / 0.03 Strength XP should count. Save and verify history, Strength XP, and volume. Check kg conversion, zero weight, add/remove sets, and template replacement confirmation.
 - Reload while a workout is unfinished. Verify draft values and completed checkboxes survive. Return to activities and reopen the workout to resume. Drafts must be scoped to the connected athlete and backend.
 - Simulate a lost save response, then retry the same submitted save. Verify one database record and one XP contribution. Invalid fields must not create records; save failures retain the draft. Completed records must survive a backend restart and ongoing Strava sync.
 - Log a marathon-length run or 100 km ride manually. Confirm it earns class XP but creates no running/cycling skill results or queued Strava detail requests. A Strava Strength summary without volume still earns no Strength XP.

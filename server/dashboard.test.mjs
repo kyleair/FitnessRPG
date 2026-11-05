@@ -9,10 +9,10 @@ test('aggregates each class, deduplicates IDs, and excludes other sports from XP
   const result = buildDashboard([run, run, activity(2, 'Ride', 25000), activity(3, 'Swim', 1000), activity(4, 'WeightTraining', 0), activity(5, 'Walk', 2000)], { now: new Date('2026-10-25T12:00:00Z') });
   assert.equal(result.importedCount, 5);
   assert.equal(result.monthlyDistanceKm, 33);
-  assert.deepEqual(result.classes.map(fitnessClass => fitnessClass.xp), [5, 0, 25 / 3]);
+  assert.deepEqual(result.classes.map(fitnessClass => fitnessClass.xp), [5, 0, 12.5]);
   assert.equal(result.classes[0].level, 1);
-  assert.equal(result.classes[2].formula, '3 km = 1 XP');
-  assert.equal(result.recentActivities.find(item => item.id === 2).xp, 25 / 3);
+  assert.equal(result.classes[2].formula, '2 km = 1 XP');
+  assert.equal(result.recentActivities.find(item => item.id === 2).xp, 12.5);
   assert.deepEqual(result.classes.map(item => item.key), ['running', 'strength', 'cycling']);
   assert.equal(result.classes[1].xpUnavailable, true);
   assert.equal(result.recentActivities.find(item => item.id === 1).classKey, 'running');

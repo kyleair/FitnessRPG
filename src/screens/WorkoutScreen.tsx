@@ -124,13 +124,13 @@ export default function WorkoutScreen({ activity }: { activity?: ManualActivity 
         <Text style={s.eyebrow}>REVIEW WORKOUT</Text><Text style={s.heading}>{result.name}</Text>
         {result.exercises?.map(item => <View key={item.name}><Text style={s.link}>{item.name}</Text><Text style={s.body}>{item.sets.map(set => `${set.weight} ${result.weightUnit} × ${set.reps}`).join(' · ')}</Text></View>)}
         <Text style={s.heading}>{displayNumber(workoutVolume(result))} lb lifted{ '\n' }+{displayNumber(xpPreview(result))} Strength XP</Text>
-        <Text style={s.body}>Completed-set weight × reps, converted to pounds ÷ {rules.strengthPoundsPerXp}. Incomplete sets are not saved or counted.</Text>
+        <Text style={s.body}>Completed-set weight × reps, converted to pounds ÷ {rules.strengthPoundsPerXp.toLocaleString()}. Incomplete sets are not saved or counted.</Text>
         {draft.submitted && <Text style={s.body}>This save is awaiting confirmation. Retry Save to confirm it without adding duplicate XP.</Text>}
         {!draft.submitted && <FormButton secondary title="Keep working out" disabled={saving} onPress={() => setReview(null)} />}
         <FormButton title={saving ? 'Saving…' : activity ? 'Save changes' : 'Save workout'} disabled={saving} onPress={save} />
       </View>}
       {!!error && <Text accessibilityRole="alert" style={s.error}>{error}</Text>}
-      <Text style={s.body}>Only completed sets earn XP: {rules.strengthPoundsPerXp} lb lifted = 1 Strength XP. Use 0 for unweighted sets; body weight is not inferred. Strength skill records are not updated by this entry.</Text>
+        <Text style={s.body}>Only completed sets earn XP: {rules.strengthPoundsPerXp.toLocaleString()} lb lifted = 1 Strength XP. Use 0 for unweighted sets; body weight is not inferred. Strength skill records are not updated by this entry.</Text>
     </>}
     <Modal visible={picker} transparent animationType="slide" onRequestClose={() => setPicker(false)}>
       <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}><View style={styles.sheet} accessibilityViewIsModal>
