@@ -42,7 +42,7 @@ function SkillTile({ skill, classKey, gender, ageBand }: { skill: Skill; classKe
   const processing = !!skill.processing;
   const locked = !skill.best && !processing;
   const theme = classThemes[classKey];
-  const milestones = skillMilestones(skill, classKey, gender, ageBand);
+  const milestones = skillMilestones(skill, gender, ageBand);
   const rank = milestones ? skillRank(milestones.level) : null;
   const push = (mode: 'ranks' | 'history') => router.push({ pathname: `/classes/[classKey]/${mode}`, params: { classKey, skillKey: skill.key } });
   return <View style={[styles.tile, locked && styles.lockedTile, rank && { borderColor: rank.color, borderWidth: rank.borderWidth, borderRadius: rank.borderRadius }, rank?.ornate && { shadowColor: rank.color, shadowOpacity: 0.35, shadowRadius: 8, shadowOffset: { width: 0, height: 0 }, elevation: 3 }]} accessible accessibilityLabel={`${skill.name}. ${locked ? 'Locked. No recorded result yet.' : skill.best ? `${rank?.name} ${rank?.division}. Best ${formatSkillResult(skill.best)}.` : 'Activity recorded. Result processing.'}`}>

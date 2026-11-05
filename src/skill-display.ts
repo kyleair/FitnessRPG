@@ -17,9 +17,9 @@ export type RankedSkill = {
   rank: SkillRank;
 };
 
-export function skillMilestones(skill: Skill, classKey: ClassKey, gender: SkillGender, ageBand: AgeBand): SkillMilestones | null {
+export function skillMilestones(skill: Skill, gender: SkillGender, ageBand: AgeBand): SkillMilestones | null {
   if (!skill.best) return null;
-  const progression = progressionTable(skill.key.replace(`${classKey}_`, ''), gender, ageBand);
+  const progression = progressionTable(skill.key, gender, ageBand);
   if (!progression) return null;
   const rawValue = skill.best.value ?? skill.best.timeMs;
   if (rawValue === undefined) return null;
@@ -39,7 +39,7 @@ export function skillMilestones(skill: Skill, classKey: ClassKey, gender: SkillG
 
 export function topRankedSkills(data: Dashboard, gender: SkillGender, ageBand: AgeBand, count = 3): RankedSkill[] {
   return data.classes.flatMap(fitnessClass => fitnessClass.skills.flatMap(skill => {
-    const milestones = skillMilestones(skill, fitnessClass.key, gender, ageBand);
+    const milestones = skillMilestones(skill, gender, ageBand);
     return milestones ? [{ classKey: fitnessClass.key, skill, milestones, rank: skillRank(milestones.level) }] : [];
   })).sort((left, right) => right.milestones.level - left.milestones.level || left.skill.name.localeCompare(right.skill.name)).slice(0, count);
 }
