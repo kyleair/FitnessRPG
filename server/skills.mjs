@@ -2,7 +2,7 @@ export const skillDefinitions = {
   // These are the currently calculated provider metrics. Keep unsupported
   // display-only skills out of this list until their data source exists.
   running: [["100m", "100M", 100, "speed"], ["200m", "200M", 200, "speed"], ["400m", "400M", 400, "speed"], ["800m", "800M", 800, "speed"], ["5k", "5K", 5000, "endurance"], ["10k", "10K", 10000, "endurance"], ["half_marathon", "Half marathon", 21097.5, "endurance"], ["marathon", "Marathon", 42195, "endurance"]],
-  cycling: [["1k", "1K", 1000, "speed"], ["4k", "4K", 4000, "speed"], ["10k", "10K", 10000, "speed"], ["20k", "20K", 20000, "endurance"], ["50k", "50K", 50000, "endurance"], ["100k", "100K", 100000, "endurance"], ["160k", "160K", 160000, "endurance"]],
+  cycling: [["1k", "1K", 1000, "speed"], ["5k", "5K", 5000, "speed"], ["10k", "10K", 10000, "speed"], ["20k", "20K", 20000, "endurance"], ["50k", "50K", 50000, "endurance"], ["100k", "100K", 100000, "endurance"], ["160k", "160K", 160000, "endurance"]],
   strength: [["bench_press", "Bench press", null, "push"], ["deadlift", "Deadlift", null, "pull"], ["squat", "Squat", null, "legs"]],
 };
 // The full first-pass catalog. Entries without a calculated result are still
@@ -15,7 +15,7 @@ export const displaySkillDefinitions = {
     ["total_elevation_run", "Total elevation in one run", "climbing", "elevation"], ["longest_sustained_run_climb", "Longest sustained climb", "climbing", "duration"], ["monthly_elevation_run", "Monthly elevation", "climbing", "elevation"],
   ],
   cycling: [
-    ["1k", "1K", "speed", "duration"], ["4k", "4K", "speed", "duration"], ["10k", "10K", "speed", "duration"],
+    ["1k", "1K", "speed", "duration"], ["5k", "5K", "speed", "duration"], ["10k", "10K", "speed", "duration"],
     ["longest_ride", "Longest ride", "endurance", "kilometers"], ["20k", "20K", "endurance", "duration"], ["50k", "50K", "endurance", "duration"], ["100k", "100K", "endurance", "duration"], ["160k", "160K", "endurance", "duration"], ["monthly_distance", "Monthly distance", "endurance", "kilometers"],
     ["monthly_elevation_cycling", "Monthly elevation", "climbing", "elevation"], ["vertical_meters_one_hour", "Vertical meters in one hour", "climbing", "elevation"], ["longest_sustained_cycling_climb", "Longest sustained climb", "climbing", "duration"], ["total_elevation_ride", "Total elevation in one ride", "climbing", "elevation"],
   ],
@@ -25,7 +25,7 @@ export const displaySkillDefinitions = {
     ["back_squat", "Back squat", "legs", "one-rep max"], ["leg_press", "Leg press", "legs", "one-rep max"], ["monthly_leg_volume", "Monthly leg volume", "legs", "volume"],
   ],
 };
-export const calculationVersion = classKey => classKey === 'cycling' ? 4 : classKey === 'running' ? 4 : 1;
+export const calculationVersion = classKey => classKey === 'cycling' ? 5 : classKey === 'running' ? 4 : 1;
 
 export function runningBestTimes(details) {
   if (!Array.isArray(details?.best_efforts)) return null;
@@ -49,17 +49,23 @@ export function needsSkillProcessing(activity, classKey, entry) {
     || (classKey === 'running' && (!entry.detailsProcessed || !entry.streamsProcessed));
 }
 
-// Piecewise-linear distance/time trace. A minimum occurs when either endpoint
-// touches a sample. Scan both endpoint sets so uneven sampling does not bias it.
+// On a piecewise-linear trace, check both sets of sample endpoints and any
+// interpolated windows where descent reaches the cap.
 export function bestTimes(streams, definitions, { maxDescentPerKm } = {}) {
   const d = streams?.distance?.data, t = streams?.time?.data;
   if (!Array.isArray(d) || !Array.isArray(t) || d.length !== t.length || d.length < 2) return null;
   if (d.some((v, i) => !Number.isFinite(v) || v < 0 || !Number.isFinite(t[i]) || t[i] < 0 || (i && (v < d[i - 1] || t[i] <= t[i - 1])))) return null;
   const altitude = streams?.altitude?.data;
   const canFilterDescent = typeof maxDescentPerKm === 'function' && Array.isArray(altitude) && altitude.length === d.length && altitude.every(Number.isFinite);
-  const eligible = (startIndex, endIndex, startAltitude, endAltitude, distance) => !canFilterDescent || cumulativeDescent(altitude, startIndex, endIndex, startAltitude, endAltitude) <= maxDescentPerKm(distance) * distance / 1000;
+  const descent = canFilterDescent ? [0] : null;
+  if (descent) {
+    for (let i = 1; i < altitude.length; i++) {
+      descent.push(descent[i - 1] + Math.max(0, altitude[i - 1] - altitude[i]));
+    }
+  }
   const results = {};
   for (const [key, , distance] of definitions) {
+    const cap = descent ? maxDescentPerKm(distance) * distance / 1000 : Infinity;
     let best = Infinity, right = 1, left = 0;
     for (let i = 0; i < d.length; i++) {
       const target = d[i] + distance;
@@ -67,8 +73,7 @@ export function bestTimes(streams, definitions, { maxDescentPerKm } = {}) {
       while (right < d.length && d[right] < target) right++;
       if (right === d.length) break;
       const fraction = (target - d[right - 1]) / (d[right] - d[right - 1]);
-      const endAltitude = altitude?.[right - 1] + (altitude?.[right] - altitude?.[right - 1]) * fraction;
-      if (!eligible(i, right, altitude?.[i], endAltitude, distance)) continue;
+      if (descent && interpolate(descent, right - 1, fraction) - descent[i] > cap) continue;
       const end = t[right - 1] + (t[right] - t[right - 1]) * fraction;
       best = Math.min(best, end - t[i]);
     }
@@ -77,23 +82,52 @@ export function bestTimes(streams, definitions, { maxDescentPerKm } = {}) {
       if (target < d[0]) continue;
       while (left + 1 < i && d[left + 1] <= target) left++;
       const fraction = (target - d[left]) / (d[left + 1] - d[left]);
-      const startAltitude = altitude?.[left] + (altitude?.[left + 1] - altitude?.[left]) * fraction;
-      if (!eligible(left, i, startAltitude, altitude?.[i], distance)) continue;
+      if (descent && descent[i] - interpolate(descent, left, fraction) > cap) continue;
       const start = t[left] + (t[left + 1] - t[left]) * fraction;
       best = Math.min(best, t[i] - start);
     }
+    if (descent) best = Math.min(best, bestDescentCrossing(d, t, descent, distance, cap));
     if (Number.isFinite(best) && best > 0) results[key] = Math.round(best * 1000);
   }
   return results;
 }
 
-function cumulativeDescent(altitude, startIndex, endIndex, startAltitude, endAltitude) {
-  let loss = 0, previous = startAltitude;
-  for (let index = startIndex + 1; index < endIndex; index++) {
-    loss += Math.max(0, previous - altitude[index]);
-    previous = altitude[index];
+function interpolate(values, index, fraction) {
+  return values[index] + (values[index + 1] - values[index]) * fraction;
+}
+
+// Sweep intervals where neither endpoint crosses a sample. Time and descent
+// are linear on each interval, so only a cap crossing adds a candidate.
+function bestDescentCrossing(distances, times, descent, distance, cap) {
+  let best = Infinity, left = 0, right = 0;
+  const last = distances.length - 1;
+  let start = distances[0];
+  const limit = distances[last] - distance;
+  while (start < limit) {
+    // Skip zero-distance spans. Each interval uses its own side of a stop,
+    // so the elapsed time and descent jumps are never interpolated across.
+    while (distances[left + 1] <= start) left++;
+    while (distances[right + 1] - distance <= start) right++;
+    const leftEnd = distances[left + 1];
+    const rightEnd = distances[right + 1] - distance;
+    const end = Math.min(leftEnd, rightEnd);
+    const leftSpan = leftEnd - distances[left];
+    const rightSpan = distances[right + 1] - distances[right];
+    const leftStartFraction = 1 - (leftEnd - start) / leftSpan;
+    const rightStartFraction = 1 - (rightEnd - start) / rightSpan;
+    const leftEndFraction = 1 - (leftEnd - end) / leftSpan;
+    const rightEndFraction = 1 - (rightEnd - end) / rightSpan;
+    const startLoss = interpolate(descent, right, rightStartFraction) - interpolate(descent, left, leftStartFraction);
+    const endLoss = interpolate(descent, right, rightEndFraction) - interpolate(descent, left, leftEndFraction);
+    if ((startLoss <= cap) !== (endLoss <= cap)) {
+      const fraction = (cap - startLoss) / (endLoss - startLoss);
+      const startTime = interpolate(times, left, leftStartFraction + fraction * (leftEndFraction - leftStartFraction));
+      const endTime = interpolate(times, right, rightStartFraction + fraction * (rightEndFraction - rightStartFraction));
+      best = Math.min(best, endTime - startTime);
+    }
+    start = end;
   }
-  return loss + Math.max(0, previous - endAltitude);
+  return best;
 }
 
 export function classSkills(classKey, activities, cache, now = new Date()) {

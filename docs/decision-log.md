@@ -270,7 +270,7 @@ Record decisions here as the project evolves. Keep entries short and link to the
 
 ## 2026-10-31 - Process and display the complete Cycling skill catalog
 
-- Calculate 1K, 4K, 10K, 20K, 50K, 100K, and 160K using the existing interpolated distance/time algorithm. Retire the calculated 75K target to match the catalog. Running and Strength processing and class XP stay unchanged.
+- Calculate 1K, 5K, 10K, 20K, 50K, 100K, and 160K using the existing interpolated distance/time algorithm. Retire the calculated 75K target to match the catalog. Running and Strength processing and class XP stay unchanged.
 - Longest Ride (km) and Total Elevation in One Ride (m) come from saved Strava summaries. Monthly Distance and Monthly Elevation sum imported rides starting in the previous 28 days, ending at the most recent Saturday **00:00 UTC**, start inclusive/end exclusive. This is an explicit initial timezone choice until account timezones exist. Values stay fixed during the week for a fixed import; newly imported history can fill the window. An empty window shows zero when imported cycling history exists; an account without rides remains empty.
 - Cycling skills use Strava rides only, including the existing eligible virtual/mountain/gravel types. Manual entries continue earning XP but do not enter these skill calculations. Attribute each result to its ride or dated window, and show partial elevation totals when summaries are missing elevation. Old snapshots may contain zero substituted for missing elevation by the previous importer; those values cannot be distinguished without future reconciliation.
 - Request altitude with time/distance in the same budgeted stream request. Vertical Meters in One Hour sums positive altitude changes over a full rolling 3,600 elapsed seconds (including stops), with linear interpolation at window boundaries. Shorter rides do not produce an hourly result. Search both endpoint sample sets in linear time. This is a sample-based estimate, not provider-corrected elevation.
@@ -304,8 +304,8 @@ Record decisions here as the project evolves. Keep entries short and link to the
 
 ## 2026-11-04 - Tune cycling speed references
 
-- Replace the Cycling 5K skill with a 4K skill.
-- Set Cycling 1K's fastest reference to 1:00, Cycling 4K's references to 20:00 and 5:00, and Cycling 10K's references to 50:00 and 12:00.
+- Set Cycling 1K's fastest reference to 1:00, Cycling 5K's references to 20:00 and 5:00, and Cycling 10K's references to 50:00 and 12:00.
 - These are experimental cycling progression anchors and remain separate from the Running 5K and 10K scales.
 - Set the Men 18-34 Cycling Monthly Distance ceiling to 3,000 km.
 - Exclude downhill-heavy cycling speed segments from stream-derived distance times: cumulative descent may not exceed 5 m per kilometer for 1K, or 10 m per kilometer for longer speed targets. Missing altitude leaves the distance-time calculation available, with no descent filter.
+- Check interpolated windows where descent reaches the cap, in addition to windows with a recorded endpoint. Cycling calculation version 5 queues existing rides for reprocessing.

@@ -44,10 +44,24 @@ test('cycling speed efforts exclude downhill-heavy segments using distance-speci
   const gentle = { distance: { data: [0, 1000, 2000, 3000, 4000, 5000] }, time: { data: [0, 60, 120, 180, 240, 300] }, altitude: { data: [100, 94, 88, 82, 76, 70] } };
   const gentleResult = cyclingMetrics(gentle).times;
   assert.equal(gentleResult['1k'], undefined); // 6 m descent exceeds the 1K limit.
-  assert.equal(gentleResult['4k'], 240000); // 24 m descent stays below the 4K limit of 40 m.
+  assert.equal(gentleResult['5k'], 300000); // 30 m descent stays below the 5K limit of 50 m.
 
   const steep = { distance: { data: Array.from({ length: 11 }, (_, i) => i * 1000) }, time: { data: Array.from({ length: 11 }, (_, i) => i * 60) }, altitude: { data: Array.from({ length: 11 }, (_, i) => 100 - i * 11) } };
   assert.equal(cyclingMetrics(steep).times['10k'], undefined); // 110 m descent exceeds the 10K limit of 100 m.
+});
+
+test('cycling finds the fastest eligible window between recorded samples', () => {
+  const streams = {
+    distance: { data: [0, 1000, 2000] },
+    time: { data: [0, 10, 110] },
+    altitude: { data: [10, 0, 0] },
+  };
+  assert.equal(cyclingMetrics(streams).times['1k'], 55000);
+
+  // The cap can also become binding as descent increases across the interval.
+  streams.time.data = [0, 100, 110];
+  streams.altitude.data = [10, 10, 0];
+  assert.equal(cyclingMetrics(streams).times['1k'], 55000);
 });
 
 test('four-week windows update on Saturday UTC, exclude the end and include the start', () => {
@@ -76,7 +90,7 @@ test('summary skills are immediate, exclude manual rides, retain ties and missin
 test('upgrades cycling cache through the queue, saves compact results in isolated SQLite snapshots, and resumes without refetch', async () => {
   const db = openDatabase(':memory:');
   const activity = ride(1, { distance: 500 }); // short rides still need climbing processing
-  const old = { activities: [activity], historyComplete: true, syncedAt: now.getTime(), activityCheckAt: now.getTime(), skillCache: { 1: { version: 1, fingerprint: fingerprint(activity), times: { '4k': 1 } } } };
+  const old = { activities: [activity], historyComplete: true, syncedAt: now.getTime(), activityCheckAt: now.getTime(), skillCache: { 1: { version: 1, fingerprint: fingerprint(activity), times: { '5k': 1 } } } };
   db.saveSnapshot('a', old);
   db.saveSnapshot('b', { activities: [], skillCache: {} });
   let calls = 0;

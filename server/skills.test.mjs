@@ -17,7 +17,7 @@ test('calculates subactivity elapsed efforts with interpolation and includes sto
 
 test('cycling supports all seven targets and running includes official marathon distances', () => {
   const times = bestTimes(stream([0, 160000], [0, 16000]), skillDefinitions.cycling);
-  assert.deepEqual(Object.values(times), [100000, 400000, 1000000, 2000000, 5000000, 10000000, 16000000]);
+  assert.deepEqual(Object.values(times), [100000, 500000, 1000000, 2000000, 5000000, 10000000, 16000000]);
   assert.equal(bestTimes(stream([0, 42195], [0, 12600]), skillDefinitions.running).marathon, 12600000);
 });
 
@@ -76,8 +76,8 @@ test('running replaces legacy caches with provider details and streams; cycling 
   const result = await service.get();
   assert.equal(details, 1); assert.equal(streams, 2);
   const running5k = result.classes[0].skills.find(skill => skill.key === 'running_5k');
-  const cycling4k = result.classes[2].skills.find(skill => skill.key === 'cycling_4k');
+  const cycling5k = result.classes[2].skills.find(skill => skill.key === 'cycling_5k');
   assert.equal(running5k.best.timeMs, 1519000);
   assert.equal(running5k.best.method, 'strava_best_efforts');
-  assert.equal(cycling4k.best.method, 'distance_time_stream_v1');
+  assert.equal(cycling5k.best.method, 'distance_time_stream_v1');
 });
