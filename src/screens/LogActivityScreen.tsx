@@ -66,7 +66,7 @@ export default function LogActivityScreen({ activity }: { activity?: ManualActiv
         <Text style={s.eyebrow}>REVIEW ACTIVITY</Text><Text style={s.heading}>{result.name}</Text>
         <Text style={s.body}>{result.sportType} · {new Date(result.startDate).toLocaleDateString()}{'\n'}{displayNumber(result.distance / 1000)} km · {displayNumber(result.movingTime / 60)} min</Text>
         <Text style={s.heading}>+{displayNumber(xpPreview(result))} {result.sportType === 'Run' ? 'Running' : result.sportType === 'Ride' ? 'Cycling' : ''} XP</Text>
-        <Text style={s.body}>{result.sportType === 'Run' ? '1 km = 1 Running XP.' : result.sportType === 'Ride' ? '3 km = 1 Cycling XP.' : 'This activity is recorded in history but has no XP rule yet.'}</Text>
+        <Text style={s.body}>{result.sportType === 'Run' ? '1 km = 1 Running XP.' : result.sportType === 'Ride' ? '2 km = 1 Cycling XP.' : 'This activity is recorded in history but has no XP rule yet.'}</Text>
         {draft.submitted && <Text style={s.body}>This save is awaiting confirmation. Retry Save to confirm it; it will not add duplicate XP.</Text>}
         {!draft.submitted && <FormButton secondary title="Edit activity" onPress={() => setReview(null)} disabled={saving} />}
         <FormButton title={saving ? 'Saving…' : activity ? 'Save changes' : 'Save activity'} onPress={save} disabled={saving} />
