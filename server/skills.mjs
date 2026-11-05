@@ -11,7 +11,7 @@ export const displaySkillDefinitions = {
   running: [
     ["100m", "100M", "speed", "duration"], ["200m", "200M", "speed", "duration"], ["400m", "400M", "speed", "duration"], ["800m", "800M", "speed", "duration"],
     ["5k", "5K", "endurance", "duration"], ["10k", "10K", "endurance", "duration"], ["half_marathon", "Half marathon", "endurance", "duration"], ["marathon", "Full marathon", "endurance", "duration"],
-    ["longest_run", "Longest run", "endurance", "duration"], ["monthly_distance", "Monthly distance", "endurance", "kilometers"],
+    ["longest_run", "Longest run", "endurance", "kilometers"], ["monthly_distance", "Monthly distance", "endurance", "kilometers"],
     ["total_elevation_run", "Total elevation in one run", "climbing", "elevation"], ["longest_sustained_run_climb", "Longest sustained climb", "climbing", "duration"], ["monthly_elevation_run", "Monthly elevation", "climbing", "elevation"],
   ],
   cycling: [
@@ -25,7 +25,7 @@ export const displaySkillDefinitions = {
     ["back_squat", "Back squat", "legs", "one-rep max"], ["leg_press", "Leg press", "legs", "one-rep max"], ["monthly_leg_volume", "Monthly leg volume", "legs", "volume"],
   ],
 };
-export const calculationVersion = classKey => classKey === 'cycling' ? 2 : classKey === 'running' ? 3 : 1;
+export const calculationVersion = classKey => classKey === 'cycling' ? 5 : classKey === 'running' ? 4 : 1;
 
 export function runningBestTimes(details) {
   if (!Array.isArray(details?.best_efforts)) return null;
@@ -49,33 +49,85 @@ export function needsSkillProcessing(activity, classKey, entry) {
     || (classKey === 'running' && (!entry.detailsProcessed || !entry.streamsProcessed));
 }
 
-// Piecewise-linear distance/time trace. A minimum occurs when either endpoint
-// touches a sample. Scan both endpoint sets so uneven sampling does not bias it.
-export function bestTimes(streams, definitions) {
+// On a piecewise-linear trace, check both sets of sample endpoints and any
+// interpolated windows where descent reaches the cap.
+export function bestTimes(streams, definitions, { maxDescentPerKm } = {}) {
   const d = streams?.distance?.data, t = streams?.time?.data;
   if (!Array.isArray(d) || !Array.isArray(t) || d.length !== t.length || d.length < 2) return null;
   if (d.some((v, i) => !Number.isFinite(v) || v < 0 || !Number.isFinite(t[i]) || t[i] < 0 || (i && (v < d[i - 1] || t[i] <= t[i - 1])))) return null;
+  const altitude = streams?.altitude?.data;
+  const canFilterDescent = typeof maxDescentPerKm === 'function' && Array.isArray(altitude) && altitude.length === d.length && altitude.every(Number.isFinite);
+  const descent = canFilterDescent ? [0] : null;
+  if (descent) {
+    for (let i = 1; i < altitude.length; i++) {
+      descent.push(descent[i - 1] + Math.max(0, altitude[i - 1] - altitude[i]));
+    }
+  }
   const results = {};
   for (const [key, , distance] of definitions) {
+    const cap = descent ? maxDescentPerKm(distance) * distance / 1000 : Infinity;
     let best = Infinity, right = 1, left = 0;
     for (let i = 0; i < d.length; i++) {
       const target = d[i] + distance;
       right = Math.max(right, i + 1);
       while (right < d.length && d[right] < target) right++;
       if (right === d.length) break;
-      const end = t[right - 1] + (t[right] - t[right - 1]) * (target - d[right - 1]) / (d[right] - d[right - 1]);
+      const fraction = (target - d[right - 1]) / (d[right] - d[right - 1]);
+      if (descent && interpolate(descent, right - 1, fraction) - descent[i] > cap) continue;
+      const end = t[right - 1] + (t[right] - t[right - 1]) * fraction;
       best = Math.min(best, end - t[i]);
     }
     for (let i = 1; i < d.length; i++) {
       const target = d[i] - distance;
       if (target < d[0]) continue;
       while (left + 1 < i && d[left + 1] <= target) left++;
-      const start = t[left] + (t[left + 1] - t[left]) * (target - d[left]) / (d[left + 1] - d[left]);
+      const fraction = (target - d[left]) / (d[left + 1] - d[left]);
+      if (descent && descent[i] - interpolate(descent, left, fraction) > cap) continue;
+      const start = t[left] + (t[left + 1] - t[left]) * fraction;
       best = Math.min(best, t[i] - start);
     }
+    if (descent) best = Math.min(best, bestDescentCrossing(d, t, descent, distance, cap));
     if (Number.isFinite(best) && best > 0) results[key] = Math.round(best * 1000);
   }
   return results;
+}
+
+function interpolate(values, index, fraction) {
+  return values[index] + (values[index + 1] - values[index]) * fraction;
+}
+
+// Sweep intervals where neither endpoint crosses a sample. Time and descent
+// are linear on each interval, so only a cap crossing adds a candidate.
+function bestDescentCrossing(distances, times, descent, distance, cap) {
+  let best = Infinity, left = 0, right = 0;
+  const last = distances.length - 1;
+  let start = distances[0];
+  const limit = distances[last] - distance;
+  while (start < limit) {
+    // Skip zero-distance spans. Each interval uses its own side of a stop,
+    // so the elapsed time and descent jumps are never interpolated across.
+    while (distances[left + 1] <= start) left++;
+    while (distances[right + 1] - distance <= start) right++;
+    const leftEnd = distances[left + 1];
+    const rightEnd = distances[right + 1] - distance;
+    const end = Math.min(leftEnd, rightEnd);
+    const leftSpan = leftEnd - distances[left];
+    const rightSpan = distances[right + 1] - distances[right];
+    const leftStartFraction = 1 - (leftEnd - start) / leftSpan;
+    const rightStartFraction = 1 - (rightEnd - start) / rightSpan;
+    const leftEndFraction = 1 - (leftEnd - end) / leftSpan;
+    const rightEndFraction = 1 - (rightEnd - end) / rightSpan;
+    const startLoss = interpolate(descent, right, rightStartFraction) - interpolate(descent, left, leftStartFraction);
+    const endLoss = interpolate(descent, right, rightEndFraction) - interpolate(descent, left, leftEndFraction);
+    if ((startLoss <= cap) !== (endLoss <= cap)) {
+      const fraction = (cap - startLoss) / (endLoss - startLoss);
+      const startTime = interpolate(times, left, leftStartFraction + fraction * (leftEndFraction - leftStartFraction));
+      const endTime = interpolate(times, right, rightStartFraction + fraction * (rightEndFraction - rightStartFraction));
+      best = Math.min(best, endTime - startTime);
+    }
+    start = end;
+  }
+  return best;
 }
 
 export function classSkills(classKey, activities, cache, now = new Date()) {
@@ -105,7 +157,7 @@ export function classSkills(classKey, activities, cache, now = new Date()) {
 
 // Validate dimensions independently: missing altitude must not discard speed results.
 export function cyclingMetrics(streams) {
-  const times = bestTimes(streams, skillDefinitions.cycling);
+  const times = bestTimes(streams, skillDefinitions.cycling, { maxDescentPerKm: distance => distance === 1000 ? 5 : 10 });
   const result = altitudeMetrics(streams);
   const { longest_sustained_climb, ...metrics } = result.metrics;
   if (longest_sustained_climb) metrics.longest_sustained_cycling_climb = longest_sustained_climb;
@@ -171,12 +223,10 @@ function enduranceSkills(classKey, activities, cache, now) {
     const unit = kind === 'distance' ? 'km' : kind === 'elevation' ? 'm' : 'ms';
     const eligible = imported.filter(a => !distanceMeters || a.distance >= distanceMeters);
     const current = a => cache[a.id]?.version === calculationVersion(classKey) && cache[a.id]?.fingerprint === fingerprint(a);
-    const processing = (!summary || key === 'longest_run') && eligible.some(a => {
-      if (key === 'longest_run' && Number.isFinite(a.elapsedTime)) return false;
+    const processing = !summary && eligible.some(a => {
       if (!current(a)) return true;
       if (classKey === 'cycling') return !!cache[a.id]?.retryAt;
       const entry = cache[a.id];
-      if (key === 'longest_run') return !entry.detailsProcessed;
       if (distanceMeters) return !entry.detailsProcessed || (runningStreamDefinitions.some(([id]) => id === key) && !Number.isFinite(entry.times?.[key]) && !entry.streamsProcessed);
       return !entry.streamsProcessed;
     });
@@ -184,7 +234,7 @@ function enduranceSkills(classKey, activities, cache, now) {
     const explanation = monthly ? `Previous 28 days ending Saturday 00:00 UTC; updates weekly. Imported Strava ${classKey === 'running' ? 'runs' : 'rides'} only.`
       : key === 'longest_sustained_cycling_climb' || key === 'longest_sustained_run_climb' ? 'Longest continuously rising altitude trace; flat or descending samples end the climb. Sample-based elapsed duration.'
       : key === 'vertical_meters_one_hour' ? 'Greatest positive altitude gain in a full rolling 60 minutes, including stops. Sample-based estimate.'
-      : key === 'longest_run' ? 'Longest completed run by elapsed duration, including stops; uses summary or activity-detail elapsed time.'
+      : key === 'longest_run' ? 'Longest completed run by distance, using imported Strava run summaries.'
       : summary ? 'Calculated from saved Strava summaries.' : classKey === 'running' ? 'Exact Strava best effort when returned; 100M, 200M and 800M use distance/time streams when absent. Elapsed time includes stops.' : 'Fastest continuous distance effort, using elapsed time including stops.';
     if (monthly) {
       const field = kind === 'distance' ? 'distance' : 'elevationGain';
@@ -197,13 +247,13 @@ function enduranceSkills(classKey, activities, cache, now) {
         let value;
         if (key === 'longest_ride') value = activity.distance / 1000;
         else if (key === 'total_elevation_ride' || key === 'total_elevation_run') value = activity.elevationGain;
-        else if (key === 'longest_run') value = Number.isFinite(activity.elapsedTime) ? activity.elapsedTime * 1000 : current(activity) ? cache[activity.id].metrics?.longest_run?.value : undefined;
+        else if (key === 'longest_run') value = activity.distance / 1000;
         else if (current(activity)) value = distanceMeters ? cache[activity.id].times?.[key] : cache[activity.id].metrics?.[key]?.value;
         if (!Number.isFinite(value) || value < 0 || (kind !== 'elevation' && value === 0)) continue;
         const lower = !!distanceMeters;
         if (!best || (lower ? value < best.value : value > best.value) || (value === best.value && activity.startDate < best.achievedAt)) {
           best = { kind, value, unit, ...(kind === 'duration' ? { timeMs: value } : {}), activityId: activity.id, activityName: activity.name,
-            achievedAt: activity.startDate, source: 'strava', method: key === 'longest_run' && !Number.isFinite(activity.elapsedTime) ? 'strava_details_v1' : summary ? 'strava_summary_v1' : distanceMeters ? cache[activity.id]?.methods?.[key] ?? 'distance_time_stream_v1' : 'altitude_time_stream_v1' };
+            achievedAt: activity.startDate, source: 'strava', method: summary ? 'strava_summary_v1' : distanceMeters ? cache[activity.id]?.methods?.[key] ?? 'distance_time_stream_v1' : 'altitude_time_stream_v1' };
         }
       }
     }

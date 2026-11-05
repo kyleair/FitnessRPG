@@ -39,18 +39,18 @@ export function skillRankScore(rankNumber: number) {
 export const ageBands: AgeBand[] = ['18-34', '35-39', '40-44', '45-49', '50-54', '55-59', '60-64', '65-69', '70-74', '75-79', '80+'];
 export const genders: { key: SkillGender; label: string }[] = [{ key: 'men', label: 'Men' }, { key: 'women', label: 'Women' }];
 
-type Anchor = { unit: ProgressionUnit; direction: ProgressionDirection; men: [number, number]; women: [number, number]; ageEffect?: number[] };
+type Anchor = { unit: ProgressionUnit; direction: ProgressionDirection; men: [number, number]; women: [number, number]; decimalPlaces?: number; ageEffect?: number[] };
 
 // Anchors are intentionally readable and conservative. Each pair is level 1 ->
 // level 100 for ages 18-34; the app linearly interpolates the 99 levels between.
 // They are a first-pass reference scale, not medical or competitive standards.
 const anchors: Record<string, Anchor> = {
-  '100m': { unit: 'duration', direction: 'lower', men: [25, 9.58], women: [30, 10.49] },
-  '200m': { unit: 'duration', direction: 'lower', men: [55, 19.19], women: [65, 21.34] },
-  '400m': { unit: 'duration', direction: 'lower', men: [125, 43.03], women: [145, 47.60] },
-  '800m': { unit: 'duration', direction: 'lower', men: [300, 100], women: [340, 113] },
-  '5k': { unit: 'duration', direction: 'lower', men: [2100, 765], women: [2400, 840] },
-  '10k': { unit: 'duration', direction: 'lower', men: [4500, 1590], women: [5100, 1740] },
+  '100m': { unit: 'duration', direction: 'lower', decimalPlaces: 2, men: [25.00, 9.58], women: [30.00, 10.49] },
+  '200m': { unit: 'duration', direction: 'lower', decimalPlaces: 2, men: [55.00, 19.19], women: [65.00, 21.34] },
+  '400m': { unit: 'duration', direction: 'lower', decimalPlaces: 2, men: [125.00, 43.03], women: [145.00, 47.60] },
+  '800m': { unit: 'duration', direction: 'lower', decimalPlaces: 2, men: [300.00, 100.00], women: [340.00, 113.00] },
+  '5k': { unit: 'duration', direction: 'lower', men: [3000, 765], women: [2400, 840] },
+  '10k': { unit: 'duration', direction: 'lower', men: [6000, 1590], women: [5100, 1740] },
   'half_marathon': { unit: 'duration', direction: 'lower', men: [9000, 3600], women: [10200, 3900] },
   // The requested example: men 18-34 run from 6:00:00 to 2:00:00 linearly.
   'marathon': { unit: 'duration', direction: 'lower', men: [21600, 7200], women: [23400, 7800] },
@@ -60,9 +60,13 @@ const anchors: Record<string, Anchor> = {
   '75k': { unit: 'duration', direction: 'lower', men: [21000, 9000], women: [24000, 10200] },
   '100k': { unit: 'duration', direction: 'lower', men: [27000, 12600], women: [30000, 13800] },
   '160k': { unit: 'duration', direction: 'lower', men: [54000, 21600], women: [60000, 24000] },
-  'longest_run': { unit: 'duration', direction: 'higher', men: [1800, 43200], women: [1800, 36000] },
+  'cycling_1k': { unit: 'duration', direction: 'lower', men: [330, 60], women: [390, 60] },
+  'cycling_5k': { unit: 'duration', direction: 'lower', men: [1200, 300], women: [1200, 300] },
+  'cycling_10k': { unit: 'duration', direction: 'lower', men: [3000, 720], women: [3000, 720] },
+  'longest_run': { unit: 'kilometers', direction: 'higher', men: [10, 100], women: [10, 100] },
   'longest_ride': { unit: 'kilometers', direction: 'higher', men: [20, 300], women: [15, 260] },
-  'monthly_distance': { unit: 'kilometers', direction: 'higher', men: [15, 1000], women: [15, 850] },
+  'monthly_distance': { unit: 'kilometers', direction: 'higher', men: [15, 750], women: [15, 850] },
+  'cycling_monthly_distance': { unit: 'kilometers', direction: 'higher', men: [15, 3000], women: [15, 3000] },
   'monthly_elevation_run': { unit: 'meters', direction: 'higher', men: [100, 12000], women: [80, 10000] },
   'monthly_elevation_cycling': { unit: 'meters', direction: 'higher', men: [250, 30000], women: [200, 25000] },
   'total_elevation_run': { unit: 'meters', direction: 'higher', men: [50, 3000], women: [40, 2500] },
@@ -87,6 +91,15 @@ const ageMultipliers: Record<AgeBand, number> = { '18-34': 1, '35-39': 1.03, '40
 
 export type LevelValue = { level: number; value: number };
 export type ProgressionTable = Anchor & { skillKey: string; ageBand: AgeBand; gender: SkillGender; levels: LevelValue[] };
+type MeasuredSkillValue = { kind?: 'duration' | 'distance' | 'elevation'; unit?: 'ms' | 'km' | 'm'; value?: number; timeMs?: number };
+
+export function progressionMeasurementValue(best: MeasuredSkillValue, unit: ProgressionUnit) {
+  const expected = unit === 'duration' ? { kind: 'duration', unit: 'ms' } : unit === 'kilometers' ? { kind: 'distance', unit: 'km' } : unit === 'meters' ? { kind: 'elevation', unit: 'm' } : null;
+  if (!expected || (best.kind && best.kind !== expected.kind) || (best.unit && best.unit !== expected.unit)) return null;
+  const rawValue = best.value ?? best.timeMs;
+  if (rawValue === undefined || !Number.isFinite(rawValue)) return null;
+  return unit === 'duration' ? rawValue / 1000 : rawValue;
+}
 
 function ageAdjusted(anchor: Anchor, gender: SkillGender, ageBand: AgeBand, level: number) {
   const [low, high] = anchor[gender];
@@ -97,16 +110,19 @@ function ageAdjusted(anchor: Anchor, gender: SkillGender, ageBand: AgeBand, leve
 }
 
 export function progressionTable(skillKey: string, gender: SkillGender, ageBand: AgeBand): ProgressionTable | null {
-  const anchor = anchors[skillKey];
+  const anchor = anchors[skillKey] ?? anchors[skillKey.replace(/^(running|cycling)_/, '')];
   if (!anchor) return null;
   const levels = Array.from({ length: 100 }, (_, index) => ({ level: index + 1, value: ageAdjusted(anchor, gender, ageBand, index + 1) }));
   return { ...anchor, skillKey, gender, ageBand, levels };
 }
 
-export function formatProgressionValue(value: number, unit: ProgressionUnit) {
+export function formatProgressionValue(value: number, unit: ProgressionUnit, decimalPlaces = 0) {
   if (unit === 'duration') {
-    const total = Math.round(value), hours = Math.floor(total / 3600), minutes = Math.floor(total / 60) % 60, seconds = total % 60;
-    return hours ? `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}` : `${minutes}:${String(seconds).padStart(2, '0')}`;
+    const factor = 10 ** decimalPlaces;
+    const total = Math.round(value * factor) / factor;
+    const wholeSeconds = Math.floor(total), hours = Math.floor(wholeSeconds / 3600), minutes = Math.floor(wholeSeconds / 60) % 60;
+    const seconds = (total % 60).toFixed(decimalPlaces).padStart(decimalPlaces ? 3 + decimalPlaces : 2, '0');
+    return hours ? `${hours}:${String(minutes).padStart(2, '0')}:${seconds}` : `${minutes}:${seconds}`;
   }
   if (unit === 'kilometers') return `${value < 100 ? value.toFixed(1) : Math.round(value)} km`;
   if (unit === 'meters') return `${Math.round(value).toLocaleString()} m`;

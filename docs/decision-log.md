@@ -247,7 +247,7 @@ Record decisions here as the project evolves. Keep entries short and link to the
 
 - **Decision:** Replace the current partial distance-skill list with the following subclass metrics. These are skill definitions, not class-XP rules.
 - **Running / Speed:** 100M, 200M, 400M, and 800M, each measured by best duration.
-- **Running / Endurance:** 5K, 10K, half marathon, and full marathon measured by best duration; Longest Run measured by longest completed run duration; Monthly Distance measured as total running kilometers in the trailing 28 days.
+- **Running / Endurance:** 5K, 10K, half marathon, and full marathon measured by best duration; Longest Run measured by longest completed run distance in kilometers; Monthly Distance measured as total running kilometers in the trailing 28 days.
 - **Running / Climbing:** Total Elevation in One Run measured by elevation gained; Longest Sustained Climb measured by climb duration; Monthly Elevation measured by elevation gained in the trailing 28 days.
 - **Cycling / Speed:** 1K, 5K, and 10K, each measured by best duration.
 - **Cycling / Endurance:** Longest Ride measured by kilometers; 20K, 50K, 100K, and 160K measured by best duration; Monthly Distance measured by kilometers ridden in the trailing 28 days.
@@ -276,7 +276,7 @@ Record decisions here as the project evolves. Keep entries short and link to the
 - Request altitude with time/distance in the same budgeted stream request. Vertical Meters in One Hour sums positive altitude changes over a full rolling 3,600 elapsed seconds (including stops), with linear interpolation at window boundaries. Shorter rides do not produce an hourly result. Search both endpoint sample sets in linear time. This is a sample-based estimate, not provider-corrected elevation.
 - Initial sustained-climb rule: consecutive strictly rising altitude samples; flat/downhill samples end the climb. Measure elapsed duration, with no smoothing, grade threshold or descent tolerance. This conservative, noise-sensitive rule is experimental and described in the UI; tuning requires a calculation-version change.
 - Persist compact typed per-ride climbing measurements (kind/value/unit), distance times, fingerprint, version, and fetch/retry metadata in the existing account-scoped atomic SQLite snapshot. Do not store raw streams or duplicate summary/window totals that can drift. Summary aggregation is one pass per metric over saved rides and makes no provider requests. Monthly totals are derived on reads, so Saturday rollover needs no scheduler or database write.
-- Cycling calculation version 2 triggers one queued reprocessing pass over imported cycling rides, including rides below 1 km. Existing budget reservations, pauses, fair retries and restart recovery apply. Missing altitude does not discard valid distance times, and invalid distance does not discard valid climbing results. Completed missing streams remain processed under the existing immutable-import policy.
+- Cycling calculation version 4 triggers one queued reprocessing pass over imported cycling rides, including rides below 1 km. Existing budget reservations, pauses, fair retries and restart recovery apply. Missing altitude does not discard valid distance times, and invalid distance does not discard valid climbing results. Completed missing streams remain processed under the existing immutable-import policy.
 - Display km, m, or duration in tiles, accessibility labels, ranks, milestones and the current-result history view. Window dates, Strava attribution, calculation explanations and partial imported-history scope remain visible. This slice does not add a historical series of weekly snapshots or every attempt to the history page.
 
 
@@ -286,11 +286,26 @@ Record decisions here as the project evolves. Keep entries short and link to the
 - Strava's [current running best-effort documentation](https://support.strava.com/en-us/articles/15401661-how-do-best-efforts-work-for-running-on-strava) lists 400M and the endurance distances, omits 100M/200M and lists half a mile rather than exact 800M. Older official community lists included 800M. Accept exact 800M if returned, but do not substitute a 804.672-meter half-mile effort. Compute only 100M, 200M and 800M from distance/time streams when absent from provider results. Other provider distances remain empty when missing. Explain stream estimates and their GPS-sampling limitations.
 - Fetch distance/time/altitude streams for imported runs, including runs below 100 meters, to compute sprint efforts and Longest Sustained Climb. Reuse Cycling's sample-based strictly rising climb rule. Running does not expose a vertical-meters-per-hour skill. This supersedes the earlier prohibition on running stream processing.
 - Use existing saved Strava summary distance/elevation for Monthly Distance, Monthly Elevation and Total Elevation in One Run. Reuse the Cycling four-week Saturday 00:00 UTC windows, partial-elevation reporting, empty-window behavior and Strava-only eligibility. Running and Cycling totals remain independent; manual activities earn XP but do not enter skill metrics.
-- Define Longest Run as **elapsed duration including stops**, matching the catalog's duration measurement, from `elapsed_time` on new summary imports. Old immutable summary snapshots lack that field, so use elapsed time from the queued activity detail instead. Do not infer it from moving time. Correct its reference scale from kilometers to duration; initial experimental age-18-34 anchors are 30 minutes to 12 hours for Men and 30 minutes to 10 hours for Women.
-- Running calculation version 3 queues one-time reprocessing; Cycling remains version 2. Include running elevation/elapsed summary fields in fingerprints. Persist successful detail and stream stages independently with timestamps, typed climbing/duration measurements and per-distance methods in the account's existing SQLite snapshot. Commit provider results before requesting streams, so stream errors, budget pauses and restarts do not refetch details. Successful stages with missing data are final under the existing immutable-import policy; transient failures retry fairly.
+- Define Longest Run as **completed-run distance in kilometers**, from the imported Strava summary. This keeps the metric available without an additional detail request and matches the distance-based reference scale.
+- Running calculation version 4 queues one-time reprocessing; Cycling remains version 2. Include running elevation/elapsed summary fields in fingerprints. Persist successful detail and stream stages independently with timestamps, typed climbing/duration measurements and per-distance methods in the account's existing SQLite snapshot. Commit provider results before requesting streams, so stream errors, budget pauses and restarts do not refetch details. Successful stages with missing data are final under the existing immutable-import policy; transient failures retry fairly.
 - Reuse unit-aware tiles, milestones, ranks and current-result history. Display per-result provider-versus-stream attribution. No schema migration, reconnect, raw-stream storage, weekly historical series or class-XP change is needed.
 ## 2026-10-31 - Name skill progression ranks and color-code skill tiers
 
 - **Decision:** Display the current 1-100 skill progression as five divisions within each rank tier: Iron, Bronze, Silver, Gold, Platinum, Diamond, Champ, Grand Champ, and Master. The 100-point progression maps to 45 displayed divisions, so a score of 25 displays as Silver 2.
 - **Visual treatment:** Skill cards use intuitive material colors through Diamond. Champ, Grand Champ, and Master use stronger borders, rounded frames, and a restrained glow to make the endgame tiers feel more ceremonial without reducing readability.
 - **Why:** Fitness class progression already uses levels; calling performance progression ranks keeps the two systems distinct and makes the skill cards easier to scan.
+
+## 2026-11-04 - Tune running skill reference anchors
+
+- Set the Men 18-34 level-1 targets to 50:00 for 5K and 1:40:00 for 10K; set the 10K level-100 target to 26:30.
+- Store and display 100M, 200M, 400M, and 800M reference times to hundredths of a second.
+- Measure Longest Run in kilometers, with 10 km and 100 km as the Men 18-34 endpoints. Keep the Men 18-34 Running Monthly Distance ceiling at 750 km.
+- These are tuning experiments for the progression scale, not official age-grade standards.
+
+## 2026-11-04 - Tune cycling speed references
+
+- Set Cycling 1K's fastest reference to 1:00, Cycling 5K's references to 20:00 and 5:00, and Cycling 10K's references to 50:00 and 12:00.
+- These are experimental cycling progression anchors and remain separate from the Running 5K and 10K scales.
+- Set the Men 18-34 Cycling Monthly Distance ceiling to 3,000 km.
+- Exclude downhill-heavy cycling speed segments from stream-derived distance times: cumulative descent may not exceed 5 m per kilometer for 1K, or 10 m per kilometer for longer speed targets. Missing altitude leaves the distance-time calculation available, with no descent filter.
+- Check interpolated windows where descent reaches the cap, in addition to windows with a recorded endpoint. Cycling calculation version 5 queues existing rides for reprocessing.

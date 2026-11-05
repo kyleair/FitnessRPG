@@ -7,6 +7,7 @@ export type SkillMilestones = {
   nextLevel: number;
   progress: number;
   unit: ProgressionUnit;
+  decimalPlaces: number;
 };
 
 export type RankedSkill = {
@@ -33,7 +34,7 @@ export function skillMilestones(skill: Skill, classKey: ClassKey, gender: SkillG
   const progress = safeLevel === 100 || span === 0 ? 1 : progression.direction === 'lower'
     ? Math.max(0, Math.min(1, (currentLevel - value) / span))
     : Math.max(0, Math.min(1, (value - currentLevel) / span));
-  return { level: safeLevel, currentLevel, nextLevel, progress, unit: progression.unit };
+  return { level: safeLevel, currentLevel, nextLevel, progress, unit: progression.unit, decimalPlaces: progression.decimalPlaces ?? 0 };
 }
 
 export function topRankedSkills(data: Dashboard, gender: SkillGender, ageBand: AgeBand, count = 3): RankedSkill[] {
